@@ -23,6 +23,8 @@ DisplayedCats/Total.v
 DisplayedCats/Fiber.v
 DisplayedCats/FullyFaithfulDispFunctor.v
 
+Duploids/Core.v
+
 opp_precat.v
 OppositeCategory/Core.v
 Groupoids.v
