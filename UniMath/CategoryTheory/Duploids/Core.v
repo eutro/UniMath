@@ -10,10 +10,18 @@ Require Import UniMath.MoreFoundations.All.
 Require Import UniMath.CategoryTheory.Core.Categories.
 Require Import UniMath.CategoryTheory.Core.Functors.
 Require Import UniMath.CategoryTheory.Core.Isos.
+Require Import UniMath.CategoryTheory.Core.Univalence.
 Require Import UniMath.CategoryTheory.Core.NaturalTransformations.
 Require Import UniMath.CategoryTheory.Subcategory.Core.
 Require Import UniMath.CategoryTheory.Subcategory.Full.
+Require Import UniMath.CategoryTheory.whiskering.
 Require Import UniMath.CategoryTheory.Adjunctions.Core.
+Require Import UniMath.CategoryTheory.opp_precat.
+Require Import UniMath.CategoryTheory.PrecategoryBinProduct.
+Require Import UniMath.CategoryTheory.Categories.HSET.Core.
+Require Import UniMath.CategoryTheory.Categories.HSET.Univalence.
+Require Import UniMath.CategoryTheory.Profunctors.Core.
+Require Import UniMath.CategoryTheory.Profunctors.Transformation.
 
 Local Open Scope cat.
 
@@ -183,6 +191,15 @@ Identity Coercion Id_negative_object : negative_object >-> carrier.
 Coercion object_of_negative_object {C : quasiduploid} (a : negative_object C) : C := pr1 a.
 Coercion is_negative_of_negative_object {C : quasiduploid} (a : negative_object C) : is_negative a := pr2 a.
 
+Definition thunkable_mor {C : quasiduploid} (a b : C) : UU := carrier (thunkable_mors C a b).
+Identity Coercion Id_thunkable_mor : thunkable_mor >-> carrier.
+Coercion mor_of_thunkable_mor {C : quasiduploid} (a b : C) (f : thunkable_mor a b) : a --> b := pr1 f.
+Coercion is_thunkable_of_thunkable_mor {C : quasiduploid} (a b : C) (f : thunkable_mor a b) : is_thunkable f := pr2 f.
+Definition linear_mor {C : quasiduploid} (a b : C) : UU := carrier (linear_mors C a b).
+Identity Coercion Id_linear_mor : linear_mor >-> carrier.
+Coercion mor_of_linear_mor {C : quasiduploid} (a b : C) (f : linear_mor a b) : a --> b := pr1 f.
+Coercion is_linear_of_linear_mor {C : quasiduploid} (a b : C) (f : linear_mor a b) : is_linear f := pr2 f.
+
 Definition is_linear_of_positive {C : precategory_data} {a b : C} (f : a --> b)
   : is_positive a -> is_linear f := λ H, H _ f.
 Definition is_linear_of_positive' {C : quasiduploid} {a : positive_object C} {b : C} (f : pr1 a --> b)
@@ -210,32 +227,22 @@ Lemma assoc'_negative {C : precategory_data} {a c d : C}
   : (f · g) · h = f · (g · h).
 Proof. apply assoc'_thunkable, is_thunkable_of_negative, H. Defined.
 
-Definition duploid_compose {C : quasiduploid} {a b c : C}
-  (f : a --> b) (g : b --> c) : a --> c := f · g.
-Definition positive_compose {C : quasiduploid} {a : C} {b : positive_object C} {c : C}
-  (f : a --> b) (g : b --> c) : a --> c := f · g.
-Definition negative_compose {C : quasiduploid} {a : C} {b : negative_object C} {c : C}
-  (f : a --> b) (g : b --> c) : a --> c := f · g.
+Notation "f ⊙ g" :=
+  (compose (C:=precategory_data_from_quasiduploid _) f g)
+    (at level 40, no associativity) : duploid.
+Notation "f ⊛ g" :=
+  (compose (b:=object_of_positive_object _) f g)
+    (at level 40, no associativity) : duploid.
+Notation "f ⊖ g" :=
+  (compose (b:=object_of_negative_object _) f g)
+    (at level 40, no associativity) : duploid.
 
-Notation "f ⊙ g" := (duploid_compose f g) (at level 40, no associativity) : duploid.
-Notation "f ⊛ g" := (positive_compose f g) (at level 40, no associativity) : duploid.
-Notation "f ⊖ g" := (negative_compose f g) (at level 40, no associativity) : duploid.
-
-Lemma duploid_compose_of {C : quasiduploid} {a b c : C}
-  (f : a --> b) (g : b --> c) : f · g = f ⊙ g.
+Lemma negative_object_of {C : quasiduploid} (a : C) (H : is_negative a)
+  : a = object_of_negative_object (a,,H).
 Proof. apply idpath. Defined.
-Lemma positive_compose_of {C : quasiduploid} {a b c : C}
-  (H : is_positive b) (f : a --> b) (g : b --> c)
-  : f ⊙ g = positive_compose (b:=b,,H) f g.
+Lemma positive_object_of {C : quasiduploid} (a : C) (H : is_positive a)
+  : a = object_of_positive_object (a,,H).
 Proof. apply idpath. Defined.
-Lemma negative_compose_of {C : quasiduploid} {a b c : C}
-  (H : is_negative b) (f : a --> b) (g : b --> c)
-  : f ⊙ g = negative_compose (b:=b,,H) f g.
-Proof. apply idpath. Defined.
-
-Ltac duploid_compose := repeat rewrite duploid_compose_of.
-Ltac duploid_compose_positive H := repeat rewrite (positive_compose_of H).
-Ltac duploid_compose_negative H := repeat rewrite (negative_compose_of H).
 
 (** ** The category of all objects and thunkable maps. *)
 Definition thunkable_category (C : quasiduploid) : category.
@@ -282,6 +289,14 @@ Definition positive_thunkable_category (C : quasiduploid) : category
 Definition negative_linear_category (C : quasiduploid) : category
   := full_sub_category (linear_category C) (λ a, negative_objects C a).
 
+(* Inclusion functors for the above. *)
+Definition positive_category_to_linear_category {C : quasiduploid}
+  : functor (positive_category C) (linear_category C)
+  := sub_precategory_inclusion _ _.
+Definition negative_category_to_thunkable_category {C : quasiduploid}
+  : functor (negative_category C) (thunkable_category C)
+  := sub_precategory_inclusion _ _.
+
 (* Morphisms between positive objects are always linear. *)
 Definition embed_positive_mor (C : quasiduploid)
   (a b : positive_objects C) (f : C⟦pr1 a, pr1 b⟧) : positive_category C⟦a, b⟧
@@ -306,6 +321,67 @@ Proof.
   - intro f. now do 2 apply carrier_eq.
 Defined.
 
+Definition duploid_homset {C : quasiduploid} (a b : C) : hSet :=
+  make_hSet (a --> b) (duploid_homsets _ a b).
+Definition duploid_fhomset {C : quasiduploid} {a b c d : C}
+  (f : a --> b) (g : c --> d)
+  (h : b --> c)
+  : a --> d := f · h · g.
+
+Lemma duploid_fhomset_id {C : quasiduploid} {a b : C} (h : a --> b)
+  : duploid_fhomset (identity a) (identity b) h = h.
+Proof.
+  unfold duploid_fhomset.
+  now rewrite duploid_id_left, duploid_id_right.
+Qed.
+
+Lemma duploid_fhomset_comp {C : quasiduploid} {a b c d u v : C}
+  (f : a --> b) (g : c --> d)
+  (h : u --> a) (k : d --> v)
+  (y : b --> c)
+  (Hf : is_thunkable f) (Hg : is_linear g)
+  (Hh : is_thunkable h) (Hk : is_linear k)
+  : duploid_fhomset (h · f) (g · k) y =
+      duploid_fhomset h k (duploid_fhomset f g y).
+Proof.
+  unfold duploid_fhomset.
+  rewrite (assoc_linear _ Hk).
+  rewrite (assoc_linear _ Hg).
+  now rewrite (assoc'_thunkable _ Hh).
+Qed.
+
+Definition duploid_fhomset_data (C : quasiduploid)
+  : functor_data
+      (category_binproduct
+               ((thunkable_category C)^op)
+               (linear_category C))
+      HSET_univalent_category.
+Proof.
+  use make_functor_data.
+  - intro ab. apply (duploid_homset (pr1 ab) (pr2 ab)).
+  - intros ab cd fg h. apply (duploid_fhomset (pr11 fg) (pr12 fg) h).
+Defined.
+
+Lemma duploid_fhomset_is_functor (C : quasiduploid)
+  : is_functor (duploid_fhomset_data C).
+Proof.
+  use make_is_functor.
+  - intro ab.
+    use funextfun; intro fg.
+    apply duploid_fhomset_id.
+  - intros bc ad uv fg hk.
+    use funextfun; intro y.
+    apply duploid_fhomset_comp.
+    + apply is_thunkable_of_thunkable_mor.
+    + apply is_linear_of_linear_mor.
+    + apply is_thunkable_of_thunkable_mor.
+    + apply is_linear_of_linear_mor.
+Qed.
+
+Definition duploid_homset_functor (C : quasiduploid)
+  : linear_category C ↛ thunkable_category C
+  := make_functor _ (duploid_fhomset_is_functor C).
+
 Definition is_polarized (C : quasiduploid) : UU
   := ∏ a : C, ∥ is_positive a ⨿ is_negative a ∥.
 
@@ -324,25 +400,25 @@ Definition preduploid_polarity {C : preduploid} (a : C)
   := pr2 C a.
 
 Definition duploid_force_data (C : quasiduploid) : UU :=
-  ∏ (a : C), ∑ upa : C, upa --> a.
+  ∑ upshift : C -> C, ∏ a : C, upshift a --> a.
 Definition duploid_wrap_data (C : quasiduploid) : UU :=
-  ∏ (a : C), ∑ downa : C, a --> downa.
+  ∑ downshift : C -> C, ∏ a : C, a --> downshift a.
 
 Definition make_duploid_force_data {C : quasiduploid}
   (upshift : C -> C) (force : ∏ (a : C), upshift a --> a)
   : duploid_force_data C :=
-  λ a, upshift a,,force a.
+  upshift,,force.
 Definition make_duploid_wrap_data {C : quasiduploid}
   (downshift : C -> C) (wrap : ∏ (a : C), a --> downshift a)
   : duploid_wrap_data C :=
-  λ a, downshift a,,wrap a.
+  downshift,,wrap.
 
-Definition upshift' {C : quasiduploid} (D : duploid_force_data C) (a : C) : C := pr1 (D a).
-Definition downshift' {C : quasiduploid} (D : duploid_wrap_data C) (a : C) : C := pr1 (D a).
+Definition upshift' {C : quasiduploid} (D : duploid_force_data C) : C -> C := pr1 D.
+Definition downshift' {C : quasiduploid} (D : duploid_wrap_data C) : C -> C := pr1 D.
 Definition force' {C : quasiduploid} (D : duploid_force_data C) (a : C)
-  : upshift' D a --> a := pr2 (D a).
+  : upshift' D a --> a := pr2 D a.
 Definition wrap' {C : quasiduploid} (D : duploid_wrap_data C) (a : C)
-  : a --> downshift' D a := pr2 (D a).
+  : a --> downshift' D a := pr2 D a.
 
 Definition duploid_force_axioms {C : quasiduploid} (D : duploid_force_data C) : UU
   := ∏ (a : C), is_linear (force' D a) ×
@@ -444,6 +520,13 @@ Definition duploid : UU :=
   ∑ (C : preduploid),
     ∑ (D : duploid_data C),
     duploid_axioms D.
+
+Definition make_duploid {C : preduploid}
+  (D : duploid_data C)
+  (H : duploid_axioms D)
+  : duploid
+  := C,,D,,H.
+
 Coercion preduploid_of_duploid (C : duploid) : preduploid := pr1 C.
 Coercion duploid_data_of_duploid (C : duploid) : duploid_data C := pr12 C.
 
@@ -493,6 +576,23 @@ Proof. apply is_linear_of_positive, is_positive_downshift. Qed.
 Lemma is_thunkable_delay {C : duploid} (a : C) : is_thunkable (delay a).
 Proof. apply is_thunkable_of_negative, is_negative_upshift. Qed.
 
+Lemma is_precategory_of_quasiduploid (C : quasiduploid)
+  (H : ∏ (a b c d : C) (f : a --> b) (g : b --> c) (h : c --> d), f · (g · h) = (f · g) · h)
+  : is_precategory C.
+Proof.
+  use make_is_precategory_one_assoc.
+  - intros. apply duploid_id_left.
+  - intros. apply duploid_id_right.
+  - intros. apply H.
+Qed.
+
+Definition make_category_of_quasiduploid (C : quasiduploid) (H : is_precategory C) : category.
+Proof.
+  use make_category.
+  - exact (make_precategory C H).
+  - intros a b. apply duploid_homsets.
+Qed.
+
 Section lemmas.
 
 Context {C : duploid}.
@@ -503,55 +603,71 @@ Proof.
   apply duploid_id_right.
 Qed.
 
+Lemma delay_force_left {a b : C} (f : a --> b) : delay a · (force a · f) = f.
+Proof.
+  rewrite (assoc_negative _ (⇑a)), delay_force_id.
+  apply duploid_id_left.
+Qed.
+
 Lemma wrap_unwrap_left {a b : C} (f : a --> b) : wrap a · (unwrap a · f) = f.
 Proof.
   rewrite (assoc_thunkable _ (is_thunkable_wrap _)), wrap_unwrap_id.
   apply duploid_id_left.
 Qed.
 
-Ltac decide_polarity a H :=
-  use (factor_through_squash _ _ (preduploid_polarity a)); [ idtac | intro H ].
+Lemma wrap_unwrap_right {a b : C} (f : a --> b) : (f · wrap b) · unwrap b = f.
+Proof.
+  rewrite (assoc'_positive _ (⇓b)), wrap_unwrap_id.
+  apply duploid_id_right.
+Qed.
+
+Lemma delay_force_interpose {a b c : C} (f : a --> b) (g : b --> c)
+  : (f ⊙ delay b) ⊖ (force b ⊙ g) = f ⊙ g.
+Proof. now rewrite (assoc_negative _ (⇑b)), delay_force_right. Qed.
+
+Lemma wrap_unwrap_interpose {a b c : C} (f : a --> b) (g : b --> c)
+  : (f ⊙ wrap b) ⊛ (unwrap b ⊙ g) = f ⊙ g.
+Proof. now rewrite (assoc'_positive _ (⇓b)), wrap_unwrap_left. Qed.
 
 Lemma is_thunkable_of_delay_wrap {a b : C} (f : a --> b)
-  : f · (delay b · wrap (⇑b)) = (f · delay b) · wrap (⇑b) ->
+  : f ⊙ (delay b ⊖ wrap (⇑b)) = (f ⊙ delay b) ⊖ wrap (⇑b) ->
     is_thunkable f.
 Proof.
-  duploid_compose.
-  duploid_compose_negative (is_negative_upshift b).
   intros Hf.
-  decide_polarity b Hb. apply isaprop_is_thunkable.
-  induction Hb as [Hb | Hb].
-  2: apply is_thunkable_of_negative, Hb.
-  assert (H' : ∏ (d : C) (h : ⇑b --> d), f ⊙ (delay b ⊙ h) = (f ⊙ delay b) ⊙ h). {
+  assert (H' : ∏ (d : C) (h : ⇑b --> d), f ⊙ (delay b ⊖ h) = (f ⊙ delay b) ⊖ h). {
     intros d h.
-    duploid_compose_positive Hb.
-    intermediate_path ((f · (delay b · wrap (⇑b))) · (unwrap (⇑b) · h)). {
-      admit.
-    }
-    rewrite Hf.
-    rewrite (assoc'_negative _ (is_negative_upshift _)).
+    rewrite <- (wrap_unwrap_interpose (delay b) h).
+    rewrite (assoc_positive _ (⇓⇑b)), Hf.
+    rewrite (assoc'_negative _ (⇑b)).
     now rewrite wrap_unwrap_left.
   }
   intros c d g h.
-  decide_polarity c Hc. apply duploid_homsets.
-  induction Hc as [Hc | Hc].
-  1: apply assoc_positive, Hc.
-  intermediate_path (f · (delay b · (force b · g) · h)). {
-    rewrite (assoc_thunkable (delay b) (is_thunkable_delay _)).
-    now rewrite delay_force_id, duploid_id_left.
-  }
-  rewrite (assoc'_negative (⇑b) (is_negative_upshift _)).
-  rewrite H'.
-  rewrite (assoc_negative (⇑b) (is_negative_upshift _)).
-  rewrite <- H'.
-  rewrite (assoc_negative (⇑b) (is_negative_upshift _)).
-  now rewrite delay_force_id, duploid_id_left.
-Admitted.
+  intermediate_path (f · (delay b · (force b · g) · h)).
+    now rewrite delay_force_left.
+  rewrite (assoc'_negative _ (⇑b)), H'.
+  rewrite (assoc_negative _ (⇑b)), <- H'.
+  now rewrite delay_force_left.
+Qed.
 
 Lemma is_linear_of_force_unwrap {a b : C} (f : b --> a)
-  : (force (⇓b) · unwrap b) · f = force (⇓b) · (unwrap b) · f ->
+  : (force (⇓b) · unwrap b) · f = force (⇓b) · (unwrap b · f) ->
     is_linear f.
-Proof. admit. Admitted.
+Proof.
+  intros Hf.
+  assert (H' : ∏ (d : C) (h : d --> ⇓b), (h · unwrap b) · f = h · (unwrap b · f)). {
+    intros d h.
+    rewrite <- (delay_force_interpose h (unwrap b)).
+    rewrite (assoc'_negative _ (⇑⇓b)), Hf.
+    rewrite (assoc_positive _ (⇓b)).
+    now rewrite delay_force_right.
+  }
+  intros c d g h.
+  intermediate_path ((h · ((g · wrap b) · unwrap b)) · f).
+    now rewrite wrap_unwrap_right.
+  rewrite (assoc_positive _ (⇓b)), H'.
+  rewrite (assoc'_positive _ (⇓b)), <- H'.
+  now rewrite wrap_unwrap_right.
+Qed.
 
 End lemmas.
 
@@ -561,69 +677,75 @@ Context {C₁ C₂ : category} (θ : adjunction C₂ C₁).
 Let F : functor C₂ C₁ := left_functor θ.
 Let G : functor C₁ C₂ := right_functor θ.
 Let H : are_adjoints F G := θ.
-Let η : nat_trans (functor_identity C₂) (F ∙ G) := adjunit H.
-Let ε : nat_trans (G ∙ F) (functor_identity C₁) := adjcounit H.
+Let η : nat_trans (functor_identity C₂) (F ∙ G) := unit_from_are_adjoints H.
+Let ε : nat_trans (G ∙ F) (functor_identity C₁) := counit_from_are_adjoints H.
 
-Let obs := C₁ ⨿ C₂.
+Definition oblique_ob := C₁ ⨿ C₂.
 
-Definition duploid_of_adjunction_neg (a : obs) : C₁.
+Definition oblique_negativise (a : oblique_ob) : C₁.
 Proof. induction a as [n | p]. exact n. exact (F p). Defined.
-Definition duploid_of_adjunction_pos (a : obs) : C₂.
+Definition oblique_positivise (a : oblique_ob) : C₂.
 Proof. induction a as [n | p]. exact (G n). exact p. Defined.
 
-Notation "a '⁻'" := (duploid_of_adjunction_neg a) : duploid.
-Notation "a '⁺'" := (duploid_of_adjunction_pos a) : duploid.
+Notation "a '⁻'" := (oblique_negativise a) : duploid.
+Notation "a '⁺'" := (oblique_positivise a) : duploid.
 
-Let mor (a b : obs) := C₁⟦F (a⁺), b⁻⟧.
+Definition oblique_mor (a b : oblique_ob) := C₁⟦F (a⁺), b⁻⟧.
 
-Let ob_mor : precategory_ob_mor
-  := make_precategory_ob_mor obs mor.
+Lemma isaset_oblique_mor (a b : oblique_ob) : isaset (oblique_mor a b).
+Proof. apply C₁. Qed.
 
-Let identity_oblique (a : ob_mor)
-  : a --> a.
+Definition oblique_identity (a : oblique_ob) : oblique_mor a a.
 Proof.
   induction a.
   + apply (φ_adj_inv H), identity.
   + apply identity.
 Defined.
 
-Let compose_oblique (a b c : ob_mor)
-  (f : a --> b) (g : b --> c)
-  : a --> c.
+Definition oblique_compose {a b c : oblique_ob}
+  (f : oblique_mor a b) (g : oblique_mor b c)
+  : oblique_mor a c.
 Proof.
   induction b.
   + exact (φ_adj_inv H (φ_adj H f · φ_adj H g)).
   + exact (f · g).
 Defined.
 
-Let precat_data : precategory_data
-    := make_precategory_data ob_mor identity_oblique compose_oblique.
-
-Let is_quasi : is_quasiduploid precat_data.
+Lemma oblique_left_id {a b : oblique_ob} (f : oblique_mor a b) :
+  oblique_compose (oblique_identity a) f = f.
 Proof.
-  use make_is_quasiduploid; simpl.
-  - intros a b f.
-    unfold compose, identity.
-    induction a; simpl.
-    + rewrite φ_adj_after_φ_adj_inv, id_left.
-      apply φ_adj_inv_after_φ_adj.
-    + apply id_left.
-  - intros a b f.
-    unfold compose, identity.
-    induction b; simpl.
-    + rewrite φ_adj_after_φ_adj_inv, id_right.
-      apply φ_adj_inv_after_φ_adj.
-    + apply id_right.
+  induction a; simpl.
+  + rewrite φ_adj_after_φ_adj_inv, id_left.
+    apply φ_adj_inv_after_φ_adj.
+  + apply id_left.
 Qed.
 
-Let quasi : quasiduploid.
+Lemma oblique_right_id {a b : oblique_ob} (f : oblique_mor a b) :
+  oblique_compose f (oblique_identity b) = f.
 Proof.
-  use (make_quasiduploid precat_data).
-  - intros a b; simpl. apply C₁.
-  - apply is_quasi.
+  induction b; simpl.
+  + rewrite φ_adj_after_φ_adj_inv, id_right.
+    apply φ_adj_inv_after_φ_adj.
+  + apply id_right.
+Qed.
+
+Definition oblique_quasiduploid : quasiduploid.
+Proof.
+  use make_quasiduploid.
+  - use make_precategory_data.
+    + exact (make_precategory_ob_mor oblique_ob oblique_mor).
+    + exact oblique_identity.
+    + intros a b c f g. exact (oblique_compose f g).
+  - intros a b. apply isaset_oblique_mor.
+  - use make_is_quasiduploid.
+    + intros a b f. apply oblique_left_id.
+    + intros a b f. apply oblique_right_id.
 Defined.
 
-Lemma is_negative_of_adj_left (a : C₁) : is_negative (C:=quasi) (inl a).
+Definition oblique_negative (a : C₁) : oblique_quasiduploid := inl a.
+Definition oblique_positive (a : C₂) : oblique_quasiduploid := inr a.
+
+Lemma is_negative_of_adj_left (a : C₁) : is_negative (oblique_negative a).
 Proof.
   intros b f c d g h.
   induction c as [m | q]; unfold compose; simpl.
@@ -633,7 +755,7 @@ Proof.
     now rewrite φ_adj_inv_natural_postcomp.
 Qed.
 
-Lemma is_positive_of_adj_right (a : C₂) : is_positive (C:=quasi) (inr a).
+Lemma is_positive_of_adj_right (a : C₂) : is_positive (oblique_positive a).
 Proof.
   intros b f c d g h.
   induction c as [m | q]; unfold compose; simpl.
@@ -642,7 +764,7 @@ Proof.
   + apply assoc'.
 Qed.
 
-Let polarized : is_polarized quasi.
+Lemma is_polarized_oblique_quasiduploid : is_polarized oblique_quasiduploid.
 Proof.
   intro a.
   apply hinhpr.
@@ -651,68 +773,426 @@ Proof.
   - left; apply is_positive_of_adj_right.
 Qed.
 
-Definition preduploid_of_adjunction : preduploid
-  := make_preduploid polarized.
+Definition oblique_preduploid : preduploid :=
+  make_preduploid is_polarized_oblique_quasiduploid.
 
-Definition duploid_data_of_adjunction : duploid_data preduploid_of_adjunction.
+Definition oblique_upshift (a : oblique_preduploid) : oblique_preduploid.
 Proof.
-  apply make_duploid_data.
-  - use make_duploid_force_data;
-      intro a; induction a as [n | p].
-    + exact (inl n).
-    + exact (inl (F p)).
-    + apply identity.
-    + apply (φ_adj_inv H), identity.
-  - use make_duploid_wrap_data;
-      intro a; induction a as [n | p].
-    + exact (inr (G n)).
-    + exact (inr p).
-    + simpl. apply identity.
-    + apply identity.
+  induction a as [n | p]; apply oblique_negative.
+  - exact n.
+  - exact (F p).
 Defined.
 
-Definition duploid_axioms_of_adjunction : duploid_axioms duploid_data_of_adjunction.
+Definition oblique_force (a : oblique_preduploid) : oblique_upshift a --> a.
+Proof.
+  induction a as [n | p].
+  + apply identity.
+  + apply (φ_adj_inv H), identity.
+Defined.
+
+Definition oblique_delay (a : oblique_preduploid) : a --> oblique_upshift a.
+Proof.
+  induction a as [n | p].
+  + apply identity.
+  + apply (identity (F p)).
+Defined.
+
+Definition oblique_downshift (a : oblique_preduploid) : oblique_preduploid.
+Proof.
+  induction a as [n | p]; apply oblique_positive.
+  + exact (G n).
+  + exact p.
+Defined.
+
+Definition oblique_wrap (a : oblique_preduploid) : a --> oblique_downshift a.
+Proof.
+  induction a as [n | p].
+  + apply (identity (F (G n))).
+  + apply identity.
+Defined.
+
+Definition oblique_unwrap (a : oblique_preduploid) : oblique_downshift a --> a.
+Proof.
+  induction a as [n | p].
+  + apply (φ_adj_inv H), identity.
+  + apply identity.
+Defined.
+
+Lemma is_negative_oblique_upshift (a : oblique_preduploid)
+  : is_negative (oblique_upshift a).
+Proof. induction a; apply is_negative_of_adj_left. Qed.
+
+Lemma is_positive_oblique_downshift (a : oblique_preduploid)
+  : is_positive (oblique_downshift a).
+Proof. induction a; apply is_positive_of_adj_right. Qed.
+
+Lemma is_linear_oblique_force (a : oblique_preduploid)
+  : is_linear (oblique_force a).
+Proof.
+  induction a as [n | p].
+  1: apply is_linear_identity.
+  intros b c f g.
+  induction b as [m | q].
+  1: now rewrite (assoc'_negative _ (is_negative_of_adj_left _)).
+  unfold compose; simpl.
+  rewrite φ_adj_after_φ_adj_inv.
+  now do 2 rewrite id_right, φ_adj_inv_after_φ_adj.
+Qed.
+
+Definition is_thunkable_oblique_wrap (a : oblique_preduploid)
+  : is_thunkable (oblique_wrap a).
+Proof.
+  induction a as [n | p].
+  2: apply is_thunkable_identity.
+  intros b c f g.
+  induction b as [m | q].
+  2: now rewrite (assoc'_positive _ (is_positive_of_adj_right _)).
+  unfold compose; simpl.
+  now do 2 rewrite id_left.
+Qed.
+
+Definition is_inverse_in_precat_oblique_force_delay (a : oblique_preduploid)
+  : is_inverse_in_precat (oblique_force a) (oblique_delay a).
+Proof.
+  induction a as [n | p]; simpl; split; unfold identity, compose; simpl;
+    fold (identity (C:=C₂)); fold (identity (C:=C₁)).
+  - now rewrite φ_adj_after_φ_adj_inv, id_left.
+  - now rewrite φ_adj_after_φ_adj_inv, id_left.
+  - now rewrite id_right.
+  - now rewrite φ_adj_after_φ_adj_inv, id_right, φ_adj_inv_after_φ_adj.
+Qed.
+
+Definition is_inverse_in_precat_oblique_wrap_unwrap (a : oblique_preduploid)
+  : is_inverse_in_precat (oblique_wrap a) (oblique_unwrap a).
+Proof.
+  induction a as [n | p]; simpl; split; unfold identity, compose; simpl;
+    fold (identity (C:=C₂)); fold (identity (C:=C₁)).
+  - now rewrite id_left.
+  - now rewrite φ_adj_after_φ_adj_inv, id_left, φ_adj_inv_after_φ_adj.
+  - apply id_left.
+  - apply id_left.
+Qed.
+
+Definition oblique_duploid_data : duploid_data oblique_preduploid.
+Proof.
+  apply make_duploid_data.
+  - exact (make_duploid_force_data oblique_upshift oblique_force).
+  - exact (make_duploid_wrap_data oblique_downshift oblique_wrap).
+Defined.
+
+Definition oblique_duploid_axioms : duploid_axioms oblique_duploid_data.
 Proof.
   apply make_duploid_axioms.
-  - use make_duploid_force_axioms; intro a; induction a as [n | p].
-    + apply is_negative_of_adj_left.
-    + apply is_negative_of_adj_left.
-    + apply (is_linear_identity (C:=quasi) (inl n)).
-    + unfold force', upshift'; simpl.
-      intros b c f g.
-      induction b as [m | q].
-      1: now rewrite (assoc'_negative _ (is_negative_of_adj_left _)).
-      unfold compose; simpl.
-      rewrite φ_adj_after_φ_adj_inv.
-      now do 2 rewrite id_right, φ_adj_inv_after_φ_adj.
-    + apply identity.
-    + apply (identity (F p)).
-    + unfold force', upshift'; simpl; split; unfold identity, compose; simpl;
-        now rewrite φ_adj_after_φ_adj_inv, id_left.
-    + unfold force', upshift'; simpl; split; unfold identity, compose; simpl.
-      * now rewrite id_right.
-      * now rewrite φ_adj_after_φ_adj_inv, id_right,
-          φ_adj_inv_after_φ_adj.
-  - use make_duploid_wrap_axioms; intro a; induction a as [n | p].
-    + apply is_positive_of_adj_right.
-    + apply is_positive_of_adj_right.
-    + unfold wrap', downshift'; simpl.
-      intros b c f g.
-      induction b as [m | q].
-      2: now rewrite (assoc'_positive _ (is_positive_of_adj_right _)).
-      unfold compose; simpl.
-      now do 2 rewrite id_left.
-    + apply (is_thunkable_identity (C:=quasi) (inr p)).
-    + apply (φ_adj_inv H), identity.
-    + apply (identity (F p)).
-    + unfold wrap', downshift'; simpl; split; unfold identity, compose; simpl.
-      * now rewrite id_left.
-      * now rewrite φ_adj_after_φ_adj_inv, id_left,
-          φ_adj_inv_after_φ_adj.
-    + unfold wrap', downshift'; simpl; split; unfold identity, compose; simpl;
-        now rewrite id_left.
+  - use make_duploid_force_axioms.
+    + apply is_negative_oblique_upshift.
+    + apply is_linear_oblique_force.
+    + apply oblique_delay.
+    + apply is_inverse_in_precat_oblique_force_delay.
+  - use make_duploid_wrap_axioms.
+    + apply is_positive_oblique_downshift.
+    + apply is_thunkable_oblique_wrap.
+    + apply oblique_unwrap.
+    + apply is_inverse_in_precat_oblique_wrap_unwrap.
+Defined.
+
+(* The oblique duploid is the duploid arising from an adjunction,
+   where objects are objects in either category, and morphisms
+   are the morphisms C₁⟦F a⁺, b⁻⟧ (equivalently C₂⟦a⁻, G b⁺⟧). *)
+Definition oblique_duploid : duploid
+  := make_duploid oblique_duploid_data oblique_duploid_axioms.
+
+Lemma is_linear_of_oblique_counit_precompose {n : C₁} {a : oblique_duploid}
+  (f : oblique_negative n --> a)
+  : #(G ∙ F) (ε n) · f = ε ((G ∙ F) n) · f ->
+    is_linear f.
+Proof.
+  intro Hf.
+  apply (is_linear_of_force_unwrap (C:=oblique_duploid)).
+  unfold force, unwrap, compose; simpl.
+  rewrite φ_adj_natural_postcomp, φ_adj_inv_natural_precomp.
+  do 2 rewrite φ_adj_after_φ_adj_inv, id_left, φ_adj_inv_after_φ_adj.
+  unfold φ_adj_inv; fold ε.
+  do 2 rewrite functor_id, id_left.
+  exact Hf.
+Qed.
+
+Lemma is_thunkable_of_oblique_unit_postcompose {a : oblique_duploid} {p : C₂}
+  (f : a --> oblique_positive p)
+  : φ_adj H f · #(F ∙ G) (η p) = φ_adj H f · η ((F ∙ G) p) ->
+    is_thunkable f.
+Proof.
+  intro Hf.
+  apply (is_thunkable_of_delay_wrap (C:=oblique_duploid)).
+  eenough (H' : φ_adj_inv H (φ_adj H _) = φ_adj_inv H (φ_adj H _)). {
+    do 2 rewrite φ_adj_inv_after_φ_adj in H'.
+    exact H'.
+  }
+  apply maponpaths.
+  unfold delay, wrap, compose; simpl.
+  do 2 rewrite φ_adj_natural_postcomp, φ_adj_inv_natural_precomp.
+  rewrite φ_adj_inv_after_φ_adj, functor_id.
+  do 2 rewrite id_right.
+  rewrite functor_comp, functor_id, φ_adj_natural_precomp.
+  do 2 rewrite φ_adj_identity. fold η.
+  exact Hf.
+Qed.
+
+Corollary is_precategory_of_oblique_idempotent_adjunction
+  (H1 : post_whisker ε (G ∙ F) = pre_whisker (G ∙ F) ε)
+  : is_precategory oblique_duploid.
+Proof.
+  use is_precategory_of_quasiduploid.
+  intros a b c d f g h.
+  apply assoc_linear.
+  induction c as [n | p].
+  2: apply is_linear_of_positive, is_positive_of_adj_right.
+  apply is_linear_of_oblique_counit_precompose.
+  intermediate_path (post_whisker ε (G ∙ F) n · h).
+    apply idpath.
+  now rewrite H1.
 Qed.
 
 End adjunction.
+
+Section functors.
+
+Context {C : duploid}.
+
+(* Guillame claims that upshiftf takes linear morphisms to linear morphisms, and
+   dually for downshiftf. This is hard to believe in general, and so upshiftf is
+   only a functor [linear_category C → negative_category C], rather than
+   [linear_category C → negative_linear_category C]; and dually for
+   downshiftf. This should suffice for the main results, however. *)
+
+Definition upshiftf {a b : C} (f : a --> b) : ⇑a --> ⇑b := (force a · f) · delay b.
+Definition downshiftf {a b : C} (f : a --> b) : ⇓a --> ⇓b := unwrap a · (f · wrap b).
+
+Notation "'#⇑' f" := (upshiftf f) (at level 40) : duploid.
+Notation "'#⇓' f" := (downshiftf f) (at level 40) : duploid.
+
+Lemma upshiftf_id {a : C} : #⇑identity a = identity (⇑a).
+Proof. unfold upshiftf. now rewrite duploid_id_right, force_delay_id. Qed.
+Lemma downshiftf_id {a : C} : #⇓identity a = identity (⇓a).
+Proof. unfold downshiftf. now rewrite duploid_id_left, unwrap_wrap_id. Qed.
+
+Lemma upshiftf_comp {a b c : C} (f : linear_mor a b) (g : linear_mor b c)
+  : #⇑(f · g) = (#⇑f) · (#⇑g).
+Proof.
+  unfold upshiftf.
+  rewrite (assoc_negative _ (⇑b)).
+  do 2 rewrite (assoc_linear _ g).
+  now rewrite delay_force_right.
+Qed.
+
+Lemma downshiftf_comp {a b c : C} (f : thunkable_mor a b) (g : thunkable_mor b c)
+  : #⇓(f · g) = (#⇓f) · (#⇓g).
+Proof.
+  unfold downshiftf.
+  rewrite (assoc'_positive _ (⇓b)).
+  do 2 rewrite (assoc'_thunkable _ f).
+  now rewrite wrap_unwrap_left.
+Qed.
+
+Definition upshift_functor :
+  functor (linear_category C) (negative_category C).
+Proof.
+  use make_functor.
+  - use make_functor_data.
+    + exact upshift.
+    + intros a b f.
+      apply embed_negative_mor, (#⇑pr1 f).
+  - use make_is_functor.
+    + intros a. apply carrier_eq, carrier_eq, upshiftf_id.
+    + intros a b c f g. apply carrier_eq, carrier_eq, upshiftf_comp.
+Defined.
+
+Definition downshift_functor :
+  functor (thunkable_category C) (positive_category C).
+Proof.
+  use make_functor.
+  - use make_functor_data.
+    + exact downshift.
+    + intros a b f.
+      apply embed_positive_mor, (#⇓pr1 f).
+  - use make_is_functor.
+    + intros a. apply carrier_eq, carrier_eq, downshiftf_id.
+    + intros a b c f g. apply carrier_eq, carrier_eq, downshiftf_comp.
+Defined.
+
+Definition included_upshift_functor
+  : functor (linear_category C) (thunkable_category C)
+  := upshift_functor ∙ negative_category_to_thunkable_category.
+Definition included_downshift_functor
+  : functor (thunkable_category C) (linear_category C)
+  := downshift_functor ∙ positive_category_to_linear_category.
+
+(* The functor [thunkable_category C⟦∙, I⇑∙⟧]. *)
+Definition duploid_upshifted_homset_functor
+  : linear_category C ↛ thunkable_category C.
+Proof.
+  eapply functor_composite.
+  2: eapply homSet_functor.
+  apply pair_functor.
+  1: apply functor_identity.
+  apply included_upshift_functor.
+Defined.
+
+(* The functor [linear_category C⟦I⇓∙, ∙⟧]. *)
+Definition duploid_downshifted_homset_functor
+  : linear_category C ↛ thunkable_category C.
+Proof.
+  eapply functor_composite.
+  2: eapply homSet_functor.
+  apply pair_functor.
+  2: apply functor_identity.
+  apply functor_opp, included_downshift_functor.
+Defined.
+
+(* thunkable_category C⟦∙, I⇑∙⟧ ≃ C⟦∙, ∙⟧ *)
+Definition duploid_mor_to_thunkable_mor (a b : C)
+  (f : C⟦a, b⟧) : thunkable_category C⟦a, ⇑b⟧.
+Proof.
+  exists (f · delay b).
+  apply (is_thunkable_of_negative _ (⇑_)).
+Defined.
+
+Definition thunkable_mor_to_duploid_mor (a b : C)
+  (f : thunkable_category C⟦a, ⇑b⟧) : C⟦a, b⟧.
+Proof.
+  exact (pr1 f · force b).
+Defined.
+
+Lemma is_inverse_duploid_mor_to_from_thunkable_mor (a b : C)
+  (f : C⟦a, b⟧)
+  : thunkable_mor_to_duploid_mor _ _ (duploid_mor_to_thunkable_mor _ _ f) = f.
+Proof. apply delay_force_right. Qed.
+
+Lemma is_inverse_duploid_mor_from_to_thunkable_mor (a b : C)
+  (f : thunkable_category C⟦a, ⇑b⟧)
+  : duploid_mor_to_thunkable_mor _ _ (thunkable_mor_to_duploid_mor _ _ f) = f.
+Proof.
+  apply carrier_eq.
+  intermediate_path (pr1 f · (force b · delay b)).
+  1: apply (assoc'_thunkable _ (pr2 f)).
+  now rewrite force_delay_id, duploid_id_right.
+Qed.
+
+Lemma isweq_duploid_mor_to_thunkable_mor (a b : C)
+  : isweq (duploid_mor_to_thunkable_mor a b).
+Proof.
+  use isweq_iso.
+  - apply thunkable_mor_to_duploid_mor.
+  - apply is_inverse_duploid_mor_to_from_thunkable_mor.
+  - apply is_inverse_duploid_mor_from_to_thunkable_mor.
+Qed.
+
+Lemma isweq_thunkable_mor_to_duploid_mor (a b : C)
+  : isweq (thunkable_mor_to_duploid_mor a b).
+Proof.
+  use isweq_iso.
+  - apply duploid_mor_to_thunkable_mor.
+  - apply is_inverse_duploid_mor_from_to_thunkable_mor.
+  - apply is_inverse_duploid_mor_to_from_thunkable_mor.
+Qed.
+
+Definition weq_duploid_mor_thunkable_mor (a b : C)
+  : C⟦a, b⟧ ≃ thunkable_category C⟦a, ⇑b⟧
+  := make_weq _ (isweq_duploid_mor_to_thunkable_mor a b).
+Definition weq_thunkable_mor_duploid_mor (a b : C)
+  : thunkable_category C⟦a, ⇑b⟧ ≃ C⟦a, b⟧
+  := make_weq _ (isweq_thunkable_mor_to_duploid_mor a b).
+
+Definition duploid_mor_to_linear_mor (a b : C)
+  (f : C⟦a, b⟧) : linear_category C⟦⇓a, b⟧.
+Proof.
+  exists (unwrap a · f).
+  apply (is_linear_of_positive _ (⇓_)).
+Defined.
+
+Definition linear_mor_to_duploid_mor (a b : C)
+  (f : linear_category C⟦⇓a, b⟧) : C⟦a, b⟧.
+Proof.
+  exact (wrap a · pr1 f).
+Defined.
+
+Lemma is_inverse_duploid_mor_to_from_linear_mor (a b : C)
+  (f : C⟦a, b⟧)
+  : linear_mor_to_duploid_mor _ _ (duploid_mor_to_linear_mor _ _ f) = f.
+Proof. apply wrap_unwrap_left. Qed.
+
+Lemma is_inverse_duploid_mor_from_to_linear_mor (a b : C)
+  (f : linear_category C⟦⇓a, b⟧)
+  : duploid_mor_to_linear_mor _ _ (linear_mor_to_duploid_mor _ _ f) = f.
+Proof.
+  apply carrier_eq.
+  intermediate_path ((unwrap a · wrap a) · pr1 f).
+  1: apply (assoc_linear _ (pr2 f)).
+  now rewrite unwrap_wrap_id, duploid_id_left.
+Qed.
+
+Lemma isweq_duploid_mor_to_linear_mor (a b : C)
+  : isweq (duploid_mor_to_linear_mor a b).
+Proof.
+  use isweq_iso.
+  - apply linear_mor_to_duploid_mor.
+  - apply is_inverse_duploid_mor_to_from_linear_mor.
+  - apply is_inverse_duploid_mor_from_to_linear_mor.
+Qed.
+
+Lemma isweq_linear_mor_to_duploid_mor (a b : C)
+  : isweq (linear_mor_to_duploid_mor a b).
+Proof.
+  use isweq_iso.
+  - apply duploid_mor_to_linear_mor.
+  - apply is_inverse_duploid_mor_from_to_linear_mor.
+  - apply is_inverse_duploid_mor_to_from_linear_mor.
+Qed.
+
+Definition weq_duploid_mor_linear_mor (a b : C)
+  : C⟦a, b⟧ ≃ linear_category C⟦⇓a, b⟧
+  := make_weq _ (isweq_duploid_mor_to_linear_mor a b).
+Definition weq_linear_mor_duploid_mor (a b : C)
+  : linear_category C⟦⇓a, b⟧ ≃ C⟦a, b⟧
+  := make_weq _ (isweq_linear_mor_to_duploid_mor a b).
+
+(* The adjunction ⇓ -| ⇑ : thunkable_category C -> linear_category C *)
+Theorem are_adjoints_downshift_upshift
+  : are_adjoints
+      (A:=thunkable_category C)
+      (B:=linear_category C)
+      included_downshift_functor
+      included_upshift_functor.
+Proof.
+  use adj_from_nathomweq.
+  use tpair. {
+    intros a b.
+    eapply weqcomp.
+    apply weq_linear_mor_duploid_mor.
+    apply weq_duploid_mor_thunkable_mor.
+  }
+  use tpair.
+  - intros a b f c h.
+    apply carrier_eq.
+    simpl.
+    change ((wrap c ⊙ ((#⇓ pr1 h) ⊙ pr1 f)) ⊙ delay b
+            = pr1 h ⊙ ((wrap a ⊙ pr1 f) ⊙ delay b)).
+    unfold downshiftf.
+    rewrite (assoc_thunkable _ (pr2 h)).
+    do 2 rewrite (assoc'_linear _ (pr2 f)).
+    now rewrite wrap_unwrap_left.
+  - intros a b f c h.
+    apply carrier_eq.
+    change ((wrap a ⊙ (pr1 f ⊙ pr1 h)) ⊙ delay c
+            = ((wrap a ⊙ pr1 f) ⊙ delay b) ⊙ (#⇑ pr1 h)).
+    unfold upshiftf.
+    rewrite (assoc_negative _ (⇑b)).
+    rewrite delay_force_interpose.
+    now rewrite (assoc_linear _ (pr2 h)).
+Defined.
+
+End functors.
+
+Definition duploid_functor {C C' : precategory_data} : UU
+  := ∑ (F : functor C C'), is_quasiduploid_functor F.
 
 End duploids.
