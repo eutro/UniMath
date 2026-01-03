@@ -1,6 +1,6 @@
 (** * Duploids *)
 (** ** Contents
-- Definitions of [semi,pre]duploids
+- Definitions of [quasi,pre]duploids
 - Lemmas about duploids
 *)
 
@@ -25,12 +25,12 @@ Require Import UniMath.CategoryTheory.Profunctors.Transformation.
 
 Local Open Scope cat.
 
-(** * Duploids *)
-Section duploids.
-
 Declare Scope duploid.
 Delimit Scope duploid with duploid.
 Local Open Scope duploid.
+
+(** * Duploids *)
+Section duploids.
 
 Definition is_quasiduploid (C : precategory_data) : UU
   := ((∏ (a b : C) (f : a --> b), identity a · f = f)
@@ -1192,7 +1192,286 @@ Defined.
 
 End functors.
 
-Definition duploid_functor {C C' : precategory_data} : UU
-  := ∑ (F : functor C C'), is_quasiduploid_functor F.
+Definition polarization_choice_data (C : quasiduploid) : UU
+  := ob C -> bool.
+
+Identity Coercion Id_polarization_choice_data : polarization_choice_data >-> Funclass.
+
+Lemma isaset_polarization_choice_data (C : quasiduploid)
+  : isaset (polarization_choice_data C).
+Proof.
+  apply impred_isaset; intro.
+  apply isasetbool.
+Qed.
+
+Definition is_polarization_choice {C : quasiduploid}
+  (polarity : polarization_choice_data C) : UU.
+Proof.
+  refine (∏ (a : C), _).
+  induction (polarity a).
+  - exact (is_positive a).
+  - exact (is_negative a).
+Defined.
+
+Lemma isaprop_is_polarization_choice {C : quasiduploid}
+  (polarity : polarization_choice_data C)
+  : isaprop (is_polarization_choice polarity).
+Proof.
+  apply impred; intro a.
+  induction (polarity a).
+  - apply isaprop_is_positive.
+  - apply isaprop_is_negative.
+Qed.
+
+Definition polarization_choice (C : quasiduploid)
+  := ∑ (polarity : polarization_choice_data C),
+    is_polarization_choice polarity.
+
+Lemma isaset_polarization_choice (C : quasiduploid)
+  : isaset (polarization_choice C).
+Proof.
+  apply isaset_total2.
+  - apply isaset_polarization_choice_data.
+  - intro x. apply isasetaprop, isaprop_is_polarization_choice.
+Qed.
+
+Coercion data_of_polarization_choice (C : quasiduploid)
+  (polarization : polarization_choice C)
+  : polarization_choice_data C := pr1 polarization.
+
+Definition shifts_respect_polarization_choice
+  {C : duploid} (polarization : polarization_choice C) : UU
+  := (∏ (a : C), polarization (⇓a) = true)
+       × (∏ (a : C), polarization (⇑a) = false).
+
+Lemma isaprop_shifts_respect_polarization_choice
+  {C : duploid} (polarization : polarization_choice C)
+  : isaprop (shifts_respect_polarization_choice polarization).
+Proof.
+  apply isapropdirprod; apply impred; intro a;
+    apply isasetbool.
+Qed.
+
+Definition functor_preserves_polarization_choice
+  {C C' : quasiduploid}
+  (HC : polarization_choice C)
+  (HC' : polarization_choice C')
+  (F : functor C C') : UU
+  := ∏ (a : C), HC' (F a) = HC a.
+
+Lemma isaprop_functor_preserves_polarization_choice
+  {C C' : quasiduploid}
+  (HC : polarization_choice C)
+  (HC' : polarization_choice C')
+  (F : functor C C')
+  : isaprop (functor_preserves_polarization_choice HC HC' F).
+Proof. apply impred; intro a; apply isasetbool. Qed.
+
+Definition split_preduploid : UU
+  := ∑ (C : preduploid), polarization_choice C.
+Coercion preduploid_of_split_preduploid (C : split_preduploid) : preduploid := pr1 C.
+Coercion preduploid_polarization_choice
+  (C : split_preduploid) : polarization_choice C := pr2 C.
+Definition make_split_preduploid (C : preduploid) (H : polarization_choice C)
+  : split_preduploid := C,,H.
+
+Definition split_duploid : UU
+  := ∑ (C : duploid), polarization_choice C.
+Coercion duploid_of_split_duploid (C : split_duploid) : duploid := pr1 C.
+Coercion duploid_polarization_choice
+  (C : split_duploid) : polarization_choice C := pr2 C.
+Definition make_split_duploid (C : duploid) (H : polarization_choice C)
+  : split_duploid := C,,H.
+
+Coercion split_preduploid_of_split_duploid (C : split_duploid) : split_preduploid
+  := make_split_preduploid C C.
+
+Definition functor_preserves_shifts {C C' : duploid}
+  (F : functor C C') : UU
+  := (∏ (a : C), is_linear (#F (force a)))
+       × (∏ (a : C), is_thunkable (#F (wrap a))).
+
+Lemma isaprop_functor_preserves_shifts {C C' : duploid}
+  (F : functor C C')
+  : isaprop (functor_preserves_shifts F).
+Proof.
+  apply isapropdirprod; apply impred; intro a.
+  - apply isaprop_is_linear.
+  - apply isaprop_is_thunkable.
+Qed.
+
+Definition split_preduploid_functor (C C' : split_preduploid) : UU
+  := ∑ (F : functor C C'),
+    functor_preserves_polarization_choice C C' F.
+Coercion functor_of_split_preduploid_functor {C C' : split_preduploid}
+  (F : split_preduploid_functor C C') : functor C C' := pr1 F.
+Coercion split_preduploid_functor_preserves_polarization_choice {C C' : split_preduploid}
+  (F : split_preduploid_functor C C')
+  : functor_preserves_polarization_choice C C' F := pr2 F.
+Definition make_split_preduploid_functor {C C' : split_preduploid}
+  (F : functor C C') (H : functor_preserves_polarization_choice C C' F)
+  : split_preduploid_functor C C' := F,,H.
+
+Definition split_duploid_functor (C C' : split_duploid) : UU
+  := ∑ (F : split_preduploid_functor C C'),
+    functor_preserves_shifts F.
+Coercion split_preduploid_functor_of_split_duploid_functor {C C' : split_duploid}
+  (F : split_duploid_functor C C') : split_preduploid_functor C C' := pr1 F.
+Coercion split_duploid_functor_preserves_shifts {C C' : split_duploid}
+  (F : split_duploid_functor C C')
+  : functor_preserves_shifts F := pr2 F.
+Definition make_split_duploid_functor {C C' : split_duploid}
+  (F : split_preduploid_functor C C') (H : functor_preserves_shifts F)
+  : split_duploid_functor C C' := F,,H.
+
+Definition split_preduploid_functor_identity (C : split_preduploid)
+  : split_preduploid_functor C C.
+Proof.
+  use make_split_preduploid_functor.
+  - apply functor_identity.
+  - intro a. apply idpath.
+Defined.
+
+Definition split_duploid_functor_identity (C : split_duploid)
+  : split_duploid_functor C C.
+Proof.
+  use make_split_duploid_functor.
+  - apply split_preduploid_functor_identity.
+  - split; intro a.
+    + apply is_linear_force.
+    + apply is_thunkable_wrap.
+Defined.
+
+Definition split_preduploid_functor_compose {C₁ C₂ C₃ : split_preduploid}
+  (F : split_preduploid_functor C₁ C₂)
+  (G : split_preduploid_functor C₂ C₃)
+  : split_preduploid_functor C₁ C₃.
+Proof.
+  use make_split_preduploid_functor.
+  - exact (F ∙ G).
+  - intro a; simpl.
+    rewrite (split_preduploid_functor_preserves_polarization_choice G).
+    apply (split_preduploid_functor_preserves_polarization_choice F).
+Defined.
+
+Definition is_linear_and_thunkable {C : precategory_data}
+  {a b : C} (f : a --> b) : UU
+  := is_linear f × is_thunkable f.
+
+Lemma isaprop_is_linear_and_thunkable {C : quasiduploid}
+  {a b : C} (f : a --> b)
+  : isaprop (is_linear_and_thunkable f).
+Proof.
+  apply isapropdirprod.
+  apply isaprop_is_linear.
+  apply isaprop_is_thunkable.
+Qed.
+
+Definition are_linear_and_thunkable_inverses {C : quasiduploid}
+  {a b : C} (f : a --> b) (g : b --> a) : UU
+  := is_inverse_in_precat f g
+       × is_linear_and_thunkable f
+       × is_linear_and_thunkable g.
+
+Lemma isaprop_are_linear_and_thunkable_inverses {C : quasiduploid}
+  {a b : C} (f : a --> b) (g : b --> a)
+  : isaprop (are_linear_and_thunkable_inverses f g).
+Proof.
+  apply isapropdirprod; apply isapropdirprod.
+  1, 2: apply duploid_homsets.
+  1, 2: apply isaprop_is_linear_and_thunkable.
+Qed.
+
+Lemma is_linear_and_thunkable_identity {C : quasiduploid} (a : C)
+  : is_linear_and_thunkable (identity a).
+Proof.
+  use tpair.
+  apply is_linear_identity.
+  apply is_thunkable_identity.
+Qed.
+
+Definition is_linear_and_thunkable_z_isomorphism {C : quasiduploid}
+  {a b : C} (f : a --> b) : UU
+  := ∑ (g : b --> a), are_linear_and_thunkable_inverses f g.
+
+Definition isaprop_is_linear_and_thunkable_z_isomorphism {C : quasiduploid}
+  {a b : C} (f : a --> b)
+  : isaprop (is_linear_and_thunkable_z_isomorphism f).
+Proof.
+  apply isaproptotal2.
+  1: intro h; apply isaprop_are_linear_and_thunkable_inverses.
+  intros g g' H1 H2.
+  apply (linear_inverse_unique f g g' (pr1 H1) (pr1 H2)).
+  exact (pr122 H1).
+Qed.
+
+Definition is_linear_and_thunkable_z_isomorphism_idtomor {C : quasiduploid}
+  {a b : C} (p : a = b)
+  : is_linear_and_thunkable_z_isomorphism (idtomor _ _ p).
+Proof.
+  induction p.
+  use tpair.
+  1: apply identity.
+  use tpair.
+  1: use make_is_inverse_in_precat; apply duploid_id_left.
+  use tpair.
+  all: apply is_linear_and_thunkable_identity.
+Defined.
+
+Definition duploid_indistinguishable {C : quasiduploid} (a b : C)
+  := ∑ (f : a --> b), is_linear_and_thunkable_z_isomorphism f.
+
+Coercion duploid_indistinguishable_to_z_iso {C : quasiduploid} {a b : C}
+  (f : duploid_indistinguishable a b) : z_iso a b.
+Proof.
+  use make_z_iso.
+  - apply (pr1 f).
+  - apply (pr12 f).
+  - apply (pr122 f).
+Defined.
+
+Definition is_positive_of_duploid_indistinguishable {C : quasiduploid}
+  (a b : C) : duploid_indistinguishable a b -> is_positive a -> is_positive b.
+Proof.
+  intros [f [f̂ [inv_f_f̂ [_ linear_and_thunkable_f̂]]]] Ha c g.
+  assert (Hg : g = f̂ · (f · g)).
+  { rewrite (assoc_thunkable _ (pr2 linear_and_thunkable_f̂)).
+    now rewrite (pr2 inv_f_f̂), duploid_id_left. }
+  rewrite Hg.
+  apply is_linear_compose.
+  - apply (pr1 linear_and_thunkable_f̂).
+  - apply (is_linear_of_positive _ Ha).
+Qed.
+
+Definition is_negative_of_duploid_indistinguishable {C : quasiduploid}
+  (a b : C) : duploid_indistinguishable a b -> is_negative a -> is_negative b.
+Proof.
+  intros [f [f̂ [inv_f_f̂ [linear_and_thunkable_f _]]]] Ha c g.
+  assert (Hg : g = (g · f̂) · f).
+  { rewrite (assoc'_linear _ (pr1 linear_and_thunkable_f)).
+    now rewrite (pr2 inv_f_f̂), duploid_id_right. }
+  rewrite Hg.
+  apply is_thunkable_compose.
+  - apply (is_thunkable_of_negative _ Ha).
+  - apply (pr2 linear_and_thunkable_f).
+Qed.
+
+Definition id_to_duploid_indistinguishable {C : quasiduploid}
+  {a b : C} (p : a = b) : duploid_indistinguishable a b.
+Proof.
+  use tpair.
+  apply idtomor, p.
+  apply is_linear_and_thunkable_z_isomorphism_idtomor.
+Defined.
+
+Definition duploid_is_univalent (C : quasiduploid) : UU
+  := ∏ (a b : C), isweq (λ (p : a = b), id_to_duploid_indistinguishable p).
+
+Definition isaprop_duploid_is_univalent (C : quasiduploid)
+  : isaprop (duploid_is_univalent C).
+Proof.
+  do 2 (apply impred; intro).
+  apply isapropisweq.
+Qed.
 
 End duploids.
