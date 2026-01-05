@@ -639,6 +639,7 @@ The packages and files are listed here in logical order: each file depends only 
    - [DisplayedCats/ReindexingForward.v](CategoryTheory/DisplayedCats/ReindexingForward.v)
    - [DisplayedCats/TotalCategoryFacts.v](CategoryTheory/DisplayedCats/TotalCategoryFacts.v)
    - [DisplayedCats/TotalAdjunction.v](CategoryTheory/DisplayedCats/TotalAdjunction.v)
+   - [Monads/CoKleisliCategory.v](CategoryTheory/Monads/CoKleisliCategory.v)
    - [Monads/KleisliCategory.v](CategoryTheory/Monads/KleisliCategory.v)
    - [Monads/KTriples.v](CategoryTheory/Monads/KTriples.v)
    - [Monads/Kleisli.v](CategoryTheory/Monads/Kleisli.v)
