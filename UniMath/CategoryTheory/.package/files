@@ -459,6 +459,7 @@ DisplayedCats/TotalCategoryFacts.v
 DisplayedCats/TotalAdjunction.v
 
 Monads/KleisliCategory.v
+Monads/CoKleisliCategory.v
 Monads/KTriples.v
 Monads/Kleisli.v
 Monads/KTriplesEquiv.v
@@ -470,6 +471,7 @@ Categories/CatIsoInserter.v
 Categories/EilenbergMoore.v
 Categories/CoEilenbergMoore.v
 Categories/KleisliCategory.v
+Categories/CoKleisliCategory.v
 Limits/Examples/EilenbergMooreLimits.v
 Elements.v
 Core.v
