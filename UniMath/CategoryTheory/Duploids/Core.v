@@ -851,6 +851,34 @@ Proof.
   now do 2 rewrite id_left.
 Qed.
 
+Lemma is_linear_oblique_delay (a : oblique_preduploid)
+  : is_linear (oblique_delay a).
+Proof.
+  induction a as [n | p].
+  2: apply is_linear_of_positive, is_positive_of_adj_right.
+  intros b c f g.
+  induction b as [m | q].
+  1: apply assoc'_negative, is_negative_of_adj_left.
+  cbn.
+  rewrite φ_adj_natural_postcomp.
+  rewrite φ_adj_after_φ_adj_inv.
+  do 2 rewrite id_right.
+  rewrite φ_adj_inv_natural_postcomp.
+  now do 2 rewrite φ_adj_inv_after_φ_adj.
+Qed.
+
+Lemma is_thunkable_oblique_unwrap (a : oblique_preduploid)
+  : is_thunkable (oblique_unwrap a).
+Proof.
+  induction a as [n | p].
+  1: apply is_thunkable_of_negative, is_negative_of_adj_left.
+  intros b c f g.
+  induction b as [m | q].
+  2: apply assoc_positive, is_positive_of_adj_right.
+  cbn.
+  now do 2 rewrite id_left.
+Qed.
+
 Definition is_inverse_in_precat_oblique_force_delay (a : oblique_preduploid)
   : is_inverse_in_precat (oblique_force a) (oblique_delay a).
 Proof.

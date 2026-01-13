@@ -24,6 +24,9 @@ DisplayedCats/Fiber.v
 DisplayedCats/FullyFaithfulDispFunctor.v
 
 Duploids/Core.v
+Duploids/Magmoids.v
+Duploids/Duploids.v
+Duploids/Subcategories.v
 
 opp_precat.v
 OppositeCategory/Core.v
