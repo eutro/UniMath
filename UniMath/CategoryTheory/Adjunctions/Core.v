@@ -613,49 +613,52 @@ End HomSetIsoClosedUnderIso.
 
 (** * Adjunction defined from a natural isomorphism on homsets (F A --> B) ≃ (A --> G B) *)
 
-Definition natural_hom_weq {C D : precategory} (F : functor C D) (G : functor D C) : UU
+Definition natural_hom_weq {C D : precategory_data} (F : functor_data C D) (G : functor_data D C) : UU
   := ∑ (hom_weq :  ∏ {A : C} {B : D}, F A --> B ≃ A --> G B),
        (∏ (A : C) (B : D) (f : F A --> B) (X : C) (h : X --> A),
         hom_weq (#F h · f) = h · hom_weq f) ×
        (∏ (A : C) (B : D) (f : F A --> B) (Y : D) (k : B --> Y),
         hom_weq (f · k) = hom_weq f · #G k).
 
-Definition hom_weq {C D : precategory} {F : functor C D} {G : functor D C}
+Definition hom_weq {C D : precategory_data} {F : functor_data C D} {G : functor_data D C}
            (H : natural_hom_weq F G) : ∏ {A : C} {B : D}, F A --> B ≃ A --> G B := pr1 H.
 
-Definition hom_natural_precomp {C D : precategory} {F : functor C D} {G : functor D C}
+Definition hom_natural_precomp {C D : precategory_data} {F : functor_data C D} {G : functor_data D C}
            (H : natural_hom_weq F G) : ∏ (A : C) (B : D) (f : F A --> B) (X : C) (h : X --> A),
                        hom_weq H (#F h · f) = h · hom_weq H f := pr1 (pr2 H).
 
-Definition hom_natural_postcomp {C D : precategory} {F : functor C D} { G : functor D C}
+Definition hom_natural_postcomp {C D : precategory_data} {F : functor_data C D} {G : functor_data D C}
            (H : natural_hom_weq F G) : ∏ (A : C) (B : D) (f : F A --> B) (Y : D) (k : B --> Y),
                        hom_weq H (f · k) = hom_weq H f · #G k := pr2 (pr2 H).
+
+Definition hom_inv_weq {C D : precategory_data} {F : functor_data C D} {G : functor_data D C}
+          (H : natural_hom_weq F G) : ∏ {A : C} {B : D}, A --> G B → F A --> B
+  := λ A B, invmap (hom_weq H).
+
+Definition inv_natural_precomp {C D : precategory_data} {F : functor_data C D} {G : functor_data D C}
+          (H : natural_hom_weq F G) {A : C} {B : D} (g : A --> G B) {X : C} (h : X --> A)
+  : hom_inv_weq H (h · g) = #F h · hom_inv_weq H g.
+Proof.
+  apply pathsinv0, pathsweq1.
+  rewrite hom_natural_precomp.
+  apply cancel_precomposition.
+  apply homotweqinvweq.
+Defined.
+
+Definition inv_natural_postcomp {C D : precategory_data} {F : functor_data C D} {G : functor_data D C}
+          (H : natural_hom_weq F G) {A : C} {B : D} (g : A --> G B) {Y : D} (k : B --> Y)
+  : hom_inv_weq H (g · #G k) = hom_inv_weq H g · k.
+Proof.
+  apply pathsinv0, pathsweq1.
+  rewrite hom_natural_postcomp.
+  apply cancel_postcomposition.
+  apply homotweqinvweq.
+Defined.
 
 Section Adjunction_from_HomSetIso.
 
   Context {C D : precategory} {F : functor C D} {G : functor D C}
           (H : natural_hom_weq F G).
-
-  Local Definition hom_inv : ∏ {A : C} {B : D}, A --> G B → F A --> B
-    := λ A B, invmap (hom_weq H).
-
-  Definition inv_natural_precomp {A : C} {B : D} (g : A --> G B) {X : C} (h : X --> A)
-    : hom_inv (h · g) = #F h · hom_inv g.
-  Proof.
-    apply pathsinv0, pathsweq1.
-    rewrite hom_natural_precomp.
-    apply cancel_precomposition.
-    apply homotweqinvweq.
-  Defined.
-
-  Definition inv_natural_postcomp {A : C} {B : D} (g : A --> G B) {Y : D} (k : B --> Y)
-    : hom_inv (g · #G k) = hom_inv g · k.
-  Proof.
-    apply pathsinv0, pathsweq1.
-    rewrite hom_natural_postcomp.
-    apply cancel_postcomposition.
-    apply homotweqinvweq.
-  Defined.
 
   Definition unit_from_hom : nat_trans (functor_identity C) (F ∙ G).
   Proof.
@@ -672,7 +675,7 @@ Section Adjunction_from_HomSetIso.
   Definition counit_from_hom : nat_trans (G ∙ F) (functor_identity D).
   Proof.
     use make_nat_trans.
-    - exact (λ B, hom_inv (identity (G B))).
+    - exact (λ B, hom_inv_weq H (identity (G B))).
     - intros B B' k. cbn.
       rewrite <- inv_natural_postcomp.
       rewrite <- inv_natural_precomp.
@@ -757,6 +760,31 @@ Section Adjunction_HomSetIso_weq.
   Defined.
 
 End Adjunction_HomSetIso_weq.
+
+(** * Composition and inverse of natural_hom_weq *)
+
+Lemma natural_hom_weq_compose {C D E : precategory_data}
+  (F : functor_data C D) (G : functor_data D C)
+  (J : functor_data D E) (K : functor_data E D)
+  (H1 : natural_hom_weq F G)
+  (H2 : natural_hom_weq J K)
+  : natural_hom_weq (functor_composite_data F J) (functor_composite_data K G).
+Proof.
+  use tpair.
+  - intros a b.
+    intermediate_weq (D⟦F a, K b⟧).
+    + apply (hom_weq H2).
+    + apply (hom_weq H1).
+  - use make_dirprod.
+    + intros a b f c g. cbn.
+      etrans.
+      * apply maponpaths, (hom_natural_precomp H2).
+      * apply (hom_natural_precomp H1).
+    + intros a b f c g. cbn.
+      etrans.
+      * apply maponpaths, (hom_natural_postcomp H2).
+      * apply (hom_natural_postcomp H1).
+Defined.
 
 Section RelativeAdjunction_by_natural_hom_weq.
 
