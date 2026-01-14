@@ -348,9 +348,9 @@ Section polarized_subtypes.
 
   Definition linear_mor (a b : M) := ∑ (f : a --> b), ish_linear f.
   Definition make_linear_mor {a b : M} (f : a --> b) (H : is_linear f) : linear_mor a b := f,,H.
-  Coercion linear_mor_to_mor (a b : M) (f : linear_mor a b) : a --> b := pr1 f.
-  Coercion linear_mor_is_linear (a b : M) (f : linear_mor a b) : is_linear f := pr2 f.
-  Definition isaset_linear_mor (a b : M) : isaset (linear_mor a b).
+  Coercion linear_mor_to_mor {a b : M} (f : linear_mor a b) : a --> b := pr1 f.
+  Coercion linear_mor_is_linear {a b : M} (f : linear_mor a b) : is_linear f := pr2 f.
+  Definition isaset_linear_mor {a b : M} : isaset (linear_mor a b).
   Proof.
     apply isaset_total2.
     - apply hs.
@@ -369,9 +369,9 @@ Section polarized_subtypes.
 
   Definition thunkable_mor (a b : M) := ∑ (f : a --> b), ish_thunkable f.
   Definition make_thunkable_mor {a b : M} (f : a --> b) (H : is_thunkable f) : thunkable_mor a b := f,,H.
-  Coercion thunkable_mor_to_mor (a b : M) (f : thunkable_mor a b) : a --> b := pr1 f.
-  Coercion thunkable_mor_is_thunkable (a b : M) (f : thunkable_mor a b) : is_thunkable f := pr2 f.
-  Definition isaset_thunkable_mor (a b : M) : isaset (thunkable_mor a b).
+  Coercion thunkable_mor_to_mor {a b : M} (f : thunkable_mor a b) : a --> b := pr1 f.
+  Coercion thunkable_mor_is_thunkable {a b : M} (f : thunkable_mor a b) : is_thunkable f := pr2 f.
+  Definition isaset_thunkable_mor {a b : M} : isaset (thunkable_mor a b).
   Proof.
     apply isaset_total2.
     - apply hs.
@@ -407,7 +407,7 @@ Section polarized_subtypes.
     : linear_and_thunkable_mor a c
     := make_linear_and_thunkable_mor (f · g) (is_linear_and_thunkable_compose f g f g).
 
-  Definition isaset_linear_and_thunkable_mor (a b : M) : isaset (linear_and_thunkable_mor a b).
+  Definition isaset_linear_and_thunkable_mor {a b : M} : isaset (linear_and_thunkable_mor a b).
   Proof.
     apply isaset_total2.
     - apply hs.
