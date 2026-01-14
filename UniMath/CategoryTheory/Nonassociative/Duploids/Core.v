@@ -1,6 +1,9 @@
 (********************************************************************************
 
- Definition of [pre]duploids.
+ [Pre]duploids
+
+ Author: B. Szilvasy
+ January 2026
 
  Contents:
  1. Polarity shifts
@@ -8,22 +11,23 @@
  3. Definition of a preduploid
  4. Definition of a duploid
 
- Author: B. Szilvasy
- January 2026
-
  ********************************************************************************)
 
 Require Import UniMath.Foundations.All.
 Require Import UniMath.MoreFoundations.All.
 
-Require Import UniMath.CategoryTheory.Duploids.Magmoids.
 Require Import UniMath.CategoryTheory.Core.Categories.
 Require Import UniMath.CategoryTheory.Core.Isos.
+
+Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
+Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Isos.
+
+Local Open Scope cat.
+Local Open Scope unital_magmoid.
 
 Declare Scope duploid.
 Delimit Scope duploid with duploid.
 Local Open Scope duploid.
-Local Open Scope cat.
 
 (** ** 1. Polarity shifts *)
 
