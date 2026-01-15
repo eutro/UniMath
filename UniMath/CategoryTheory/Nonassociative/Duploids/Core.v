@@ -147,7 +147,7 @@ End shifts.
 
 (** ** 2. Polarization choices *)
 
-Section polarity.
+Section polarities.
 
   (* Property to say that a is negative, positive, or both. *)
   Definition has_polarity {M : unital_premagmoid} (a : M) : UU
@@ -182,7 +182,7 @@ Section polarity.
     - now apply H2.
   Defined.
 
-End polarity.
+End polarities.
 
 (** ** 3. Definition of a preduploid *)
 Definition preduploid : UU

@@ -249,7 +249,7 @@ Section shift_functors.
 End shift_functors.
 
 (** ** 3. Adjunctions of the shift functors of a duploid *)
-Section shift_functors_adjunction.
+Section shift_functor_adjunctions.
   Context (D : duploid).
 
   Definition delayed_mor (a b : D) := thunkable_mor a (⇑b).
@@ -451,4 +451,4 @@ Section shift_functors_adjunction.
         (upshift_positive_to_negative D).
   Proof. apply adj_from_nathomweq, nathomweq_delayed_wrapped'. Defined.
 
-End shift_functors_adjunction.
+End shift_functor_adjunctions.

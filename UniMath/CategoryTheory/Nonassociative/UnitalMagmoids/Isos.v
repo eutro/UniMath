@@ -1,8 +1,12 @@
 (********************************************************************************
 
+ Isomorphisms in Unital Magmoids
+
  Contents:
- 1. Inverses and when they are unique
- 2. Linear and thunkable isomorphisms
+ 1. Definitions of inverses and when they are unique
+ 2. Composition of inverses when they exist
+ 3. Linear-and-thunkable isomorphisms [lt_iso]
+ 4. Lemmas about linear-and-thunkable isomorphisms
 
  Author: B. Szilvasy
  January 2026
@@ -88,7 +92,7 @@ Section inverses.
     - apply g'.
   Qed.
 
-  (* Thunkable and linear inverses are of course unique *)
+  (* Thunkable-and-linear inverses are of course unique *)
   Definition has_linear_and_thunkable_inverse : UU
     := ∑ (g : linear_and_thunkable_mor b a), is_inverse_in_precat f g.
   Definition make_has_linear_and_thunkable_inverse
@@ -116,9 +120,9 @@ Section inverses.
 
 End inverses.
 
-(** ** 2. Linear and thunkable isomorphisms *)
+(** ** 2. Composition of inverses when they exist *)
 
-Section iso.
+Section composition.
   Context {M : unital_magmoid}.
 
   Lemma is_inverse_in_precat_identity_of_magmoid (a : M)
@@ -245,12 +249,18 @@ Section iso.
         * apply (is_inverse_in_precat2 g').
         * apply (is_inverse_in_precat2 g).
   Defined.
+End composition.
 
-  (** Linear-and-thunkable isomorphisms. *)
+(** ** 3. Linear-and-thunkable isomorphisms [lt_iso] *)
+
+Section isos.
+  Context {M : unital_magmoid}.
 
   Definition is_lt_iso {a b : M} (f : linear_and_thunkable_mor a b) : UU
     := has_linear_and_thunkable_inverse f.
   Identity Coercion Id_is_lt_iso : is_lt_iso >-> has_linear_and_thunkable_inverse.
+  Definition isaprop_is_lt_iso {a b : M} (f : linear_and_thunkable_mor a b)
+    : isaprop (is_lt_iso f) := isaprop_has_linear_and_thunkable_inverse f.
 
   Definition lt_iso (a b : M) : UU :=
     ∑ (f : linear_and_thunkable_mor a b), is_lt_iso f.
@@ -272,13 +282,17 @@ Section iso.
     : lt_iso a b
     := make_lt_iso _ (make_has_linear_and_thunkable_inverse f g H).
 
-  Definition inv_lt_iso {a b : M} (f : lt_iso a b) : lt_iso b a.
+  Definition lt_iso_inv {a b : M} (f : lt_iso a b) : lt_iso b a.
   Proof.
     use make_lt_iso'.
     - exact (lt_iso_inverse f).
     - exact f.
     - apply is_inverse_in_precat_inv, lt_iso_is_inverse.
   Defined.
+
+  Definition lt_iso_inv_lt_iso_inv {a b : M} (f : lt_iso a b)
+    : lt_iso_inv (lt_iso_inv f) = f.
+  Proof. apply idpath. Defined.
 
   Definition lt_iso_identity (a : M) : lt_iso a a.
   Proof.
@@ -295,18 +309,110 @@ Section iso.
       + apply (lt_iso_is_lt_iso f).
       + apply (lt_iso_is_lt_iso g).
   Defined.
+End isos.
 
-  Definition id_to_lt_iso {a b : M} (p : a = b) : lt_iso a b.
+(** ** 4. Lemmas about linear-and-thunkable isomorphisms *)
+
+Section isos_facts.
+  Context {M : unital_magmoid}.
+
+  (** Rewriting lemmas *)
+
+  Lemma lt_iso_lt_iso_inverse_id {a b : M} (p : lt_iso a b)
+    : p · lt_iso_inverse p = identity a.
+  Proof. apply lt_iso_is_inverse. Qed.
+
+  Lemma lt_iso_inverse_lt_iso_id {a b : M} (p : lt_iso a b)
+    : lt_iso_inverse p · p = identity b.
+  Proof. apply lt_iso_is_inverse. Qed.
+
+  Lemma lt_iso_left {a b c : M}
+    (p : lt_iso a b) (f : b --> c)
+    : lt_iso_inverse p · (p · f) = f.
   Proof.
-    induction p.
-    exact (lt_iso_identity a).
+    refine (assoc_thunkable _ _ _ _ @ _ @ magmoid_id_left f).
+    - apply linear_and_thunkable_mor_is_linear_and_thunkable.
+    - apply cancel_postcomposition.
+      apply lt_iso_inverse_lt_iso_id.
+  Qed.
+
+  Lemma lt_iso_inverse_right {a b c : M}
+    (p : lt_iso a b) (f : b <-- c)
+    : (f · lt_iso_inverse p) · p = f.
+  Proof.
+    refine (assoc'_linear _ _ _ _ @ _ @ magmoid_id_right f).
+    - apply linear_and_thunkable_mor_is_linear_and_thunkable.
+    - apply cancel_precomposition.
+      apply lt_iso_inverse_lt_iso_id.
+  Qed.
+
+  Lemma lt_iso_inverse_left {a b c : M}
+    (p : lt_iso b a) (f : b --> c)
+    : p · (lt_iso_inverse p · f) = f.
+  Proof.
+    change ((lt_iso_inv (lt_iso_inv p)) · (lt_iso_inverse (lt_iso_inv (lt_iso_inv p)) · f) = f).
+    apply lt_iso_left.
+  Qed.
+
+  Lemma lt_iso_right {a b c : M}
+    (p : lt_iso b a) (f : b <-- c)
+    : (f · p) · lt_iso_inverse p = f.
+  Proof.
+    change ((f · (lt_iso_inv (lt_iso_inv p))) · lt_iso_inverse (lt_iso_inv (lt_iso_inv p)) = f).
+    apply lt_iso_inverse_right.
+  Qed.
+
+  Lemma cancel_lt_iso_left {a b c : M}
+    (p : lt_iso a b) (f g : b --> c)
+    : p · f = p · g -> f = g.
+  Proof.
+    intro H.
+    eapply cancel_precomposition in H.
+    refine (!lt_iso_left _ _ @ H @ lt_iso_left _ _).
+  Qed.
+
+  Lemma cancel_lt_iso_right {a b c : M}
+    (p : lt_iso b a) (f g : b <-- c)
+    : p ∘ f = p ∘ g -> f = g.
+  Proof.
+    intro H.
+    eapply cancel_postcomposition in H.
+    refine (!lt_iso_right _ _ @ H @ lt_iso_right _ _).
+  Qed.
+
+  (** [lt_iso]s preserve polarities *)
+
+  Lemma is_positive_of_lt_iso {a b : M}
+    (p : lt_iso a b) (H : is_positive a) : is_positive b.
+  Proof.
+    intros c f.
+    rewrite <- (lt_iso_left p f).
+    apply is_linear_compose.
+    - apply linear_and_thunkable_mor_is_linear_and_thunkable.
+    - apply is_linear_of_positive, H.
+  Qed.
+
+  Lemma is_negative_of_lt_iso {a b : M}
+    (p : lt_iso a b) (H : is_negative a) : is_negative b.
+  Proof.
+    intros c f.
+    rewrite <- (lt_iso_inverse_right p f).
+    apply is_thunkable_compose.
+    - apply is_thunkable_of_negative, H.
+    - apply lt_iso_mor.
+  Qed.
+
+  (** Precomposition with an [lt_iso] is a weq. *)
+  Lemma is_iso_of_lt_iso {a b : M} (p : lt_iso a b) : is_iso p.
+  Proof.
+    intro c.
+    use isweq_iso.
+    - intro f; exact (lt_iso_inv p · f).
+    - intro f; apply lt_iso_left.
+    - intro f; apply lt_iso_inverse_left.
   Defined.
 
-  Lemma id_to_lt_iso_idtomor {a b : M} (p : a = b) :
-    (id_to_lt_iso p : M⟦a, b⟧) = idtomor _ _ p.
-  Proof. now induction p. Defined.
+  Definition lt_iso_to_iso {a b : M} (p : lt_iso a b) : iso a b
+    := make_iso p (is_iso_of_lt_iso p).
 
-  Definition unital_magmoid_is_univalent
-    := ∏ (a b : M), isweq (λ (p : a = b), id_to_lt_iso p).
-
-End iso.
+End isos_facts.
