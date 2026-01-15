@@ -22,10 +22,10 @@ Local Open Scope cat.
 
 Section functor_facts.
   Context {C C' : unital_premagmoid} (F : C ⟶ C').
-  Hypothesis (Hfull : full F).
 
+  (* Lemma of shame *)
   Lemma is_linear_in_full_functor {a b : C} (f : a --> b)
-    (H : is_linear f) : is_linear (#F f).
+    (Hfull : full F) (H : is_linear f) : is_linear (#F f).
   Proof.
     intros c d g h.
     Fail Check (Hfull _ _ h).

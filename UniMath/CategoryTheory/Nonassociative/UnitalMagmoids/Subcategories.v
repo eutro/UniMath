@@ -119,11 +119,13 @@ Notation "M '⁻ₗ'" := (negative_linear_category M) (at level 10) : unital_mag
   are depicted in the commutative diagram below. Of these, all but
   the four vertically drawn functors are fully faithful.
 
+  <<
                       M⁺  ⟶ Mₗ    ↰
                       ↑     ↑
                       M⁺ₜ → Mₗₜ  ← M⁻ₗ
                             ↓     ↓
                       ↳     Mₜ  ← M⁻
+  >>
 
   All categories also have inclusion functors into M itself.
 
