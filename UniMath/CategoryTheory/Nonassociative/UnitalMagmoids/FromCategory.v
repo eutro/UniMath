@@ -22,8 +22,10 @@ Require Import UniMath.MoreFoundations.All.
 Require Import UniMath.CategoryTheory.Core.Categories.
 
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
+Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Subcategories.
 
 Local Open Scope cat.
+Local Open Scope unital_magmoid.
 
 (** ** 1. Coercions from (pre)categories to unital (pre)magmoids *)
 
@@ -90,11 +92,98 @@ Coercion magmoid_category_to_category (M : magmoid_category) : category
 Coercion category_to_magmoid_category (M : category) : magmoid_category
   := make_magmoid_category M (precategory_is_assoc M).
 
-(** ** 4. Lemmas about polarization
+(** ** 4. Lemmas about polarization *)
 
- All morphisms in a category are linear and thunkable, and all objects in a
- category are both positive and negative.
+Section polarity_lemmas.
+  Context {C : precategory}.
 
- *)
+  (** All morphisms in a category are linear and thunkable, and hence objects in a
+      category are both positive and negative. *)
 
-(* TODO *)
+  Lemma is_linear_of_precategory {a b : C} (f : a --> b) : is_linear f.
+  Proof.
+    intros c d g h.
+    apply assoc'.
+  Defined.
+
+  Lemma is_thunkable_of_precategory {a b : C} (f : a --> b) : is_thunkable f.
+  Proof.
+    intros c d g h.
+    apply assoc.
+  Defined.
+
+  Lemma is_negative_and_thunkable_of_precategory {a b : C} (f : a --> b) : is_linear_and_thunkable f.
+  Proof.
+    use make_is_linear_and_thunkable.
+    - apply is_linear_of_precategory.
+    - apply is_thunkable_of_precategory.
+  Defined.
+
+  Lemma is_positive_of_precategory (a : C) : is_positive a.
+  Proof.
+    intros b f.
+    apply is_linear_of_precategory.
+  Defined.
+
+  Lemma is_negative_of_precategory (a : C) : is_negative a.
+  Proof.
+    intros b f.
+    apply is_thunkable_of_precategory.
+  Defined.
+End polarity_lemmas.
+
+Section polarity_lemmas.
+  Context {C : category}.
+
+  (** Linear and positive morphisms are the same as morphisms in C. *)
+  Lemma isweq_linear_mor_to_mor_of_category (a b : C)
+    : isweq (λ (f : linear_mor (M:=C) a b), linear_mor_to_mor f).
+  Proof.
+    apply isweqpr1; intro f.
+    apply (iscontraprop1 (propproperty _)),
+      is_linear_of_precategory.
+  Qed.
+
+  Definition weq_linear_mor_to_mor_of_category (a b : C)
+    : linear_mor (M:=C) a b ≃ C⟦a, b⟧
+    := make_weq _ (isweq_linear_mor_to_mor_of_category a b).
+
+  Lemma isweq_thunkable_mor_to_mor_of_category (a b : C)
+    : isweq (λ (f : thunkable_mor (M:=C) a b), thunkable_mor_to_mor f).
+  Proof.
+    apply isweqpr1; intro f.
+    apply (iscontraprop1 (propproperty _)),
+      is_thunkable_of_precategory.
+  Qed.
+
+  Definition weq_thunkable_mor_to_mor_of_category (a b : C)
+    : thunkable_mor (M:=C) a b ≃ C⟦a, b⟧
+    := make_weq _ (isweq_thunkable_mor_to_mor_of_category a b).
+
+  (** Positive and negative objects are the same as objects in C. *)
+  Lemma isweq_positive_ob_to_ob_of_category
+    : isweq (positive_ob_to_ob (M:=C)).
+  Proof.
+    change (isweq (X:=positive_ob C) pr1).
+    apply isweqpr1; intro f.
+    apply (iscontraprop1 (propproperty _)),
+      is_positive_of_precategory.
+  Qed.
+
+  Definition weq_positive_ob_to_ob_of_category
+    : positive_ob C ≃ ob C
+    := make_weq _ isweq_positive_ob_to_ob_of_category.
+
+  Lemma isweq_negative_ob_to_ob_of_category
+    : isweq (negative_ob_to_ob (M:=C)).
+  Proof.
+    change (isweq (X:=negative_ob C) pr1).
+    apply isweqpr1; intro f.
+    apply (iscontraprop1 (propproperty _)),
+      is_negative_of_precategory.
+  Qed.
+
+  Definition weq_negative_ob_to_ob_of_category
+    : negative_ob C ≃ ob C
+    := make_weq _ isweq_negative_ob_to_ob_of_category.
+End polarity_lemmas.

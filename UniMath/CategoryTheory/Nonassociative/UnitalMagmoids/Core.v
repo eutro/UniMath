@@ -63,7 +63,7 @@ Declare Scope unital_magmoid.
 Delimit Scope unital_magmoid with unital_magmoid.
 Local Open Scope unital_magmoid.
 
-Section magmoids.
+Section magmoid_defs.
   (** * 1. Unbundled definitions of unitality and associativity *)
   Definition unital_premagmoid_data := precategory_data.
   Identity Coercion Id_unital_premagmoid_data : unital_premagmoid_data >-> precategory_data.
@@ -140,11 +140,11 @@ Section magmoids.
     exact data_eq.
   Defined.
 
-End magmoids.
+End magmoid_defs.
 
 (** ** 3. Definition of linearity, thunkability, and polarization *)
 
-Section def_polarity.
+Section polarity_defs.
   Context {M : unital_premagmoid_data}.
   Hypothesis hs : has_homsets M.
 
@@ -188,11 +188,11 @@ Section def_polarity.
     - apply isaprop_is_thunkable'.
   Qed.
 
-End def_polarity.
+End polarity_defs.
 
 (** ** 4. Lemmas for working with linearity, thunkability and polarization *)
 
-Section lemma_polarity.
+Section polarity_lemmas.
   Context {M : unital_premagmoid_data}.
 
   Definition is_linear_of_positive {a b : M} (f : a --> b)
@@ -251,9 +251,9 @@ Section lemma_polarity.
     - apply (is_thunkable_compose _ _ Hf Hg).
   Qed.
 
-End lemma_polarity.
+End polarity_lemmas.
 
-Section lemma_polarity.
+Section polarity_lemmas.
   Context {M : unital_premagmoid}.
 
   (* Identities are linear and thunkable. *)
@@ -268,7 +268,7 @@ Section lemma_polarity.
     - apply is_thunkable_identity.
   Defined.
 
-End lemma_polarity.
+End polarity_lemmas.
 
 (** ** 5. Bundled linear/thunkable morphisms and polarized objects *)
 
