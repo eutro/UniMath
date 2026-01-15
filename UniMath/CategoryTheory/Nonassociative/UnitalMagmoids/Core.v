@@ -64,7 +64,8 @@ Delimit Scope unital_magmoid with unital_magmoid.
 Local Open Scope unital_magmoid.
 
 Section magmoid_defs.
-  (** * 1. Unbundled definitions of unitality and associativity *)
+  (** ** 1. Unbundled definitions of unitality and associativity *)
+
   Definition unital_premagmoid_data := precategory_data.
   Identity Coercion Id_unital_premagmoid_data : unital_premagmoid_data >-> precategory_data.
 
@@ -100,9 +101,9 @@ Section magmoid_defs.
     : isaprop (is_assoc_premagmoid M).
   Proof. apply isapropdirprod; do 7 (apply impred; intro); apply hs. Qed.
 
-  (** * 2. Definition of a unital (pre)magmoid *)
+  (** ** 2. Definition of a unital (pre)magmoid *)
 
-  (** ** 1. Unital premagmoid *)
+  (** *** 1. Unital premagmoid *)
   Definition unital_premagmoid : UU
     := total2 is_unital_premagmoid.
   Coercion unital_premagmoid_to_precategory_data (M : unital_premagmoid) : unital_premagmoid_data := pr1 M.
@@ -118,7 +119,7 @@ Section magmoid_defs.
     : f · identity b = f
     := pr2 (unital_premagmoid_is_unital M) a b f.
 
-  (** ** 2. Unital magmoid *)
+  (** *** 2. Unital magmoid *)
   Definition unital_magmoid : UU
     := ∑ (M : unital_premagmoid), has_homsets M.
   Definition make_unital_magmoid
@@ -145,6 +146,7 @@ End magmoid_defs.
 (** ** 3. Definition of linearity, thunkability, and polarization *)
 
 Section polarity_defs.
+
   Context {M : unital_premagmoid_data}.
   Hypothesis hs : has_homsets M.
 

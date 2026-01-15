@@ -37,6 +37,7 @@ Local Open Scope duploid.
  When extended and restricted along the relevant inclusion functors, we obtain
  the following two commutative diagrams of (almost) functors:
 
+ <<
   D⁺ ↪ Dₗ  ↪  D
      ⇑ ↓      ↓ ⇑
        D⁺ₗ ↪  D⁻  ↪  Dₜ
@@ -44,6 +45,7 @@ Local Open Scope duploid.
   D⁻ ↪ Dₜ  ↪  D
      ⇓ ↓      ↓ ⇓
        D⁻ₜ ↪  D⁺  ↪  Dₗ
+ >>
 
  Where all but the rightmost arrows are functorial.
 
