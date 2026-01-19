@@ -34,10 +34,12 @@
  In pictorial form, given objects and morphisms as follows, composition
  associates if any one of the annotations holds:
 
+ <<
                        thunkable ↓           ↓ linear
                                  f     g     h
                               A --> B --> C --> D
                            negative ↑     ↑ positive
+ >>
 
  When any of those named properties can be proven, the lemmas named below can be
  used to reassociate, replacing the [*] with the property:
@@ -150,6 +152,8 @@ Section polarity_defs.
   Context {M : unital_premagmoid_data}.
   Hypothesis hs : has_homsets M.
 
+  (** Linear and thunkable *)
+
   Definition is_linear {a b : M} (f : a --> b) : UU
     := ∏ (c d : M) (g : c --> a) (h : d --> c),
       (h · g) · f = h · (g · f).
@@ -162,6 +166,8 @@ Section polarity_defs.
   Lemma isaprop_is_thunkable' {a b : M} (f : a --> b) : isaprop (is_thunkable f).
   Proof. do 4 (apply impred; intro); apply hs. Qed.
 
+  (** Positive and negative *)
+
   Definition is_positive (a : M) : UU
     := ∏ (b : M) (f : a --> b), is_linear f.
   Definition is_negative (a : M) : UU
@@ -171,6 +177,8 @@ Section polarity_defs.
   Proof. do 2 (apply impred; intro); apply isaprop_is_linear'. Qed.
   Lemma isaprop_is_negative' (a : M) : isaprop (is_negative a).
   Proof. do 2 (apply impred; intro); apply isaprop_is_thunkable'. Qed.
+
+  (** Linear-and-thunkable *)
 
   Definition is_linear_and_thunkable {a b : M} (f : a --> b) : UU
     := is_linear f × is_thunkable f.
@@ -237,7 +245,7 @@ Section polarity_lemmas.
     : (f · g) · h = f · (g · h).
   Proof. apply assoc'_thunkable, is_thunkable_of_negative, H. Defined.
 
-  (* Linearity and thunkability are preserved under composition. *)
+  (** Linearity and thunkability are preserved under composition. *)
   Lemma is_linear_compose {a b c : M} (f : a --> b) (g : b --> c)
     : is_linear f -> is_linear g -> is_linear (f · g).
   Proof. intros Hf Hg d e h k. now rewrite <- Hg, <- Hg, Hf, Hg. Qed.
@@ -258,7 +266,7 @@ End polarity_lemmas.
 Section polarity_lemmas.
   Context {M : unital_premagmoid}.
 
-  (* Identities are linear and thunkable. *)
+  (** Identities are linear and thunkable. *)
   Lemma is_linear_identity (a : M) : is_linear (identity a).
   Proof. intros b c g h. now do 2 rewrite magmoid_id_right. Defined.
   Lemma is_thunkable_identity (a : M) : is_thunkable (identity a).
@@ -278,7 +286,7 @@ Section polarized_subtypes.
   Context {M : unital_magmoid}.
   Let hs : has_homsets M := unital_magmoid_has_homsets M.
 
-  (* Linear morphisms *)
+  (** Linear morphisms *)
   Definition isaprop_is_linear {a b : M} (f : a --> b) : isaprop (is_linear f).
   Proof. apply isaprop_is_linear', hs. Defined.
   Definition ish_linear {a b : M} (f : a --> b) : hProp
@@ -299,7 +307,7 @@ Section polarized_subtypes.
   Definition linear_compose {a b c : M} (f : linear_mor a b) (g : linear_mor b c)
     : linear_mor a c := make_linear_mor (f · g) (is_linear_compose f g f g).
 
-  (* Thunkable morphisms *)
+  (** Thunkable morphisms *)
   Definition isaprop_is_thunkable {a b : M} (f : a --> b) : isaprop (is_thunkable f).
   Proof. apply isaprop_is_thunkable', hs. Defined.
   Definition ish_thunkable {a b : M} (f : a --> b) : hProp
@@ -320,7 +328,7 @@ Section polarized_subtypes.
   Definition thunkable_compose {a b c : M} (f : thunkable_mor a b) (g : thunkable_mor b c)
     : thunkable_mor a c := make_thunkable_mor (f · g) (is_thunkable_compose f g f g).
 
-  (* Linear and thunkable morphisms *)
+  (** Linear and thunkable morphisms *)
   Definition isaprop_is_linear_and_thunkable {a b : M} (f : a --> b) : isaprop (is_linear_and_thunkable f).
   Proof. apply isaprop_is_linear_and_thunkable', hs. Defined.
   Definition ish_linear_and_thunkable {a b : M} (f : a --> b) : hProp
@@ -352,7 +360,7 @@ Section polarized_subtypes.
     - intro x. apply isasetaprop, propproperty.
   Qed.
 
-  (* Positive objects *)
+  (** Positive objects *)
   Definition isaprop_is_positive (a : M) : isaprop (is_positive a).
   Proof. apply isaprop_is_positive', hs. Defined.
   Definition ish_positive (a : M) : hProp
@@ -363,7 +371,7 @@ Section polarized_subtypes.
   Coercion positive_ob_to_ob (a : positive_ob) : M := pr1 a.
   Coercion positive_ob_is_positive (a : positive_ob) : is_positive a := pr2 a.
 
-  (* Negative objects *)
+  (** Negative objects *)
   Definition isaprop_is_negative (a : M) : isaprop (is_negative a).
   Proof. apply isaprop_is_negative', hs. Defined.
   Definition ish_negative (a : M) : hProp

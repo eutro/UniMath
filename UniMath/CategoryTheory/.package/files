@@ -24,10 +24,13 @@ DisplayedCats/Fiber.v
 DisplayedCats/FullyFaithfulDispFunctor.v
 
 Nonassociative/UnitalMagmoids/Core.v
+Nonassociative/UnitalMagmoids/FromCategory.v
 Nonassociative/UnitalMagmoids/Subcategories.v
 Nonassociative/UnitalMagmoids/Isos.v
 Nonassociative/UnitalMagmoids/Functors.v
+Nonassociative/UnitalMagmoids/HomFunctors.v
 Nonassociative/Duploids/Core.v
+Nonassociative/Duploids/Functors.v
 Nonassociative/Duploids/ShiftFunctors.v
 
 opp_precat.v
