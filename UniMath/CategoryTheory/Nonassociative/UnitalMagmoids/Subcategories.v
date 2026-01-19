@@ -70,6 +70,7 @@ Section polarized_categories.
     - intros a b c d f g h; apply carrier_eq, assoc'_thunkable, f.
   Defined.
 
+  (** The category of all objects and linear-and-thunkable maps. *)
   Definition linear_and_thunkable_category : category.
   Proof.
     use makecategory.
@@ -133,7 +134,7 @@ Notation "M '⁻ₗ'" := (negative_linear_category M) (at level 10) : unital_mag
 Section inclusion_functors.
   Context (M : unital_magmoid).
 
-  (* The easy fully-faithful inclusion functors for the above. *)
+  (** The easy fully-faithful inclusion functors for the above. *)
 
   Definition positive_category_to_linear_category : M⁺ ⟶ M ₗ
     := sub_precategory_inclusion _ _.
@@ -157,7 +158,7 @@ Section inclusion_functors.
     : fully_faithful negative_linear_category_to_linear_category.
   Proof. apply fully_faithful_sub_precategory_inclusion. Defined.
 
-  (* M⁺ₜ into M ₗₜ *)
+  (** M⁺ₜ into M ₗₜ *)
   Definition positive_thunkable_mor_to_linear_and_thunkable_mor {a b : positive_ob M}
     (f : thunkable_mor a b) : linear_and_thunkable_mor a b
     := (make_linear_and_thunkable_mor' f (is_linear_of_positive _ a) f).
@@ -187,7 +188,7 @@ Section inclusion_functors.
     - intro f. now apply carrier_eq.
   Defined.
 
-  (* M⁻ₗ into M ₗₜ *)
+  (** M⁻ₗ into M ₗₜ *)
   Definition negative_linear_mor_to_linear_and_thunkable_mor {a b : negative_ob M}
     (f : linear_mor a b) : linear_and_thunkable_mor a b
     := (make_linear_and_thunkable_mor' f f (is_thunkable_of_negative _ b)).
@@ -217,7 +218,7 @@ Section inclusion_functors.
     - intro f. now apply carrier_eq.
   Defined.
 
-  (* M ₗₜ into M ₗ *)
+  (** M ₗₜ into M ₗ *)
   Definition linear_and_thunkable_category_to_linear_category : M ₗₜ ⟶ M ₗ.
   Proof.
     use make_functor.
@@ -238,7 +239,7 @@ Section inclusion_functors.
     intros f f' p. apply carrier_eq, (base_paths _ _ p).
   Defined.
 
-  (* M ₗₜ into M ₜ *)
+  (** M ₗₜ into M ₜ *)
   Definition linear_and_thunkable_category_to_thunkable_category : M ₗₜ ⟶ M ₜ.
   Proof.
     use make_functor.
@@ -260,7 +261,7 @@ Section inclusion_functors.
     apply carrier_eq, (base_paths _ _ p).
   Defined.
 
-  (* M⁺ₜ into M⁺ *)
+  (** M⁺ₜ into M⁺ *)
   Definition positive_thunkable_category_to_positive_category : M⁺ₜ ⟶ M⁺.
   Proof.
     use make_functor.
@@ -287,7 +288,7 @@ Section inclusion_functors.
     exact p.
   Defined.
 
-  (* M⁻ₗ into M⁻ *)
+  (** M⁻ₗ into M⁻ *)
   Definition negative_linear_category_to_negative_category : M⁻ₗ ⟶ M⁻.
   Proof.
     use make_functor.
@@ -314,7 +315,7 @@ Section inclusion_functors.
     exact p.
   Defined.
 
-  (* M⁺ₜ into M ₗ *)
+  (** M⁺ₜ into M ₗ *)
   Definition positive_thunkable_category_to_linear_category : M⁺ₜ ⟶ M ₗ
     := positive_thunkable_category_to_linear_and_thunkable_category
          ∙ linear_and_thunkable_category_to_linear_category.
@@ -327,14 +328,14 @@ Section inclusion_functors.
     - apply faithful_linear_and_thunkable_category_to_linear_category.
   Defined.
 
-  (* I : M⁺ₜ ⟶ M ₗ factors through M⁺ *)
+  (** I : M⁺ₜ ⟶ M ₗ factors through M⁺ *)
   Lemma positive_thunkable_category_to_linear_category_through_positive
     : positive_thunkable_category_to_linear_category
       = (positive_thunkable_category_to_positive_category
            ∙ positive_category_to_linear_category).
   Proof. now apply (functor_eq _ _ (homset_property _)). Defined.
 
-  (* M⁻ₗ into M ₜ *)
+  (** M⁻ₗ into M ₜ *)
   Definition negative_linear_category_to_thunkable_category : M⁻ₗ ⟶ M ₜ
     := negative_linear_category_to_linear_and_thunkable_category
          ∙ linear_and_thunkable_category_to_thunkable_category.
@@ -347,28 +348,28 @@ Section inclusion_functors.
     - apply faithful_linear_and_thunkable_category_to_thunkable_category.
   Defined.
 
-  (* I : M⁻ₗ ⟶ M ₜ factors through M⁻ *)
+  (** I : M⁻ₗ ⟶ M ₜ factors through M⁻ *)
   Lemma negative_linear_category_to_thunkable_category_through_negative
     : negative_linear_category_to_thunkable_category
       = (negative_linear_category_to_negative_category
            ∙ negative_category_to_thunkable_category).
   Proof. now apply (functor_eq _ _ (homset_property _)). Defined.
 
-  (* I : M⁻ₗ ⟶ M ₗ factors through M ₗₜ *)
+  (** I : M⁻ₗ ⟶ M ₗ factors through M ₗₜ *)
   Lemma negative_linear_category_to_linear_category_through_thunkable
     : negative_linear_category_to_linear_category
       = (negative_linear_category_to_linear_and_thunkable_category
            ∙ linear_and_thunkable_category_to_linear_category).
   Proof. now apply (functor_eq _ _ (homset_property _)). Defined.
 
-  (* I : M⁺ₜ ⟶ M ₜ factors through M ₜₗ *)
+  (** I : M⁺ₜ ⟶ M ₜ factors through M ₜₗ *)
   Lemma positive_thunkable_category_to_thunkable_category_through_linear
     : positive_thunkable_category_to_thunkable_category
       = (positive_thunkable_category_to_linear_and_thunkable_category
            ∙ linear_and_thunkable_category_to_thunkable_category).
   Proof. now apply (functor_eq _ _ (homset_property _)). Defined.
 
-  (* Inclusion functors into M. *)
+  (** Inclusion functors into M. *)
   Definition linear_category_to_unital_magmoid : M ₗ ⟶ M.
   Proof.
     use make_functor.
