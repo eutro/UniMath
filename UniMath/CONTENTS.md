@@ -254,6 +254,7 @@ The packages and files are listed here in logical order: each file depends only 
    - [Nonassociative/Duploids/Core.v](CategoryTheory/Nonassociative/Duploids/Core.v)
    - [Nonassociative/Duploids/Functors.v](CategoryTheory/Nonassociative/Duploids/Functors.v)
    - [Nonassociative/Duploids/ShiftFunctors.v](CategoryTheory/Nonassociative/Duploids/ShiftFunctors.v)
+   - [Nonassociative/Duploids/TwoSorted.v](CategoryTheory/Nonassociative/Duploids/TwoSorted.v)
    - [opp_precat.v](CategoryTheory/opp_precat.v)
    - [OppositeCategory/Core.v](CategoryTheory/OppositeCategory/Core.v)
    - [Groupoids.v](CategoryTheory/Groupoids.v)

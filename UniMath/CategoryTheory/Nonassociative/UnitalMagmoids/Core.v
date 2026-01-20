@@ -346,6 +346,22 @@ Section polarized_subtypes.
   Coercion linear_and_thunkable_mor_to_thunkable_mor {a b : M} (f : linear_and_thunkable_mor a b)
     : thunkable_mor a b := make_thunkable_mor f f.
 
+  Definition make_linear_and_thunkable_mor_from_thunkable {a b : M} (f : thunkable_mor a b)
+    (H : is_linear f) : linear_and_thunkable_mor a b.
+  Proof.
+    use (make_linear_and_thunkable_mor f).
+    set (H' := f : is_thunkable f).
+    apply make_is_linear_and_thunkable; assumption.
+  Defined.
+
+  Definition make_linear_and_thunkable_mor_from_linear {a b : M} (f : linear_mor a b)
+    (H : is_thunkable f) : linear_and_thunkable_mor a b.
+  Proof.
+    use (make_linear_and_thunkable_mor f).
+    set (H' := f : is_linear f).
+    apply make_is_linear_and_thunkable; assumption.
+  Defined.
+
   Definition linear_and_thunkable_identity (a : M) : linear_and_thunkable_mor a a
     := make_linear_and_thunkable_mor (identity a) (is_linear_and_thunkable_identity a).
   Definition linear_and_thunkable_compose {a b c : M}
