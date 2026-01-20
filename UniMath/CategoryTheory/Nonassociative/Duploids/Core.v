@@ -7,9 +7,10 @@
 
  Contents:
  1. Polarity shifts
- 2. Polarization choices
+ 2. Polarization property
  3. Definition of a preduploid
  4. Definition of a duploid
+ 5. Lemmas about shifts
 
  ********************************************************************************)
 
@@ -145,17 +146,17 @@ Section shifts.
 
 End shifts.
 
-(** ** 2. Polarization choices *)
+(** ** 2. Polarization property *)
 
 Section polarities.
 
-  (* Property to say that a is negative, positive, or both. *)
+  (** Property to say that a is negative, positive, or both. *)
   Definition has_polarity {M : unital_premagmoid} (a : M) : UU
-    := ∥ is_negative a ⨿ is_positive a ∥.
-  Definition make_has_negative_polarity {M : unital_premagmoid} (a : M)
-    (H : is_negative a) : has_polarity a := hinhpr (inl H).
+    := ∥ is_positive a ⨿ is_negative a ∥.
   Definition make_has_positive_polarity {M : unital_premagmoid} (a : M)
-    (H : is_positive a) : has_polarity a := hinhpr (inr H).
+    (H : is_positive a) : has_polarity a := hinhpr (ii1 H).
+  Definition make_has_negative_polarity {M : unital_premagmoid} (a : M)
+    (H : is_negative a) : has_polarity a := hinhpr (ii2 H).
 
   Lemma isaprop_has_polarity {M : unital_premagmoid} (a : M) : isaprop (has_polarity a).
   Proof. apply isapropishinh. Qed.
@@ -168,12 +169,12 @@ Section polarities.
   Lemma isaprop_has_polarities (M : unital_premagmoid) : isaprop (has_polarities M).
   Proof. apply impred; intro a; apply isaprop_has_polarity. Qed.
 
-  (* Non-dependent induction schemes for polarities. *)
+  (** Non-dependent induction scheme for polarities. *)
   Lemma has_polarity_rec {M : unital_premagmoid}
     {a : M} (H : has_polarity a)
     {P : UU} (HP : isaprop P)
-    (H1 : ∏ (negp : is_negative a), P)
-    (H2 : ∏ (posp : is_positive a), P)
+    (H1 : ∏ (posp : is_positive a), P)
+    (H2 : ∏ (negp : is_negative a), P)
     : P.
   Proof.
     refine (factor_through_squash HP _ H).
@@ -225,6 +226,8 @@ Definition unwrap {D : duploid} (a : D) : thunkable_mor (⇓a) a
 Definition are_inverses_wrap_unwrap {D : duploid} (a : D)
   : is_inverse_in_precat (wrap a) (unwrap a)
   := has_thunkable_inverse_wrap' D a.
+
+(** ** 5. Lemmas about shifts *)
 
 Section shift_lemmas.
   Context {C : duploid}.
