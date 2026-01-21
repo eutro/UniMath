@@ -53,7 +53,7 @@ Local Open Scope duploid.
        D⁻ₜ ↪  D⁺  ↪  Dₗ
  >>
 
- Where all but the rightmost arrows are functorial.
+ Where all but the right ↓ arrows are functorial.
 
  *)
 
@@ -140,6 +140,10 @@ Section shift_functors.
     := upshift_linear_to_negative_linear ∙ negative_linear_category_to_negative_category D.
   Definition upshift_positive_to_negative : D⁺ ⟶ D⁻
     := positive_category_to_linear_category D ∙ upshift_linear_to_negative.
+  Definition upshift_linear_to_linear_and_thunkable : D ₗ ⟶ D ₗₜ
+    := upshift_linear_to_negative_linear ∙ negative_linear_category_to_linear_and_thunkable_category D.
+  Definition upshift_linear_and_thunkable_to_linear_and_thunkable : D ₗₜ ⟶ D ₗₜ
+    := linear_and_thunkable_category_to_linear_category D ∙ upshift_linear_to_linear_and_thunkable.
 
   (** These non-functorial maps are useful for defining the adjunctions below. *)
   Definition upshift_'_to_thunkable : functor_data D (D ₜ)
@@ -239,6 +243,10 @@ Section shift_functors.
     := downshift_thunkable_to_positive_thunkable ∙ positive_thunkable_category_to_positive_category D.
   Definition downshift_negative_to_positive : D⁻ ⟶ D⁺
     := negative_category_to_thunkable_category D ∙ downshift_thunkable_to_positive.
+  Definition downshift_thunkable_to_linear_and_thunkable : D ₜ ⟶ D ₗₜ
+    := downshift_thunkable_to_positive_thunkable ∙ positive_thunkable_category_to_linear_and_thunkable_category D.
+  Definition downshift_linear_and_thunkable_to_linear_and_thunkable : D ₗₜ ⟶ D ₗₜ
+    := linear_and_thunkable_category_to_thunkable_category D ∙ downshift_thunkable_to_linear_and_thunkable.
 
   (** These non-functorial maps are useful for defining the adjunctions below. *)
   Definition downshift_'_to_linear : functor_data D (D ₗ)
@@ -272,7 +280,11 @@ End shift_functors.
 
   In a duploid D, morphisms take part in the following isomorphism:
 
-  << Dₗ⟦⇓a, b⟧ ≃ D⟦⇓a, b⟧ ≃ D⟦a, b⟧ ≃ D⟦a, ⇑b⟧ ≃ Dₜ⟦a, ⇑b⟧ >>
+  <<
+       Dₗ⟦⇓a, b⟧ ≃ D⟦⇓a, b⟧
+                 ≃ D⟦a, b⟧
+                 ≃ D⟦a, ⇑b⟧ ≃ Dₜ⟦a, ⇑b⟧
+  >>
 
   Moreover, these isomorphisms are natural in (a : Dₜ) and (b : Dₗ), yielding an
   adjunction ⇓ ⊣ ⇑ : D ₗ ⟶ D ₜ.  In fact, each isomorphism is "natural" even for
@@ -292,549 +304,327 @@ End shift_functors.
   again...
 
 *)
+Local Notation "F '⟸' G" := (nat_trans G F) (at level 39).
+  (* type in Emacs using agda-input with \l * *)
+Local Notation "F '⟹' G" := (nat_trans F G) (at level 39).
+  (* type in Emacs using agda-input with \r * *)
+
 Section shift_functor_adjunctions.
   Context (D : duploid).
 
-  (** *** Morphisms Dₜ⟦a, ⇑b⟧ ([delayed_mor]) and Dₗ⟦⇓a, b⟧ ([wrapped_mor]). *)
-  Definition delayed_mor (a b : D) := thunkable_mor a (⇑b).
-  Definition wrapped_mor (a b : D) := linear_mor (⇓a) b.
+  (** *** Natural transformations [wrap]/[unwrap]/[force]/[delay] *)
 
-  Identity Coercion Id_delayed_mor : delayed_mor >-> thunkable_mor.
-  Identity Coercion Id_wrapped_mor : wrapped_mor >-> linear_mor.
+  (* All of the naturality goals below are equations through subtypes of D-morphisms.  I prove first
+     those on D-morphisms, and then use this tactic to ignore the subtypes with [carrier_eq]. *)
+  Local Tactic Notation "carrier_naturality" int_or_var(ncarriers) constr(naturality_lemma) :=
+    abstract (intros a b f; do ncarriers apply carrier_eq; apply naturality_lemma).
 
-  (** *** The isomorphism [delayed_mor] ≃ [D⟦-, -⟧] *)
-  Definition mor_to_delayed_mor {a b : D} (f : D⟦a, b⟧) : delayed_mor a b.
+  (** Naturality of [wrap] *)
+  Lemma wrap_natural (a b : D) (f : D⟦a, b⟧)
+    : f · wrap b = wrap a · #⇓ f.
+  Proof. apply pathsinv0, wrap_unwrap_left. Qed.
+
+  (** Naturality of [unwrap] *)
+  Lemma unwrap_natural (a b : D) (f : D⟦a, b⟧)
+    : #⇓ f · unwrap b = unwrap a · f.
   Proof.
-    use make_thunkable_mor.
-    - apply (f · delay _).
-    - apply is_thunkable_of_negative, (⇑_).
-  Defined.
-
-  Definition mor_from_delayed_mor {a b : D} (f : delayed_mor a b) : D⟦a, b⟧.
-  Proof. apply (thunkable_mor_to_mor f · force _). Defined.
-
-  Lemma mor_to_from_delayed_mor {a b : D} (f : delayed_mor a b)
-    : mor_to_delayed_mor (mor_from_delayed_mor f) = f.
-  Proof.
-    apply carrier_eq; cbn.
-    refine (assoc'_thunkable _ f _ _ @ _ @ magmoid_id_right _).
-    apply cancel_precomposition, force_delay_id.
+    unfold downshiftf.
+    rewrite (assoc'_thunkable _ (unwrap _)).
+    apply cancel_precomposition.
+    rewrite (assoc'_positive _ (⇓_)), wrap_unwrap_id.
+    apply magmoid_id_right.
   Qed.
 
-  Lemma mor_from_to_delayed_mor {a b : D} (f : D⟦a, b⟧)
-    : mor_from_delayed_mor (mor_to_delayed_mor f) = f.
+  (** Naturality of [force] *)
+  Lemma force_natural (a b : D) (f : D⟦a, b⟧)
+    : #⇑ f · force b = force a · f.
   Proof. apply delay_force_right. Qed.
 
-  Lemma weq_delayed_mor (a b : D) : delayed_mor a b ≃ D⟦a, b⟧.
+  (** Naturality of [delay] *)
+  Lemma delay_natural (a b : D) (f : D⟦a, b⟧)
+    : f · delay b = delay a · #⇑ f.
   Proof.
-    use weq_iso.
-    - apply mor_from_delayed_mor.
-    - apply mor_to_delayed_mor.
-    - apply mor_to_from_delayed_mor.
-    - apply mor_from_to_delayed_mor.
-  Defined.
-
-  Lemma invmap_weq_delayed_mor {a b : D} (f : D⟦a, b⟧)
-    : invmap (weq_delayed_mor a b) f = mor_to_delayed_mor f.
-  Proof.
-    apply invmap_eq, pathsinv0, mor_from_to_delayed_mor.
+    unfold upshiftf.
+    rewrite (assoc_linear _ (delay _)).
+    apply cancel_postcomposition.
+    rewrite (assoc_negative _ (⇑_)), delay_force_id.
+    apply pathsinv0, magmoid_id_left.
   Qed.
 
-  (** *** The isomorphism [wrapped_mor] ≃ [D⟦-, -⟧] *)
-  Definition mor_to_wrapped_mor {a b : D} (f : D⟦a, b⟧) : wrapped_mor a b.
+  (** **** [wrap] as natural transformations *)
+  Definition wrap_' : functor_identity D ⟹ downshift_'_to_' D.
   Proof.
-    use make_linear_mor.
-    - apply (f ∘ unwrap _).
-    - apply is_linear_of_positive, (⇓_).
+    use make_nat_trans.
+    - intro a; apply wrap.
+    - carrier_naturality 0 wrap_natural.
   Defined.
 
-  Definition mor_from_wrapped_mor {a b : D} (f : wrapped_mor a b) : D⟦a, b⟧.
-  Proof. apply (linear_mor_to_mor f ∘ wrap _). Defined.
-
-  Lemma mor_to_from_wrapped_mor {a b : D} (f : wrapped_mor a b)
-    : mor_to_wrapped_mor (mor_from_wrapped_mor f) = f.
+  Definition wrap_positive_thunkable
+    : functor_identity (D⁺ₜ) ⟹ downshift_positive_thunkable_to_positive_thunkable D.
   Proof.
-    apply carrier_eq; cbn.
-    refine (assoc_linear _ f _ _ @ _ @ magmoid_id_left _).
-    apply cancel_postcomposition, unwrap_wrap_id.
-  Qed.
-
-  Lemma mor_from_to_wrapped_mor {a b : D} (f : D⟦a, b⟧)
-    : mor_from_wrapped_mor (mor_to_wrapped_mor f) = f.
-  Proof. apply wrap_unwrap_left. Qed.
-
-  Lemma weq_wrapped_mor (a b : D) : wrapped_mor a b ≃ D⟦a, b⟧.
-  Proof.
-    use weq_iso.
-    - apply mor_from_wrapped_mor.
-    - apply mor_to_wrapped_mor.
-    - apply mor_to_from_wrapped_mor.
-    - apply mor_from_to_wrapped_mor.
+    use make_nat_trans.
+    - intro a; apply (wrap _,,tt).
+    - carrier_naturality 2 wrap_natural.
   Defined.
 
-  Lemma invmap_weq_wrapped_mor {a b : D} (f : D⟦a, b⟧)
-    : invmap (weq_wrapped_mor a b) f = mor_to_wrapped_mor f.
+  Definition wrap_thunkable
+    : functor_identity (D ₜ) ⟹ downshift_thunkable_to_thunkable D.
   Proof.
-    apply invmap_eq, pathsinv0, mor_from_to_wrapped_mor.
-  Qed.
-
-  (** *** The adjunction D ₗ⟦⇓I-, -⟧ ≃ D ₜ⟦-, ⇑I-⟧. *)
-
-  (** D⟦a, b⟧ ≃ D ₜ⟦a, ⇑b⟧, "naturally" in a and b *)
-  Lemma nathomweq_delayed_mor
-    : natural_hom_weq
-        (thunkable_category_to_unital_magmoid D)
-        (upshift_'_to_thunkable D).
-  Proof.
-    use tpair. {
-      intros a b.
-      apply invweq, weq_delayed_mor.
-    }
-    use make_dirprod.
-    - cbn; intros a b f c g.
-      apply carrier_eq; cbn.
-      apply (assoc'_linear _ (delay _)).
-    - cbn; intros a b f c g.
-      apply carrier_eq; cbn.
-      unfold upshiftf.
-      rewrite (assoc'_linear _ (delay _)).
-      apply pathsinv0.
-      etrans. apply delay_force_interpose.
-      apply (assoc_linear _ (delay _)).
+    use make_nat_trans.
+    - intro a; apply wrap.
+    - carrier_naturality 1 wrap_natural.
   Defined.
 
-  (** D ₗ⟦⇓a, b⟧ ≃ D⟦a, b⟧, "naturally" in a and b *)
-  Lemma nathomweq_wrapped_mor
-    : natural_hom_weq
-        (downshift_'_to_linear D)
-        (linear_category_to_unital_magmoid D).
+  (** **** [unwrap] as natural transformations *)
+  Definition unwrap_' : functor_identity D ⟸ downshift_'_to_' D.
   Proof.
-    use tpair. {
-      intros a b.
-      apply weq_wrapped_mor.
-    }
-    use make_dirprod.
-    - cbn; intros a b f c g.
-      refine (_ @ wrap_unwrap_left _).
-      unfold mor_from_wrapped_mor; cbn.
-      apply maponpaths.
-      refine (assoc'_thunkable _ (unwrap _) _ _ @ _).
-      apply maponpaths.
-      apply (assoc'_linear _ f).
-    - intros a b f c g.
-      apply (assoc_thunkable _ (wrap _)).
+    use make_nat_trans.
+    - intro a; apply unwrap.
+    - carrier_naturality 0 unwrap_natural.
   Defined.
 
-  (** D ₗ⟦⇓a, b⟧ ≃ D ₜ⟦a, ⇑b⟧, naturally in a and b *)
-  Lemma nathomweq_delayed_wrapped
-    : natural_hom_weq
-        (downshift_thunkable_to_linear D)
-        (upshift_linear_to_thunkable D).
+  Definition unwrap_positive_thunkable
+    : functor_identity (D⁺ₜ) ⟸ downshift_positive_thunkable_to_positive_thunkable D.
   Proof.
-    apply (natural_hom_weq_compose _ _ _ _
-             nathomweq_delayed_mor
-             nathomweq_wrapped_mor).
+    use make_nat_trans.
+    - intro a; apply (unwrap _,,tt).
+    - carrier_naturality 2 unwrap_natural.
   Defined.
 
-  Lemma are_adjoints_downshift_upshift_thunkable_to_linear
-    : are_adjoints (downshift_thunkable_to_linear D) (upshift_linear_to_thunkable D).
-  Proof. apply adj_from_nathomweq, nathomweq_delayed_wrapped. Defined.
-
-  (** *** The adjunction D⁺ ⟦⇓I-, -⟧ ≃ D⁻ ⟦-, ⇑I-⟧. *)
-
-  (** D⟦a, b⟧ ≃ D⁻⟦a, ⇑b⟧, "naturally" in a and b *)
-  Lemma nathomweq_delayed_mor'
-    : natural_hom_weq
-        (negative_category_to_thunkable_category D
-           ∙ thunkable_category_to_unital_magmoid D)
-        (upshift_'_to_negative D).
+  Definition unwrap_thunkable
+    : functor_identity (D ₜ) ⟸ downshift_thunkable_to_thunkable D.
   Proof.
-    use tpair. {
-      intros a b.
-      refine (weqcomp _ _).
-      2: apply invweq,
-          (weq_from_fully_faithful (fully_faithful_negative_category_to_thunkable_category D)).
-      apply (hom_weq nathomweq_delayed_mor).
-    }
-    use make_dirprod.
-    - intros a b c f g.
-      apply carrier_eq.
-      apply (hom_natural_precomp nathomweq_delayed_mor).
-    - intros a b c f g.
-      apply carrier_eq.
-      apply (hom_natural_postcomp nathomweq_delayed_mor).
+    use make_nat_trans.
+    - intro a; apply unwrap.
+    - carrier_naturality 1 unwrap_natural.
   Defined.
 
-  (** D⁺⟦⇓a, b⟧ ≃ D⟦a, b⟧, "naturally" in a and b *)
-  Lemma nathomweq_wrapped_mor'
-    : natural_hom_weq
-        (downshift_'_to_positive D)
-        (positive_category_to_linear_category D
-           ∙ linear_category_to_unital_magmoid D).
+  Definition unwrap_linear_and_thunkable
+    : functor_identity (D ₗₜ) ⟸ downshift_linear_and_thunkable_to_linear_and_thunkable D.
   Proof.
-    use tpair. {
-      intros a b.
-      refine (weqcomp _ _).
-      1: apply (weq_from_fully_faithful (fully_faithful_positive_category_to_linear_category D)).
-      apply (hom_weq nathomweq_wrapped_mor).
-    }
-    use make_dirprod.
-    - intros a b c f g.
-      apply (hom_natural_precomp nathomweq_wrapped_mor).
-    - intros a b c f g.
-      apply (hom_natural_postcomp nathomweq_wrapped_mor).
-  Defined.
-
-  (** D⁺⟦⇓a, b⟧ ≃ D⁻⟦a, ⇑b⟧, naturally in a and b *)
-  Lemma nathomweq_delayed_wrapped'
-    : natural_hom_weq
-        (downshift_negative_to_positive D)
-        (upshift_positive_to_negative D).
-  Proof.
-    apply (natural_hom_weq_compose _ _ _ _
-             nathomweq_delayed_mor'
-             nathomweq_wrapped_mor').
-  Defined.
-
-  Lemma are_adjoints_downshift_upshift_negative_to_positive
-    : are_adjoints
-        (downshift_negative_to_positive D)
-        (upshift_positive_to_negative D).
-  Proof. apply adj_from_nathomweq, nathomweq_delayed_wrapped'. Defined.
-
-  (** *** Morphisms Dₗₜ⟦a, ⇑b⟧ ([linear_delayed_mor]) and Dₗₜ⟦⇓a, b⟧ ([thunkable_wrapped_mor]) *)
-
-  Definition linear_delayed_mor (a b : D) := linear_and_thunkable_mor a (⇑b).
-  Definition thunkable_wrapped_mor (a b : D) := linear_and_thunkable_mor (⇓a) b.
-
-  Identity Coercion Id_linear_delayed_mor : linear_delayed_mor >-> linear_and_thunkable_mor.
-  Identity Coercion Id_thunkable_wrapped_mor : thunkable_wrapped_mor >-> linear_and_thunkable_mor.
-
-  Coercion linear_delayed_mor_to_delayed_mor {a b : D} (f : linear_delayed_mor a b) : delayed_mor a b := f.
-  Coercion thunkable_wrapped_mor_to_wrapped_mor {a b : D} (f : thunkable_wrapped_mor a b) : wrapped_mor a b := f.
-
-  (** *** The isomorphism [linear_delayed_mor] ≃ [Dₗ⟦-, -⟧] *)
-
-  Definition linear_mor_to_linear_delayed_mor {a b : D} (f : linear_mor a b) : linear_delayed_mor a b.
-  Proof.
-    use make_linear_and_thunkable_mor_from_thunkable.
-    - exact (mor_to_delayed_mor f).
-    - apply is_linear_compose; apply linear_mor_is_linear.
-  Defined.
-
-  Definition linear_mor_from_linear_delayed_mor {a b : D} (f : linear_delayed_mor a b) : linear_mor a b.
-  Proof.
-    use make_linear_mor.
-    - exact (mor_from_delayed_mor f).
-    - apply is_linear_compose;
-        (apply linear_and_thunkable_mor_is_linear_and_thunkable
-         || apply linear_mor_is_linear).
-  Defined.
-
-  Lemma linear_mor_to_from_linear_delayed_mor {a b : D} (f : linear_delayed_mor a b)
-    : linear_mor_to_linear_delayed_mor (linear_mor_from_linear_delayed_mor f) = f.
-  Proof.
-    apply carrier_eq.
-    set (H := mor_to_from_delayed_mor f).
-    apply base_paths in H.
-    exact H.
-  Qed.
-
-  Lemma linear_mor_from_to_linear_delayed_mor {a b : D} (f : linear_mor a b)
-    : linear_mor_from_linear_delayed_mor (linear_mor_to_linear_delayed_mor f) = f.
-  Proof. apply carrier_eq, mor_from_to_delayed_mor. Qed.
-
-  Lemma weq_linear_delayed_mor (a b : D) : linear_delayed_mor a b ≃ linear_mor a b.
-  Proof.
-    use weq_iso.
-    - apply linear_mor_from_linear_delayed_mor.
-    - apply linear_mor_to_linear_delayed_mor.
-    - apply linear_mor_to_from_linear_delayed_mor.
-    - apply linear_mor_from_to_linear_delayed_mor.
-  Defined.
-
-  Lemma invmap_weq_linear_delayed_mor {a b : D} (f : linear_mor a b)
-    : invmap (weq_linear_delayed_mor a b) f = linear_mor_to_linear_delayed_mor f.
-  Proof.
-    apply invmap_eq, pathsinv0, linear_mor_from_to_linear_delayed_mor.
-  Qed.
-
-  (** *** The isomorphism [thunkable_wrapped_mor] ≃ [Dₜ⟦-, -⟧] *)
-
-  Definition thunkable_mor_to_thunkable_wrapped_mor {a b : D} (f : thunkable_mor a b) : thunkable_wrapped_mor a b.
-  Proof.
-    use make_linear_and_thunkable_mor_from_linear.
-    - exact (mor_to_wrapped_mor f).
-    - apply is_thunkable_compose; apply thunkable_mor_is_thunkable.
-  Defined.
-
-  Definition thunkable_mor_from_thunkable_wrapped_mor {a b : D} (f : thunkable_wrapped_mor a b) : thunkable_mor a b.
-  Proof.
-    use make_thunkable_mor.
-    - exact (mor_from_wrapped_mor f).
-    - apply is_thunkable_compose;
-        (apply linear_and_thunkable_mor_is_linear_and_thunkable
-         || apply thunkable_mor_is_thunkable).
-  Defined.
-
-  Lemma thunkable_mor_to_from_thunkable_wrapped_mor {a b : D} (f : thunkable_wrapped_mor a b)
-    : thunkable_mor_to_thunkable_wrapped_mor (thunkable_mor_from_thunkable_wrapped_mor f) = f.
-  Proof.
-    apply carrier_eq.
-    set (H := mor_to_from_wrapped_mor f).
-    apply base_paths in H.
-    exact H.
-  Qed.
-
-  Lemma thunkable_mor_from_to_thunkable_wrapped_mor {a b : D} (f : thunkable_mor a b)
-    : thunkable_mor_from_thunkable_wrapped_mor (thunkable_mor_to_thunkable_wrapped_mor f) = f.
-  Proof. apply carrier_eq, mor_from_to_wrapped_mor. Qed.
-
-  Lemma weq_thunkable_wrapped_mor (a b : D) : thunkable_wrapped_mor a b ≃ thunkable_mor a b.
-  Proof.
-    use weq_iso.
-    - apply thunkable_mor_from_thunkable_wrapped_mor.
-    - apply thunkable_mor_to_thunkable_wrapped_mor.
-    - apply thunkable_mor_to_from_thunkable_wrapped_mor.
-    - apply thunkable_mor_from_to_thunkable_wrapped_mor.
-  Defined.
-
-  Lemma invmap_weq_thunkable_wrapped_mor {a b : D} (f : thunkable_mor a b)
-    : invmap (weq_thunkable_wrapped_mor a b) f = thunkable_mor_to_thunkable_wrapped_mor f.
-  Proof.
-    apply invmap_eq, pathsinv0, thunkable_mor_from_to_thunkable_wrapped_mor.
-  Qed.
-
-  (** *** The adjoint equivalence I ⊣ ⇑ : D ₗ ⟶ D⁻ₗ *)
-
-  Lemma nathomweq_linear_delayed_mor
-    : natural_hom_weq
-        (negative_linear_category_to_linear_category D)
-        (upshift_linear_to_negative_linear D).
-  Proof.
-    use tpair. {
-      cbn; intros a b.
-      intermediate_weq (linear_delayed_mor a b).
-      - apply invweq, weq_linear_delayed_mor.
-      - apply invweq,
-          (weq_from_fully_faithful (fully_faithful_negative_linear_category_to_linear_and_thunkable_category D) a (⇑b)).
-    }
-    use make_dirprod.
-    - cbn; intros a b f c g.
-      do 2 apply carrier_eq; cbn.
-      transparent assert (g' : (thunkable_mor c a)). {
-        use (make_thunkable_mor (pr11 g)).
-        apply is_thunkable_of_negative, a.
-      }
-      set (H := hom_natural_precomp nathomweq_delayed_mor a b f c g').
-      apply base_paths in H.
-      apply H.
-    - cbn; intros a b f c g.
-      do 2 apply carrier_eq; cbn.
-      set (H := hom_natural_postcomp nathomweq_delayed_mor a b f c g).
-      apply base_paths in H.
-      apply H.
-  Defined.
-
-  Lemma are_adjoints_upshift_linear_to_negative_linear_inclusion
-    : are_adjoints
-        (negative_linear_category_to_linear_category D)
-        (upshift_linear_to_negative_linear D).
-  Proof.
-    apply adj_from_nathomweq, nathomweq_linear_delayed_mor.
-  Defined.
-
-  Lemma forms_equivalence_upshift_linear_to_negative_linear
-    : forms_equivalence are_adjoints_upshift_linear_to_negative_linear_inclusion.
-  Proof.
-    use make_forms_equivalence.
+    use make_nat_trans.
     - intro a.
-      exists (force _,,tt).
-      use make_is_inverse_in_precat.
-      + do 2 apply carrier_eq.
-        apply delay_force_right.
-      + do 2 apply carrier_eq.
-        refine (_ @ force_delay_id _).
-        apply cancel_precomposition, magmoid_id_left.
+      apply (make_linear_and_thunkable_mor_from_thunkable (unwrap a)).
+      apply is_linear_of_positive, (⇓_).
+    - carrier_naturality 1 unwrap_natural.
+  Defined.
+
+  (** **** [force] as natural transformations *)
+  Definition force_' : functor_identity D ⟸ upshift_'_to_' D.
+  Proof.
+    use make_nat_trans.
+    - intro a; apply force.
+    - carrier_naturality 0 force_natural.
+  Defined.
+
+  Definition force_negative_linear
+    : functor_identity (D⁻ₗ) ⟸ upshift_negative_linear_to_negative_linear D.
+  Proof.
+    use make_nat_trans.
+    - intro a; apply (force _,,tt).
+    - carrier_naturality 2 force_natural.
+  Defined.
+
+  Definition force_linear
+    : functor_identity (D ₗ) ⟸ upshift_linear_to_linear D.
+  Proof.
+    use make_nat_trans.
+    - intro a; apply force.
+    - carrier_naturality 1 force_natural.
+  Defined.
+
+  (** **** [delay] as natural transformations *)
+  Definition delay_' : functor_identity D ⟹ upshift_'_to_' D.
+  Proof.
+    use make_nat_trans.
+    - intro a; apply delay.
+    - carrier_naturality 0 delay_natural.
+  Defined.
+
+  Definition delay_negative_linear
+    : functor_identity (D⁻ₗ) ⟹ upshift_negative_linear_to_negative_linear D.
+  Proof.
+    use make_nat_trans.
+    - intro a; apply (delay _,,tt).
+    - carrier_naturality 2 delay_natural.
+  Defined.
+
+  Definition delay_linear
+    : functor_identity (D ₗ) ⟹ upshift_linear_to_linear D.
+  Proof.
+    use make_nat_trans.
+    - intro a; apply delay.
+    - carrier_naturality 1 delay_natural.
+  Defined.
+
+  Definition delay_linear_and_thunkable
+    : functor_identity (D ₗₜ) ⟹ upshift_linear_and_thunkable_to_linear_and_thunkable D.
+  Proof.
+    use make_nat_trans.
     - intro a.
-      exists (delay _).
-      use make_is_inverse_in_precat.
-      + apply carrier_eq.
-        refine (_ @ force_delay_id _).
-        apply cancel_postcomposition, magmoid_id_left.
-      + apply carrier_eq.
-        refine (_ @ delay_force_id _).
-        apply cancel_precomposition, magmoid_id_left.
+      apply (make_linear_and_thunkable_mor_from_linear (delay a)).
+      apply is_thunkable_of_negative, (⇑_).
+    - carrier_naturality 1 delay_natural.
+  Defined.
+
+  (** *** Adjoint equivalences *)
+
+  (** I ⊣ ⇓ : Dₜ ≃ D⁺ₜ *)
+  Definition downshift_thunkable_to_positive_thunkable_adjunction_data : adjunction_data (D⁺ₜ) (D ₜ).
+  Proof.
+    use make_adjunction_data.
+    - apply positive_thunkable_category_to_thunkable_category.
+    - apply downshift_thunkable_to_positive_thunkable.
+    - apply wrap_positive_thunkable.
+    - apply unwrap_thunkable.
+  Defined.
+
+  Definition downshift_thunkable_to_positive_thunkable_form_adjunction
+    : form_adjunction' downshift_thunkable_to_positive_thunkable_adjunction_data.
+  Proof.
+    apply make_form_adjunction.
+    - intro a; apply carrier_eq, wrap_unwrap_id.
+    - intro a; do 2 apply carrier_eq.
+      refine (wrap_unwrap_left _ @ _).
+      apply unwrap_wrap_id.
   Qed.
 
-  Local Lemma adj_equivalence_negative_linear_to_linear
-    : adj_equivalence_of_cats (negative_linear_category_to_linear_category D).
+  Lemma downshift_thunkable_to_positive_thunkable_are_adjoints
+    : are_adjoints (positive_thunkable_category_to_thunkable_category D)
+        (downshift_thunkable_to_positive_thunkable D).
   Proof.
-    refine (make_adj_equivalence_of_cats _
-              (upshift_linear_to_negative_linear D)
-              _ _ _
-              forms_equivalence_upshift_linear_to_negative_linear).
-    apply are_adjoints_upshift_linear_to_negative_linear_inclusion.
+    apply (make_are_adjoints _ _ _ _ downshift_thunkable_to_positive_thunkable_form_adjunction).
   Defined.
 
-  Lemma adj_equivalence_upshift_linear_to_negative_linear
-    : adj_equivalence_of_cats (upshift_linear_to_negative_linear D).
-  Proof.
-    apply (adj_equivalence_of_cats_inv _ adj_equivalence_negative_linear_to_linear).
-  Defined.
-
-  (** *** The adjoint equivalence I ⊣ ⇓ : D ₜ ⟶ D⁺ₜ *)
-  Lemma nathomweq_thunkable_wrapped_mor
-    : natural_hom_weq
-        (downshift_thunkable_to_positive_thunkable D)
-        (positive_thunkable_category_to_thunkable_category D).
-  Proof.
-    use tpair. {
-      cbn; intros a b.
-      intermediate_weq (thunkable_wrapped_mor a b).
-      - apply (weq_from_fully_faithful (fully_faithful_positive_thunkable_category_to_linear_and_thunkable_category D) (⇓a) b).
-      - apply weq_thunkable_wrapped_mor.
-    }
-    use make_dirprod.
-    - cbn; intros a b f c g.
-      apply carrier_eq; cbn.
-      transparent assert (f' : (linear_mor (⇓a) b)). {
-        use (make_linear_mor (pr11 f)).
-        apply is_linear_of_positive, (⇓a).
-      }
-      apply (hom_natural_precomp nathomweq_wrapped_mor a b f' c g).
-    - cbn; intros a b f c g.
-      apply carrier_eq; cbn.
-      transparent assert (f' : (linear_mor (⇓a) b)). {
-        use (make_linear_mor (pr11 f)).
-        apply is_linear_of_positive, (⇓a).
-      }
-      transparent assert (g' : (linear_mor b c)). {
-        use (make_linear_mor (pr11 g)).
-        apply is_linear_of_positive, b.
-      }
-      apply (hom_natural_postcomp nathomweq_wrapped_mor a b f' c g').
-  Defined.
-
-  Lemma are_adjoints_downshift_thunkable_to_positive_thunkable_inclusion
-    : are_adjoints
-        (downshift_thunkable_to_positive_thunkable D)
-        (positive_thunkable_category_to_thunkable_category D).
-  Proof.
-    apply adj_from_nathomweq, nathomweq_thunkable_wrapped_mor.
-  Defined.
-
-  Lemma forms_equivalence_downshift_thunkable_to_positive_thunkable
-    : forms_equivalence are_adjoints_downshift_thunkable_to_positive_thunkable_inclusion.
-  Proof.
-    use make_forms_equivalence.
-    - intro a.
-      exists (unwrap _).
-      use make_is_inverse_in_precat.
-      + apply carrier_eq.
-        refine (_ @ wrap_unwrap_id _).
-        apply cancel_postcomposition, magmoid_id_right.
-      + apply carrier_eq.
-        refine (_ @ unwrap_wrap_id _).
-        apply cancel_precomposition, magmoid_id_right.
-    - intro a.
-      exists (wrap _,,tt).
-      use make_is_inverse_in_precat.
-      + do 2 apply carrier_eq.
-        refine (_ @ unwrap_wrap_id _).
-        apply cancel_postcomposition, magmoid_id_right.
-      + do 2 apply carrier_eq.
-        apply wrap_unwrap_left.
-  Qed.
-
-  Lemma adj_equivalence_downshift_thunkable_to_positive_thunkable
+  Lemma downshift_thunkable_to_positive_thunkable_is_equivalence
     : adj_equivalence_of_cats (downshift_thunkable_to_positive_thunkable D).
   Proof.
-    refine (make_adj_equivalence_of_cats _
-              (positive_thunkable_category_to_thunkable_category D)
-              _ _ _
-              forms_equivalence_downshift_thunkable_to_positive_thunkable).
-    apply are_adjoints_downshift_thunkable_to_positive_thunkable_inclusion.
+    use adj_equivalence_from_right_adjoint.
+    - eapply are_adjoints_to_is_right_adjoint,
+        downshift_thunkable_to_positive_thunkable_are_adjoints.
+    - abstract (intro a; exists (unwrap (pr1 a),,tt);
+                split; do 2 apply carrier_eq; apply are_inverses_wrap_unwrap).
+    - abstract (intro a; exists (wrap a);
+                split; apply carrier_eq, are_inverses_wrap_unwrap).
   Defined.
 
-  (** *** Wrap, delay, and force as natural isomorphisms. *)
-
-  (** **** Wrap/Unwrap as [nat_z_iso] *)
-  Definition unwrap_nat_trans_data
-    : nat_trans_data (downshift_thunkable_to_thunkable D) (functor_identity (D ₜ))
-    := unwrap (D:=D).
-  Definition wrap_nat_trans_data
-    : nat_trans_data (functor_identity (D ₜ)) (downshift_thunkable_to_thunkable D)
-    := wrap (D:=D).
-
-  Lemma unwrap_is_nat_trans : is_nat_trans _ _ unwrap_nat_trans_data.
+  (** I ⊣ ⇑ : Dₗ ≃ D⁻ₗ *)
+  Definition upshift_linear_to_negative_linear_adjunction_data : adjunction_data (D ₗ) (D⁻ₗ).
   Proof.
-    intros a b f.
-    apply carrier_eq.
-    etrans. 2: apply wrap_unwrap_right.
-    apply cancel_postcomposition, (assoc_thunkable _ (unwrap _)).
+    use make_adjunction_data.
+    - apply upshift_linear_to_negative_linear.
+    - apply negative_linear_category_to_linear_category.
+    - apply delay_linear.
+    - apply force_negative_linear.
+  Defined.
+
+  Definition upshift_linear_to_negative_linear_form_adjunction
+    : form_adjunction' upshift_linear_to_negative_linear_adjunction_data.
+  Proof.
+    apply make_form_adjunction.
+    - intro a; do 2 apply carrier_eq.
+      refine (delay_force_right _ @ _).
+      apply force_delay_id.
+    - intro a; apply carrier_eq, delay_force_id.
   Qed.
 
-  Lemma wrap_is_nat_trans : is_nat_trans _ _ wrap_nat_trans_data.
+  Lemma upshift_linear_to_negative_linear_are_adjoints
+    : are_adjoints (upshift_linear_to_negative_linear D)
+        (negative_linear_category_to_linear_category D).
   Proof.
-    intros a b f.
-    apply carrier_eq, pathsinv0, wrap_unwrap_left.
+    apply (make_are_adjoints _ _ _ _ upshift_linear_to_negative_linear_form_adjunction).
+  Defined.
+
+  Lemma upshift_linear_to_negative_linear_is_equivalence
+    : adj_equivalence_of_cats (upshift_linear_to_negative_linear D).
+  Proof.
+    eapply make_adj_equivalence_of_cats; [| split].
+    - apply upshift_linear_to_negative_linear_form_adjunction.
+    - abstract (intro a; exists (force a);
+                split; apply carrier_eq, are_inverses_force_delay).
+    - abstract (intro a; exists (delay (pr1 a),,tt);
+                split; do 2 apply carrier_eq; apply are_inverses_force_delay).
+  Defined.
+
+  (** *** Adjunction ⇓ ⊣ ⇑ : Dₗ ⟶ Dₜ *)
+
+  (** Triangle equations of [wrap]/[unwrap] for the would-be-adjunction Dₗ⟦⇓a, b⟧ ≃ D⟦a, b⟧ *)
+  Lemma triangle_1_wrap_unwrap_' (a : D)
+    : #⇓(wrap a) · unwrap (⇓a) = identity (⇓a).
+  Proof.
+    unfold downshiftf.
+    rewrite (assoc_thunkable _ (unwrap _)).
+    rewrite unwrap_wrap_id, magmoid_id_left.
+    apply wrap_unwrap_id.
   Qed.
+  (* Note: triangle_2 is just wrap_unwrap_id *)
 
-  Definition unwrap_nat_trans := make_nat_trans _ _ _ unwrap_is_nat_trans.
-  Definition wrap_nat_trans := make_nat_trans _ _ _ wrap_is_nat_trans.
-
-  Lemma is_nat_z_iso_wrap : is_nat_z_iso wrap_nat_trans.
+  (** Triangle equations of [force]/[delay] for the would-be-adjunction Dₜ⟦a, ⇑b⟧ ≃ D⟦a, b⟧ *)
+  Lemma triangle_2_delay_force_' (a : D)
+    : #⇑(force a) ∘ delay (⇑a) = identity (⇑a).
   Proof.
-    intro a.
-    exists (unwrap_nat_trans a).
-    use make_is_inverse_in_precat; apply carrier_eq.
-    - apply wrap_unwrap_id.
-    - apply unwrap_wrap_id.
+    unfold upshiftf.
+    rewrite (assoc'_linear _ (delay _)).
+    rewrite force_delay_id, magmoid_id_right.
+    apply delay_force_id.
+  Qed.
+  (* Note: triangle_1 is just delay_force_id *)
+
+  (** Unit of ⇓ ⊣ ⇑ *)
+  Definition wrap_then_delay_thunkable
+    : functor_identity (D ₜ) ⟹ downshift_thunkable_to_linear D ∙ upshift_linear_to_thunkable D
+    := nat_trans_comp _ _ _
+         wrap_thunkable
+         (pre_whisker (downshift_thunkable_to_linear_and_thunkable D)
+               (post_whisker delay_linear_and_thunkable
+                  (linear_and_thunkable_category_to_thunkable_category D))).
+
+  (** Counit of ⇓ ⊣ ⇑ *)
+  Definition force_then_unwrap_linear
+    : functor_identity (D ₗ) ⟸ upshift_linear_to_thunkable D ∙ downshift_thunkable_to_linear D
+    := nat_trans_comp _ _ _
+         (pre_whisker (upshift_linear_to_linear_and_thunkable D)
+            (post_whisker unwrap_linear_and_thunkable
+               (linear_and_thunkable_category_to_linear_category D)))
+         force_linear.
+
+  Definition upshift_downshift_linear_to_thunkable_adjunction_data
+    : adjunction_data (D ₜ) (D ₗ).
+  Proof.
+    use make_adjunction_data.
+    - apply downshift_thunkable_to_linear.
+    - apply upshift_linear_to_thunkable.
+    - apply wrap_then_delay_thunkable.
+    - apply force_then_unwrap_linear.
   Defined.
 
-  Definition wrap_nat_z_iso := make_nat_z_iso _ _ _ is_nat_z_iso_wrap.
-  Definition unwrap_nat_z_iso := nat_z_iso_inv wrap_nat_z_iso.
-
-  (** **** Force/Delay as [nat_z_iso] *)
-
-  Definition delay_nat_trans_data
-    : nat_trans_data (functor_identity (D ₗ)) (upshift_linear_to_linear D)
-    := delay (D:=D).
-  Definition force_nat_trans_data
-    : nat_trans_data (upshift_linear_to_linear D) (functor_identity (D ₗ))
-    := force (D:=D).
-
-  Lemma delay_is_nat_trans
-    : is_nat_trans _ _ delay_nat_trans_data.
+  Definition upshift_downshift_linear_to_thunkable_form_adjunction
+    : form_adjunction' upshift_downshift_linear_to_thunkable_adjunction_data.
   Proof.
-    intros a b f.
-    apply carrier_eq.
-    etrans. 1: apply pathsinv0, delay_force_left.
-    apply cancel_precomposition, (assoc_linear _ (delay _)).
-  Defined.
-
-  Lemma force_is_nat_trans
-    : is_nat_trans _ _ force_nat_trans_data.
-  Proof.
-    intros a b f.
-    apply carrier_eq, delay_force_right.
-  Defined.
-
-  Definition delay_nat_trans := make_nat_trans _ _ _ delay_is_nat_trans.
-  Definition force_nat_trans := make_nat_trans _ _ _ force_is_nat_trans.
-
-  Lemma is_nat_z_iso_force : is_nat_z_iso force_nat_trans.
-  Proof.
-    intro a.
-    exists (delay_nat_trans a).
-    use make_is_inverse_in_precat; apply carrier_eq.
-    - apply force_delay_id.
-    - apply delay_force_id.
-  Defined.
-
-  Definition force_nat_z_iso := make_nat_z_iso _ _ _ is_nat_z_iso_force.
-  Definition delay_nat_z_iso := nat_z_iso_inv force_nat_z_iso.
+    use make_form_adjunction.
+    - intro a.
+      apply carrier_eq; cbn.
+      refine (_ @ triangle_1_wrap_unwrap_' a).
+      etrans. { apply cancel_postcomposition, downshiftf_comp, (wrap _). }
+      etrans. { apply assoc'_thunkable, is_thunkable_downshiftf, (wrap _). }
+      apply cancel_precomposition.
+      etrans. { apply assoc_linear, (force _). }
+      etrans. { apply cancel_postcomposition, unwrap_natural. }
+      etrans. { apply assoc'_thunkable, (unwrap _). }
+      refine (_ @ magmoid_id_right _).
+      apply cancel_precomposition, delay_force_id.
+    - intro a.
+      apply carrier_eq; cbn.
+      refine (_ @ triangle_2_delay_force_' a).
+      etrans. { apply cancel_precomposition, upshiftf_comp, (force _). }
+      etrans. { apply assoc_linear, is_linear_upshiftf, (force _). }
+      apply cancel_postcomposition.
+      etrans. { apply assoc'_thunkable, (wrap _). }
+      etrans. { apply cancel_precomposition, pathsinv0, delay_natural. }
+      etrans. { apply assoc_linear, (delay _). }
+      refine (_ @ magmoid_id_left _).
+      apply cancel_postcomposition, wrap_unwrap_id.
+  Qed.
 
 End shift_functor_adjunctions.
 
@@ -854,14 +644,81 @@ Section restricted_shift_functors.
   Definition downshift_negative_linear_to_positive_thunkable : D⁻ₗ ⟶ D⁺ₜ
     := negative_linear_category_to_thunkable_category D ∙ downshift_thunkable_to_positive_thunkable D.
 
-  Lemma are_adjoints_upshift_downshift_negative_linear_to_positive_thunkable
-    : are_adjoints
-        upshift_positive_thunkable_to_negative_linear
-        downshift_negative_linear_to_positive_thunkable.
+  Definition delay_then_wrap_positive_thunkable
+    : functor_identity (D⁺ₜ) ⟹
+         upshift_positive_thunkable_to_negative_linear ∙
+         downshift_negative_linear_to_positive_thunkable.
   Proof.
-    use make_are_adjoints.
-    - use make_nat_trans.
+    use make_nat_trans.
+    - intro a.
+      refine (_,,tt).
+      apply (make_thunkable_mor (delay _ · wrap _)).
+      apply is_thunkable_compose;
+        first [ apply is_thunkable_of_negative, (⇑_)
+              | apply wrap ].
+    - abstract (
+          intros a b f;
+          do 2 apply carrier_eq;
+          cbn;
+          etrans; [apply assoc_thunkable, (pr21 f)|];
+          etrans; [apply cancel_postcomposition, delay_natural|];
+          etrans; [apply (assoc'_negative _ (⇑_))|];
+          etrans; [apply cancel_precomposition, wrap_natural|];
+          apply (assoc_negative _ (⇑_))).
+  Defined.
 
-  Abort.
+  Definition unwrap_then_force_negative_linear
+    : functor_identity (D⁻ₗ) ⟸
+         downshift_negative_linear_to_positive_thunkable ∙
+         upshift_positive_thunkable_to_negative_linear.
+  Proof.
+    use make_nat_trans.
+    - intro a.
+      refine (_,,tt).
+      apply (make_linear_mor (unwrap _ ∘ force _)).
+      apply is_linear_compose;
+        first [ apply is_linear_of_positive, (⇓_)
+              | apply force ].
+    - abstract (
+          intros a b f;
+          do 2 apply carrier_eq;
+          cbn;
+          apply pathsinv0;
+          etrans; [apply assoc'_linear, (pr21 f)|];
+          etrans; [apply maponpaths, (!unwrap_natural _ _ _ _)|];
+          etrans; [apply (assoc_positive _ (⇓_))|];
+          etrans; [apply cancel_postcomposition, (!force_natural _ _ _ _)|];
+          apply (assoc'_positive _ (⇓_))).
+  Defined.
+
+  Lemma upshift_downshift_negative_linear_to_positive_thunkable_adjunction_data
+    : adjunction_data (D⁺ₜ) (D⁻ₗ).
+  Proof.
+    use make_adjunction_data.
+    - apply upshift_positive_thunkable_to_negative_linear.
+    - apply downshift_negative_linear_to_positive_thunkable.
+    - apply delay_then_wrap_positive_thunkable.
+    - apply unwrap_then_force_negative_linear.
+  Defined.
+
+  Lemma upshift_downshift_negative_linear_to_positive_thunkable_form_adjunction
+    : form_adjunction' upshift_downshift_negative_linear_to_positive_thunkable_adjunction_data.
+  Proof.
+    use make_form_adjunction.
+    - intro a.
+      do 2 apply carrier_eq; cbn.
+      unfold upshiftf.
+      etrans; [apply delay_force_interpose|].
+      rewrite assoc'_positive; [|apply downshift].
+      etrans; [apply cancel_precomposition, wrap_unwrap_right|].
+      apply force_delay_id.
+    - intro a.
+      do 2 apply carrier_eq; cbn.
+      unfold downshiftf.
+      etrans; [apply wrap_unwrap_interpose|].
+      rewrite assoc_negative; [|apply upshift].
+      etrans; [apply cancel_postcomposition, delay_force_left|].
+      apply unwrap_wrap_id.
+  Qed.
 
 End restricted_shift_functors.
