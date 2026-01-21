@@ -23,16 +23,17 @@ DisplayedCats/Total.v
 DisplayedCats/Fiber.v
 DisplayedCats/FullyFaithfulDispFunctor.v
 
-Nonassociative/UnitalMagmoids/Core.v
-Nonassociative/UnitalMagmoids/FromCategory.v
-Nonassociative/UnitalMagmoids/Subcategories.v
-Nonassociative/UnitalMagmoids/Isos.v
-Nonassociative/UnitalMagmoids/Functors.v
-Nonassociative/UnitalMagmoids/HomFunctors.v
 Nonassociative/Duploids/Core.v
 Nonassociative/Duploids/Functors.v
+Nonassociative/Duploids/Oblique.v
 Nonassociative/Duploids/ShiftFunctors.v
 Nonassociative/Duploids/TwoSorted.v
+Nonassociative/UnitalMagmoids/Core.v
+Nonassociative/UnitalMagmoids/FromCategory.v
+Nonassociative/UnitalMagmoids/Functors.v
+Nonassociative/UnitalMagmoids/HomFunctors.v
+Nonassociative/UnitalMagmoids/Isos.v
+Nonassociative/UnitalMagmoids/Subcategories.v
 
 opp_precat.v
 OppositeCategory/Core.v
