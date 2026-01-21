@@ -11,11 +11,11 @@
  - [thunkable_category M] written M ₜ has all objects and thunkable morphisms.
  - [linear_and_thunkable_category M] written M ₗₜ has all objects and linear-and-thunkable morphisms.
 
- - [negative_category] written M⁻ has negative objects and thunkable morphisms.
- - [positive_category] written M⁺ has positive objects and linear morphisms.
+ - [negative_category M] written M⁻ has negative objects and thunkable morphisms.
+ - [positive_category M] written M⁺ has positive objects and linear morphisms.
 
- - [negative_linear_category] written M⁻ₗ has negative objects and linear-and-thunkable morphisms.
- - [positive_thunkable_category] written M⁺ₜ has positive objects and linear-and-thunkable morphisms.
+ - [negative_linear_category M] written M⁻ₗ has negative objects and linear-and-thunkable morphisms.
+ - [positive_thunkable_category M] written M⁺ₜ has positive objects and linear-and-thunkable morphisms.
 
  Contents:
  1. Definitions of unital magmoid subcategories
