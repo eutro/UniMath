@@ -335,7 +335,8 @@ Section polarized_subtypes.
     := make_hProp (is_linear_and_thunkable f) (isaprop_is_linear_and_thunkable f).
 
   Definition linear_and_thunkable_mor (a b : M) := ∑ (f : a --> b), ish_linear_and_thunkable f.
-  Definition make_linear_and_thunkable_mor {a b : M} (f : a --> b) (H : is_linear_and_thunkable f) := f,,H.
+  Definition make_linear_and_thunkable_mor {a b : M} (f : a --> b) (H : is_linear_and_thunkable f)
+    : linear_and_thunkable_mor a b := f,,H.
   Definition make_linear_and_thunkable_mor' {a b : M} (f : a --> b) (H1 : is_linear f) (H2 : is_thunkable f)
     : linear_and_thunkable_mor a b := make_linear_and_thunkable_mor f (make_is_linear_and_thunkable H1 H2).
   Coercion linear_and_thunkable_mor_to_mor {a b : M} (f : linear_and_thunkable_mor a b) : a --> b := pr1 f.

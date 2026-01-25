@@ -256,19 +256,64 @@ End composition.
 Section isos.
   Context {M : unital_magmoid}.
 
-  Definition is_lt_iso {a b : M} (f : linear_and_thunkable_mor a b) : UU
-    := has_linear_and_thunkable_inverse f.
-  Identity Coercion Id_is_lt_iso : is_lt_iso >-> has_linear_and_thunkable_inverse.
+  Definition is_lt_iso {a b : M} (f : a --> b) : UU
+    := is_linear_and_thunkable f × has_linear_and_thunkable_inverse f.
+
+  Definition make_is_lt_iso {a b : M} {f : a --> b}
+    (H1 : is_linear_and_thunkable f)
+    (g : has_linear_and_thunkable_inverse f)
+    := H1,,g.
+
+  Definition make_is_lt_iso' {a b : M} {f : a --> b}
+    (Hf : is_linear_and_thunkable f)
+    (g : b --> a)
+    (Hg : is_linear_and_thunkable g)
+    (Hfg : is_inverse_in_precat f g)
+    := make_is_lt_iso Hf
+         (make_has_linear_and_thunkable_inverse _
+            (make_linear_and_thunkable_mor g Hg)
+            Hfg).
+
+  Definition is_lt_iso_to_is_linear_and_thunkable {a b : M} (f : a --> b) (H : is_lt_iso f)
+    : is_linear_and_thunkable f := pr1 H.
+  Coercion is_lt_iso_to_has_linear_and_thunkable_inverse {a b : M} (f : a --> b) (H : is_lt_iso f)
+    : has_linear_and_thunkable_inverse f := pr2 H.
   Definition isaprop_is_lt_iso {a b : M} (f : linear_and_thunkable_mor a b)
-    : isaprop (is_lt_iso f) := isaprop_has_linear_and_thunkable_inverse f.
+    : isaprop (is_lt_iso f).
+  Proof.
+    apply isofhleveldirprod.
+    - apply isaprop_is_linear_and_thunkable.
+    - apply isaprop_has_linear_and_thunkable_inverse.
+  Qed.
+
+  Lemma is_lt_iso_identity (a : M) : is_lt_iso (identity a).
+  Proof.
+    use make_is_lt_iso'.
+    2: apply (identity a).
+    1, 2: apply is_linear_and_thunkable_identity.
+    apply is_inverse_in_precat_identity_of_magmoid.
+  Qed.
+
+  Lemma is_lt_iso_compose {a b c : M} (f : a --> b) (g : b --> c)
+    (Hf : is_lt_iso f) (Hg : is_lt_iso g) : is_lt_iso (f · g).
+  Proof.
+    use make_is_lt_iso.
+    - apply is_linear_and_thunkable_compose;
+        apply is_lt_iso_to_is_linear_and_thunkable;
+        [apply Hf | apply Hg].
+    - apply has_linear_and_thunkable_inverse_compose;
+        [apply Hf | apply Hg].
+  Qed.
 
   Definition lt_iso (a b : M) : UU :=
-    ∑ (f : linear_and_thunkable_mor a b), is_lt_iso f.
+    ∑ f : a --> b, is_lt_iso f.
   Definition make_lt_iso {a b : M}
-    (f : linear_and_thunkable_mor a b)
-    (g : has_linear_and_thunkable_inverse f)
-    : lt_iso a b := f,,g.
-  Coercion lt_iso_mor {a b : M} (f : lt_iso a b) : linear_and_thunkable_mor a b := pr1 f.
+    (f : a --> b) (H : is_lt_iso f)
+    : lt_iso a b := f,,H.
+  Coercion lt_iso_mor {a b : M} (f : lt_iso a b) : a --> b := pr1 f.
+  Coercion lt_iso_is_linear_and_thunkable {a b : M} (f : lt_iso a b) : is_linear_and_thunkable f := pr12 f.
+  Definition lt_iso_to_lt_mor {a b : M} (f : lt_iso a b)
+    : linear_and_thunkable_mor a b := make_linear_and_thunkable_mor _ f.
   Definition lt_iso_is_lt_iso {a b : M} (f : lt_iso a b) : is_lt_iso f := pr2 f.
   Definition lt_iso_inverse {a b : M} (f : lt_iso a b)
     : linear_and_thunkable_mor b a := lt_iso_is_lt_iso f.
@@ -280,13 +325,15 @@ Section isos.
     (g : linear_and_thunkable_mor b a)
     (H : is_inverse_in_precat f g)
     : lt_iso a b
-    := make_lt_iso _ (make_has_linear_and_thunkable_inverse f g H).
+    := make_lt_iso _
+         (make_is_lt_iso f
+            (make_has_linear_and_thunkable_inverse f g H)).
 
   Definition lt_iso_inv {a b : M} (f : lt_iso a b) : lt_iso b a.
   Proof.
     use make_lt_iso'.
     - exact (lt_iso_inverse f).
-    - exact f.
+    - exact (lt_iso_to_lt_mor f).
     - apply is_inverse_in_precat_inv, lt_iso_is_inverse.
   Defined.
 
@@ -296,18 +343,18 @@ Section isos.
 
   Definition lt_iso_identity (a : M) : lt_iso a a.
   Proof.
-    use make_lt_iso'.
-    1, 2: apply linear_and_thunkable_identity.
-    apply is_inverse_in_precat_identity_of_magmoid.
+    use make_lt_iso.
+    - apply identity.
+    - apply is_lt_iso_identity.
   Defined.
 
   Definition lt_iso_compose {a b c : M} (f : lt_iso a b) (g : lt_iso b c) : lt_iso a c.
   Proof.
     use make_lt_iso.
-    - apply (linear_and_thunkable_compose f g).
-    - apply has_linear_and_thunkable_inverse_compose.
-      + apply (lt_iso_is_lt_iso f).
-      + apply (lt_iso_is_lt_iso g).
+    - apply (linear_and_thunkable_compose (lt_iso_to_lt_mor f) (lt_iso_to_lt_mor g)).
+    - apply is_lt_iso_compose;
+        [ apply (lt_iso_is_lt_iso f)
+        | apply (lt_iso_is_lt_iso g) ].
   Defined.
 End isos.
 
@@ -341,7 +388,7 @@ Section isos_facts.
     : (f · lt_iso_inverse p) · p = f.
   Proof.
     refine (assoc'_linear _ _ _ _ @ _ @ magmoid_id_right f).
-    - apply linear_and_thunkable_mor_is_linear_and_thunkable.
+    - apply lt_iso_is_linear_and_thunkable.
     - apply cancel_precomposition.
       apply lt_iso_inverse_lt_iso_id.
   Qed.
@@ -399,7 +446,7 @@ Section isos_facts.
     rewrite <- (lt_iso_inverse_right p f).
     apply is_thunkable_compose.
     - apply is_thunkable_of_negative, H.
-    - apply lt_iso_mor.
+    - apply lt_iso_is_linear_and_thunkable.
   Qed.
 
   (** Precomposition with an [lt_iso] is a weq. *)
