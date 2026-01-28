@@ -106,6 +106,11 @@ Section notfunctor_magmoid.
     - abstract (apply has_homsets_notfunctor_unital_premagmoid, unital_magmoid_has_homsets).
   Defined.
 
+  (** Call α "locally natural" at [f : a --> b] when the naturality square communtes. *)
+  Definition is_locally_natural {C D : precategory_data} {F G : functor_data C D} (α : nat_trans_data F G)
+    {a b : C} (f : a --> b) : UU
+    := # F f · α b = α a · #G f.
+
 End notfunctor_magmoid.
 
 Section yoneda.
@@ -189,6 +194,48 @@ Section yoneda.
     change ((g · h) · f = g · (h · f)).
     (** Not associative in general! *)
   Abort.
+
+  (** The naturality equation at [identity a] always holds, however.
+      It is useful to package up this data. *)
+  Definition is_locally_yoneda_natural
+    {a : M} {F : functor_data Mᵒᵖ HSET} (α : nat_trans_data (um_yoneda_objects a) F)
+    {b : M} (f : b --> a) : UU
+    := α b f = #F f (α a (identity a)).
+
+  Definition is_yoneda_natural
+    {a : M} {F : functor_data Mᵒᵖ HSET} (α : nat_trans_data (um_yoneda_objects a) F) : UU
+    := ∏ (b : M) (f : b --> a), is_locally_yoneda_natural α f.
+
+  Definition yoneda_nat_trans (a : M) (F : notfunctor Mᵒᵖ HSET) : UU
+    := ∑ (α : nat_trans_data (um_yoneda_objects a) F), is_yoneda_natural α.
+  Definition make_yoneda_nat_trans {a : M} {F : notfunctor Mᵒᵖ HSET}
+    (α : nat_trans_data (um_yoneda_objects a) F)
+    (H : is_yoneda_natural α) : yoneda_nat_trans a F
+    := α,,H.
+  Coercion yoneda_nat_trans_to_nat_trans_data {a : M} {F : notfunctor Mᵒᵖ HSET}
+    (α : yoneda_nat_trans a F) : nat_trans_data (um_yoneda_objects a) F := pr1 α.
+  Coercion yoneda_nat_trans_is_yoneda_natural {a : M} {F : notfunctor Mᵒᵖ HSET}
+    (α : yoneda_nat_trans a F) : is_yoneda_natural α := pr2 α.
+
+  Lemma isaprop_is_locally_yoneda_natural
+    {a : M} {F : functor_data Mᵒᵖ HSET} (α : nat_trans_data (um_yoneda_objects a) F)
+    {b : M} (f : b --> a)
+    : isaprop (is_locally_yoneda_natural α f).
+  Proof. apply setproperty. Qed.
+
+  Lemma isaprop_is_yoneda_natural {a : M} {F : functor_data Mᵒᵖ HSET} (α : nat_trans_data (um_yoneda_objects a) F)
+    : isaprop (is_yoneda_natural α).
+  Proof.
+    do 2 (apply impred; intro).
+    apply isaprop_is_locally_yoneda_natural.
+  Qed.
+
+  Lemma is_yoneda_natural_um_yoneda_morphism  {a a' : M} (f : a --> a')
+    : is_yoneda_natural (um_yoneda_morphisms f).
+  Proof.
+    intros b g.
+    apply cancel_precomposition, pathsinv0, magmoid_id_left.
+  Qed.
 
   (** Precomposition is natural when constrained to linear morphisms *)
   Lemma is_nat_trans_um_yoneda_morphisms_linear {a a' : M} (f : a --> a') (Hf : is_linear f)
@@ -320,6 +367,17 @@ Section yoneda.
 
   (** Though not natural in general, the second Yoneda map is natural when F is a functor
       (in particular, [um_yoneda_ob] when restricted to thunkable maps) *)
+
+  (** [um_yoneda_map_2] is always yoneda natural *)
+  Definition is_yoneda_natural_um_yoneda_map_2 {a : M} {F : functor_data Mᵒᵖ HSET}
+    (HF : functor_idax F) (x : (F a : hSet)) : is_yoneda_natural (um_yoneda_map_2 (F:=F) x).
+  Proof.
+    intros b f.
+    unfold is_locally_yoneda_natural, um_yoneda_map_2.
+    apply maponpaths, pathsinv0, (eqtohomot (HF a)).
+  Qed.
+
+  (** [um_yoneda_map_2] is fully natural whenever F is functorial *)
   Definition is_nat_trans_um_yoneda_map_2 {a : M} {F : functor_data Mᵒᵖ HSET}
     (HF : functor_compax F) (x : (F a : hSet)) : is_nat_trans _ _ (um_yoneda_map_2 (F:=F) x).
   Proof.
@@ -330,7 +388,7 @@ Section yoneda.
     exact (eqtohomot (HF _ _ _ g f) x).
   Qed.
 
-  Definition um_yoneda_map_2' {a : M} {F : functor_data Mᵒᵖ HSET}
+  Definition um_yoneda_map_2_functorial {a : M} {F : functor_data Mᵒᵖ HSET}
     (HF : functor_compax F) (x : (F a : hSet))
     : um_yoneda_objects a ⟹ F
     := make_nat_trans _ _ _ (is_nat_trans_um_yoneda_map_2 HF x).
@@ -344,29 +402,74 @@ Section yoneda.
     exact (eqtohomot (HF a) x).
   Qed.
 
-  (** [um_yoneda_map_2] inverts [um_yoneda_map_1] if α is natural *)
-  Lemma um_yoneda_map_1_2 {a : M} {F : functor_data Mᵒᵖ HSET}
-    (α : nat_trans_data (um_yoneda_objects a) F) (Hα : is_nat_trans _ _ α) :
-    um_yoneda_map_2 (um_yoneda_map_1 α) = α.
+  (** [um_yoneda_map_2] inverts [um_yoneda_map_1] wherever α [is_locally_yoneda_natural]
+      at [f]. *)
+  Lemma um_yoneda_map_1_2_locally_yoneda_natural {a : M} {F : functor_data Mᵒᵖ HSET}
+    (α : nat_trans_data (um_yoneda_objects a) F)
+    (b : M) (f : b --> a) (Hα : is_locally_yoneda_natural α f) :
+    um_yoneda_map_2 (um_yoneda_map_1 α) b f = α b f.
   Proof.
-    apply funextsec; intro b.
-    apply funextsec; intro f.
     unfold um_yoneda_map_1, um_yoneda_map_2; cbn in *.
-    etrans.
-    2: apply maponpaths, magmoid_id_right.
-    exact (!eqtohomot (Hα a b f) (identity a)).
+    apply pathsinv0, Hα.
   Qed.
 
-  (** [yoneda_map_2'] is a weak equivalence when F is a [functor] *)
-  Lemma isweq_um_yoneda_map_2' {a : M} {F : functor Mᵒᵖ HSET}
-    : isweq (λ (x : (F a : hSet)), um_yoneda_map_2' (pr22 F) x).
+  (** In particular, this works if α is [locally_natural], or indeed natural everywhere. *)
+  Lemma um_yoneda_map_1_2_locally_natural {a : M} {F : functor_data Mᵒᵖ HSET}
+    (α : nat_trans_data (um_yoneda_objects a) F)
+    (b : M) (f : b --> a) (Hα : is_locally_natural α f) :
+    um_yoneda_map_2 (um_yoneda_map_1 α) b f = α b f.
+  Proof.
+    apply um_yoneda_map_1_2_locally_yoneda_natural.
+    etrans.
+    - apply maponpaths, pathsinv0, magmoid_id_right.
+    - apply (eqtohomot Hα).
+  Qed.
+
+  Lemma um_yoneda_map_1_2_yoneda_natural {a : M} {F : functor_data Mᵒᵖ HSET}
+    (α : nat_trans_data (um_yoneda_objects a) F)
+    (Hα : is_yoneda_natural α) :
+    um_yoneda_map_2 (um_yoneda_map_1 α) = α.
+  Proof.
+    do 2 (apply funextsec; intro).
+    apply um_yoneda_map_1_2_locally_yoneda_natural, Hα.
+  Qed.
+
+  Lemma um_yoneda_map_1_2_natural {a : M} {F : functor_data Mᵒᵖ HSET}
+    (α : nat_trans_data (um_yoneda_objects a) F)
+    (Hα : is_nat_trans (um_yoneda_objects a) F α) :
+    um_yoneda_map_2 (um_yoneda_map_1 α) = α.
+  Proof.
+    do 2 (apply funextsec; intro).
+    apply um_yoneda_map_1_2_locally_natural.
+    apply Hα.
+  Qed.
+
+  (** [yoneda_map_2] is a weak equivalence [F a ≃ (um_yoneda a ⟹ F)] when F is a [functor] *)
+  Lemma isweq_um_yoneda_map_2_functorial {a : M} {F : functor Mᵒᵖ HSET}
+    : isweq (λ (x : (F a : hSet)), um_yoneda_map_2_functorial (pr22 F) x).
   Proof.
     use isweq_iso.
     - intro α; exact (um_yoneda_map_1 α).
     - abstract (intro x; cbn; apply (eqtohomot (functor_id F a))).
     - abstract (intro α;
                 apply subtypePath'; [|apply isaprop_is_nat_trans, homset_property];
-                apply um_yoneda_map_1_2, α).
+                apply um_yoneda_map_1_2_natural, α).
+  Defined.
+
+  (** In fact, [yoneda_map_2] is a weak equivalence [F a ≃ (yoneda_nat_trans (um_yoneda a) F)]
+      for all [notfunctor]s *)
+  Lemma isweq_um_yoneda_map_2_yoneda_natural {a : M} {F : notfunctor Mᵒᵖ HSET}
+    : isweq (λ (x : (F a : hSet)),
+          make_yoneda_nat_trans
+            (um_yoneda_map_2 x)
+            (is_yoneda_natural_um_yoneda_map_2 (notfunctor_id F) x)).
+  Proof.
+    use isweq_iso.
+    - intro α; exact (um_yoneda_map_1 α).
+    - abstract (intro x; cbn; apply (eqtohomot (notfunctor_id F a))).
+    - abstract (intro α;
+                apply subtypePath'; [|apply isaprop_is_yoneda_natural];
+                apply um_yoneda_map_1_2_yoneda_natural, α).
   Defined.
 
   (** [yoneda_map_1] is surjective for F a [notfunctor] *)
@@ -390,23 +493,7 @@ Section yoneda.
       refine (!_ @ H @ _); apply (um_yoneda_map_2_1 (notfunctor_id F)).
   Qed.
 
-  (** [um_yoneda] does not appear to be [full], even if restricted to thunkable maps in the middle *)
-  Lemma full_um_yoneda (a b : M)
-    : issurjective (λ (f : a --> b), #um_yoneda_thunkable f).
-  Proof.
-    intro α.
-    apply hinhpr.
-    cbn in α.
-    set (β := (λ c, α c) : nat_trans_data (um_yoneda_objects a) (um_yoneda_objects b)).
-    exists (um_yoneda_map_1 β).
-    apply nat_trans_eq; [apply homset_property|]; intro c.
-    apply funextsec; intro f.
-    change (f · α a (identity a) = α c f).
-    (* This looks like [yoneda_map_1_2], but [f] would need to be thunkable for this to work *)
-    Fail Check (!eqtohomot (nat_trans_ax α a b f) (identity a)).
-  Abort.
-
-  (** [um_yoneda] is [faithful], however *)
+  (** [um_yoneda] is [faithful] in general *)
   Lemma faithful_um_yoneda (a b : M)
     : isincl (λ (f : a --> b), #um_yoneda f).
   Proof.
@@ -418,17 +505,32 @@ Section yoneda.
     refine (!_ @ H @ _); apply magmoid_id_left.
   Qed.
 
+  (** [um_yoneda] is [full] in the subcategory with yoneda-natural morphisms *)
+  Lemma full_um_yoneda (a b : M)
+    : issurjective (λ (f : a --> b),
+          make_yoneda_nat_trans
+            (#um_yoneda f)
+            (is_yoneda_natural_um_yoneda_morphism f)).
+  Proof.
+    intro α.
+    apply hinhpr.
+    induction α as [α Hα].
+    exists (um_yoneda_map_1 α).
+    apply subtypePath'; [|apply isaprop_is_yoneda_natural].
+    apply funextsec; intro c.
+    apply funextsec; intro f.
+    apply pathsinv0, Hα.
+  Qed.
+
   (** [um_yoneda] preserves isomorphisms *)
   Definition um_yoneda_on_lt_iso {a b : M} (f : lt_iso a b)
-    : is_lt_iso (#um_yoneda f).
+    : is_z_isomorphism (#um_yoneda f).
   Proof.
-    use make_is_lt_iso'.
-    2: apply (#um_yoneda (lt_iso_inv f)).
-    (** All morphisms in a category are linear and thunkable *)
-    1, 2: abstract easy.
-    abstract (split; do 2 (apply funextsec; intro);
-              [ apply lt_iso_right
-              | apply lt_iso_inverse_right ]).
+    use make_is_z_isomorphism.
+    - apply (#um_yoneda (lt_iso_inv f)).
+    - abstract (split; do 2 (apply funextsec; intro);
+                [ apply lt_iso_right
+                | apply lt_iso_inverse_right ]).
   Defined.
 
 End yoneda.
