@@ -256,6 +256,7 @@ The packages and files are listed here in logical order: each file depends only 
    - [Nonassociative/UnitalMagmoids/HomFunctors.v](CategoryTheory/Nonassociative/UnitalMagmoids/HomFunctors.v)
    - [Nonassociative/UnitalMagmoids/Isos.v](CategoryTheory/Nonassociative/UnitalMagmoids/Isos.v)
    - [Nonassociative/UnitalMagmoids/Subcategories.v](CategoryTheory/Nonassociative/UnitalMagmoids/Subcategories.v)
+   - [Nonassociative/UnitalMagmoids/Yoneda.v](CategoryTheory/Nonassociative/UnitalMagmoids/Yoneda.v)
    - [opp_precat.v](CategoryTheory/opp_precat.v)
    - [OppositeCategory/Core.v](CategoryTheory/OppositeCategory/Core.v)
    - [Groupoids.v](CategoryTheory/Groupoids.v)
