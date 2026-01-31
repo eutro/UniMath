@@ -143,6 +143,9 @@ Section magmoid_defs.
     exact data_eq.
   Defined.
 
+  Definition um_homset {M : unital_magmoid} (a b : M) : hSet
+    := make_hSet (M⟦a, b⟧) (unital_magmoid_has_homsets M a b).
+
 End magmoid_defs.
 
 (** ** 3. Definition of linearity, thunkability, and polarization *)
@@ -276,6 +279,45 @@ Section polarity_lemmas.
     apply make_is_linear_and_thunkable.
     - apply is_linear_identity.
     - apply is_thunkable_identity.
+  Defined.
+
+  (** Characterisations of [is_assoc_premagmoid] in a unital magmoid *)
+  Lemma any_is_linear_iff_assoc
+    : (∏ (a b : M) (f : a --> b), is_linear f) <-> is_assoc_premagmoid M.
+  Proof.
+    split; intro H.
+    - apply make_is_one_assoc_premagmoid; intros.
+      apply assoc_linear, H.
+    - intros a b f c d g h. apply H.
+  Defined.
+
+  Lemma any_is_thunkable_iff_assoc
+    : (∏ (a b : M) (f : a <-- b), is_thunkable f) <-> is_assoc_premagmoid M.
+  Proof.
+    split; intro H.
+    - apply make_is_one_assoc_premagmoid; intros.
+      apply assoc_thunkable, H.
+    - intros a b f c d g h. apply H.
+  Defined.
+
+  Lemma any_is_positive_iff_assoc
+    : (∏ (a : M), is_positive a) <-> is_assoc_premagmoid M.
+  Proof.
+    eapply logeq_trans; [|apply any_is_linear_iff_assoc].
+    split; intro H; intros.
+    - apply is_linear_of_positive, H.
+    - intros b f.
+      apply H.
+  Defined.
+
+  Lemma any_is_negative_iff_assoc
+    : (∏ (a : M), is_negative a) <-> is_assoc_premagmoid M.
+  Proof.
+    eapply logeq_trans; [|apply any_is_thunkable_iff_assoc].
+    split; intro H; intros.
+    - apply is_thunkable_of_negative, H.
+    - intros b f.
+      apply H.
   Defined.
 
 End polarity_lemmas.

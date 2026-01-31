@@ -6,7 +6,8 @@
  January 2026
 
  Contents:
- 1. Definition of oblique duploid
+ 1. Definition of the oblique duploid
+ 2. Lemmas about the oblique duploid
 
  ********************************************************************************)
 
@@ -19,6 +20,7 @@ Require Import UniMath.CategoryTheory.Core.Functors.
 Require Import UniMath.CategoryTheory.Core.Isos.
 Require Import UniMath.CategoryTheory.Core.NaturalTransformations.
 Require Import UniMath.CategoryTheory.whiskering.
+Require Import UniMath.CategoryTheory.opp_precat.
 
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.TwoSorted.
@@ -29,36 +31,36 @@ Local Open Scope cat.
 Local Open Scope unital_magmoid.
 Local Open Scope duploid.
 
-(** ** 1. Definition of oblique duploid *)
-
 Section oblique_defs.
 
-  Context {C₁ C₂ : category} (θ : adjunction C₂ C₁).
-  Let F : C₂ ⟶ C₁ := left_functor θ.
-  Let G : C₁ ⟶ C₂ := right_functor θ.
-  Let H : are_adjoints F G := θ.
-  Let η : functor_identity C₂ ⟹ F ∙ G := unit_from_are_adjoints H.
-  Let ε : G ∙ F ⟹ functor_identity C₁ := counit_from_are_adjoints H.
+  (** ** 1. Definition of the oblique duploid *)
 
-  Definition oblique_ob := C₁ ⨿ C₂.
+  Context {N P : category} (θ : adjunction P N).
+  Let L : P ⟶ N := left_functor θ.
+  Let R : N ⟶ P := right_functor θ.
+  Let HFG : are_adjoints L R := θ.
+  Let η : functor_identity P ⟹ L ∙ R := unit_from_are_adjoints HFG.
+  Let ε : R ∙ L ⟹ functor_identity N := counit_from_are_adjoints HFG.
 
-  Definition oblique_negativise (a : oblique_ob) : C₁.
-  Proof. induction a as [n | p]. exact n. exact (F p). Defined.
-  Definition oblique_positivise (a : oblique_ob) : C₂.
-  Proof. induction a as [n | p]. exact (G n). exact p. Defined.
+  Definition oblique_ob := N ⨿ P.
+
+  Definition oblique_negativise (a : oblique_ob) : N.
+  Proof. induction a as [n | p]. exact n. exact (L p). Defined.
+  Definition oblique_positivise (a : oblique_ob) : P.
+  Proof. induction a as [n | p]. exact (R n). exact p. Defined.
 
   Notation "a '⁻'" := (oblique_negativise a) : duploid.
   Notation "a '⁺'" := (oblique_positivise a) : duploid.
 
-  Definition oblique_mor (a b : oblique_ob) := C₁⟦F (a⁺), b⁻⟧.
+  Definition oblique_mor (a b : oblique_ob) := N⟦L (a⁺), b⁻⟧.
 
   Lemma isaset_oblique_mor (a b : oblique_ob) : isaset (oblique_mor a b).
-  Proof. apply C₁. Qed.
+  Proof. apply N. Qed.
 
   Definition oblique_identity (a : oblique_ob) : oblique_mor a a.
   Proof.
     induction a.
-    + apply (φ_adj_inv H), identity.
+    + apply (φ_adj_inv HFG), identity.
     + apply identity.
   Defined.
 
@@ -67,7 +69,7 @@ Section oblique_defs.
     : oblique_mor a c.
   Proof.
     induction b.
-    + exact (φ_adj_inv H (φ_adj H f · φ_adj H g)).
+    + exact (φ_adj_inv HFG (φ_adj HFG f · φ_adj HFG g)).
     + exact (f · g).
   Defined.
 
@@ -107,10 +109,10 @@ Section oblique_defs.
     intros a b; apply homset_property.
   Defined.
 
-  Definition oblique_negative (a : C₁) : oblique_unital_magmoid := ii1 a.
-  Definition oblique_positive (a : C₂) : oblique_unital_magmoid := ii2 a.
+  Definition oblique_negative (a : N) : oblique_unital_magmoid := ii1 a.
+  Definition oblique_positive (a : P) : oblique_unital_magmoid := ii2 a.
 
-  Lemma oblique_negative_is_negative (a : C₁) : is_negative (oblique_negative a).
+  Lemma oblique_negative_is_negative (a : N) : is_negative (oblique_negative a).
   Proof.
     intros b f c d g h.
     induction c as [m | q]; unfold compose; simpl.
@@ -120,7 +122,7 @@ Section oblique_defs.
       now rewrite φ_adj_inv_natural_postcomp.
   Qed.
 
-  Lemma oblique_positive_is_positive (a : C₂) : is_positive (oblique_positive a).
+  Lemma oblique_positive_is_positive (a : P) : is_positive (oblique_positive a).
   Proof.
     intros b f c d g h.
     induction c as [m | q]; unfold compose; simpl.
@@ -135,7 +137,7 @@ Section oblique_defs.
     intro a; induction a as [n | p].
     - right; apply oblique_negative_is_negative.
     - left; apply oblique_positive_is_positive.
-  Qed.
+  Defined.
 
   Definition oblique_preduploid : preduploid :=
     make_preduploid oblique_unital_magmoid (polarity_mapping_to_has_polarities oblique_polarity_mapping).
@@ -144,41 +146,41 @@ Section oblique_defs.
   Proof.
     induction a as [n | p]; apply oblique_negative.
     - exact n.
-    - exact (F p).
+    - exact (L p).
   Defined.
 
   Definition oblique_force (a : oblique_preduploid) : oblique_upshift a --> a.
   Proof.
     induction a as [n | p].
     + apply identity.
-    + apply (φ_adj_inv H), identity.
+    + apply (φ_adj_inv HFG), identity.
   Defined.
 
   Definition oblique_delay (a : oblique_preduploid) : a --> oblique_upshift a.
   Proof.
     induction a as [n | p].
     + apply identity.
-    + apply (identity (F p)).
+    + apply (identity (L p)).
   Defined.
 
   Definition oblique_downshift (a : oblique_preduploid) : oblique_preduploid.
   Proof.
     induction a as [n | p]; apply oblique_positive.
-    + exact (G n).
+    + exact (R n).
     + exact p.
   Defined.
 
   Definition oblique_wrap (a : oblique_preduploid) : a --> oblique_downshift a.
   Proof.
     induction a as [n | p].
-    + apply (identity (F (G n))).
+    + apply (identity (L (R n))).
     + apply identity.
   Defined.
 
   Definition oblique_unwrap (a : oblique_preduploid) : oblique_downshift a --> a.
   Proof.
     induction a as [n | p].
-    + apply (φ_adj_inv H), identity.
+    + apply (φ_adj_inv HFG), identity.
     + apply identity.
   Defined.
 
@@ -247,7 +249,7 @@ Section oblique_defs.
     : is_inverse_in_precat (oblique_force a) (oblique_delay a).
   Proof.
     induction a as [n | p]; simpl; split; unfold identity, compose; simpl;
-      fold (identity (C:=C₂)); fold (identity (C:=C₁)).
+      fold (identity (C:=P)); fold (identity (C:=N)).
     - now rewrite φ_adj_after_φ_adj_inv, id_left.
     - now rewrite φ_adj_after_φ_adj_inv, id_left.
     - now rewrite id_right.
@@ -258,7 +260,7 @@ Section oblique_defs.
     : is_inverse_in_precat (oblique_wrap a) (oblique_unwrap a).
   Proof.
     induction a as [n | p]; simpl; split; unfold identity, compose; simpl;
-      fold (identity (C:=C₂)); fold (identity (C:=C₁)).
+      fold (identity (C:=P)); fold (identity (C:=N)).
     - now rewrite id_left.
     - now rewrite φ_adj_after_φ_adj_inv, id_left, φ_adj_inv_after_φ_adj.
     - apply id_left.
@@ -316,64 +318,183 @@ Section oblique_defs.
     - apply oblique_has_positive_shifts.
   Defined.
 
-  (* The oblique duploid is the duploid arising from an adjunction,
-   where objects are objects in either category, and morphisms
-   are the morphisms C₁⟦F a⁺, b⁻⟧ (equivalently C₂⟦a⁻, G b⁺⟧). *)
+  (** The oblique duploid is the duploid arising from an adjunction,
+      where objects are objects in either category, and morphisms
+      are the morphisms [N⟦L a⁺, b⁻⟧] (equivalently [P⟦a⁻, R b⁺⟧]). *)
   Definition oblique_duploid : duploid
     := make_duploid _ oblique_has_polarity_shifts.
 
-  Definition oblique_split_duploid : split_duploid
-    := make_split_duploid oblique_duploid oblique_polarity_mapping.
+  Lemma oblique_polarity_mapping_respects_shifts
+    : polarity_mapping_respects_shifts (D:=oblique_duploid) oblique_polarity_mapping.
+  Proof. split; intro a; induction a; reflexivity. Qed.
 
-  Lemma is_linear_of_oblique_counit_precompose {n : C₁} {a : oblique_duploid}
+  (** Such a duploid is naturally split on which category the object is from. *)
+  Definition oblique_split_duploid : split_duploid
+    := make_split_duploid oblique_duploid
+         oblique_polarity_mapping
+         oblique_polarity_mapping_respects_shifts.
+
+  (** ** 2. Lemmas about the oblique duploid *)
+
+  (** The characterisation [is_linear_of_force_unwrap] can be expressed in terms of the counit *)
+  Lemma is_linear_iff_oblique_counit_precompose {n : N} {a : oblique_duploid}
     (f : oblique_negative n --> a)
-    : #(G ∙ F) (ε n) · f = ε ((G ∙ F) n) · f ->
-      is_linear f.
+    : #(R ∙ L) (ε n) · f = ε ((R ∙ L) n) · f <->
+        is_linear f.
   Proof.
-    intro Hf.
-    apply (is_linear_of_force_unwrap (C:=oblique_duploid)).
+    eapply logeq_trans;
+      [|apply (is_linear_iff_force_unwrap (D:=oblique_duploid))].
     cbn.
     rewrite φ_adj_natural_postcomp, φ_adj_inv_natural_precomp.
     do 2 rewrite φ_adj_after_φ_adj_inv, id_left, φ_adj_inv_after_φ_adj.
     unfold φ_adj_inv; fold ε.
     do 2 rewrite functor_id, id_left.
-    exact Hf.
+    apply isrefl_logeq.
   Qed.
 
-  Lemma is_thunkable_of_oblique_unit_postcompose {a : oblique_duploid} {p : C₂}
-    (f : a --> oblique_positive p)
-    : φ_adj H f · #(F ∙ G) (η p) = φ_adj H f · η ((F ∙ G) p) ->
-      is_thunkable f.
+  Lemma is_linear_of_oblique_counit_precompose {n : N} {a : oblique_duploid}
+    (f : oblique_negative n --> a)
+    : #(R ∙ L) (ε n) · f = ε ((R ∙ L) n) · f ->
+      is_linear f.
+  Proof. apply is_linear_iff_oblique_counit_precompose. Qed.
+
+  (** An object [n] is positive in the oblique duploid if [n] is a fixed point. *)
+  Lemma is_positive_oblique_negative_iff_pre_fixed_point (n : N)
+    : (# (R ∙ L) (ε n) = ε ((R ∙ L) n))
+      <-> is_positive (oblique_negative n).
   Proof.
-    intro Hf.
-    apply (is_thunkable_of_delay_wrap (C:=oblique_duploid)).
-    eenough (H' : φ_adj_inv H (φ_adj H _) = φ_adj_inv H (φ_adj H _)). {
-      do 2 rewrite φ_adj_inv_after_φ_adj in H'.
-      exact H'.
-    }
-    apply maponpaths.
+    eapply logeq_trans;
+      [|apply (is_positive_iff_linear_wrap (D:=oblique_duploid))].
+    eapply logeq_trans;
+      [|apply is_linear_iff_oblique_counit_precompose].
     cbn.
-    do 2 rewrite φ_adj_natural_postcomp, φ_adj_inv_natural_precomp.
-    rewrite φ_adj_inv_after_φ_adj, functor_id.
     do 2 rewrite id_right.
-    rewrite functor_comp, functor_id, φ_adj_natural_precomp.
-    do 2 rewrite φ_adj_identity. fold η.
-    exact Hf.
+    apply isrefl_logeq.
   Qed.
 
-  Corollary is_precategory_of_oblique_idempotent_adjunction
-    (H1 : post_whisker ε (G ∙ F) = pre_whisker (G ∙ F) ε)
-    : is_assoc_premagmoid oblique_duploid.
+  Lemma is_positive_oblique_negative_of_fixed_point (n : N)
+    : is_z_isomorphism (ε n) -> is_positive (oblique_negative n).
   Proof.
-    use make_is_one_assoc_premagmoid.
-    intros a b c d f g h.
-    apply assoc_linear.
-    induction c as [n | p].
-    2: apply is_linear_of_positive, oblique_positive_is_positive.
-    apply is_linear_of_oblique_counit_precompose.
-    intermediate_path (post_whisker ε (G ∙ F) n · h).
-    apply idpath.
-    now rewrite H1.
+    intro H.
+    apply is_positive_oblique_negative_iff_pre_fixed_point.
+    apply (Injectivity (λ h, #_ (is_z_isomorphism_mor H) · h)).
+    1: {
+      apply isweqonpathsincl, isinclweq.
+      apply is_iso_from_is_z_iso.
+      apply functor_on_is_z_isomorphism.
+      apply is_z_isomorphism_inv.
+    }
+    intermediate_path (identity ((R ∙ L) n)).
+    - rewrite <- functor_comp, <- functor_id.
+      apply maponpaths.
+      apply (is_z_isomorphism_is_inverse_in_precat H).
+    - apply pathsinv0.
+      refine (nat_trans_ax ε _ _ _ @ _).
+      apply (is_z_isomorphism_is_inverse_in_precat H).
+  Qed.
+
+  (** The characterisation [is_thunkable_of_delay_wrap] can be expressed in terms of the counit *)
+  Lemma is_thunkable_iff_oblique_unit_postcompose {a : oblique_duploid} {p : P}
+    (f : a --> oblique_positive p)
+    : φ_adj HFG f · #(L ∙ R) (η p) = φ_adj HFG f · η ((L ∙ R) p)
+      <-> is_thunkable f.
+  Proof.
+    eapply logeq_trans;
+      [|apply (is_thunkable_iff_delay_wrap (D:=oblique_duploid))].
+    eapply logeq_trans.
+    2: {
+      apply issymm_logeq, weq_to_iff.
+      apply (Injectivity (φ_adj HFG)).
+      apply isweqonpathsincl, isinclweq.
+      apply adjunction_hom_weq.
+    }
+    eapply logeq_trans.
+    2: {
+      cbn.
+      do 2 rewrite φ_adj_natural_postcomp, φ_adj_inv_natural_precomp.
+      rewrite φ_adj_inv_after_φ_adj, functor_id.
+      do 2 rewrite id_right.
+      rewrite functor_comp, functor_id, φ_adj_natural_precomp.
+      do 2 rewrite φ_adj_identity.
+      fold η.
+      apply isrefl_logeq.
+    }
+    apply isrefl_logeq.
+  Qed.
+
+  (** An object [p] is negative in the oblique duploid if [p] is a fixed point. *)
+  Lemma is_negative_oblique_positive_iff_pre_fixed_point (p : P)
+    : (# (L ∙ R) (η p) = η ((L ∙ R) p))
+      <-> is_negative (oblique_positive p).
+  Proof.
+    eapply logeq_trans;
+      [|apply (is_negative_iff_thunkable_force (D:=oblique_duploid))].
+    eapply logeq_trans;
+      [|apply is_thunkable_iff_oblique_unit_postcompose].
+    cbn.
+    rewrite φ_adj_after_φ_adj_inv.
+    do 2 rewrite id_left.
+    apply isrefl_logeq.
+  Qed.
+
+  Lemma is_negative_oblique_positive_of_fixed_point (p : P)
+    : is_z_isomorphism (η p) -> is_negative (oblique_positive p).
+  Proof.
+    intro H.
+    apply is_negative_oblique_positive_iff_pre_fixed_point.
+    apply (Injectivity (λ h, h · #_ (is_z_isomorphism_mor H))).
+    1: {
+      eenough (Ha : is_iso' (#_ (is_z_isomorphism_mor H))).
+      1: apply isweqonpathsincl, isinclweq, Ha.
+      change (is_iso (#(L ∙ R) (is_z_isomorphism_mor H) : P^op⟦_, _⟧)).
+      apply is_iso_from_is_z_iso.
+      apply opp_is_z_isomorphism, functor_on_is_z_isomorphism.
+      apply is_z_isomorphism_inv.
+    }
+    intermediate_path (identity ((L ∙ R) p)).
+    - rewrite <- functor_comp, <- functor_id.
+      apply maponpaths.
+      apply (is_z_isomorphism_is_inverse_in_precat H).
+    - refine (_ @ nat_trans_ax η _ _ _).
+      apply pathsinv0, (is_z_isomorphism_is_inverse_in_precat H).
+  Qed.
+
+  (** The duploid is a category if and only if the adjunction is idempotent. *)
+
+  Corollary is_precategory_iff_oblique_idempotent_counit
+    : post_whisker ε (R ∙ L) = pre_whisker (R ∙ L) ε
+      <-> is_assoc_premagmoid oblique_duploid.
+  Proof.
+    refine (logeq_trans _ any_is_positive_iff_assoc).
+    split.
+    - intros H a.
+      induction a as [n | p].
+      2: apply oblique_positive_is_positive.
+      apply is_positive_oblique_negative_iff_pre_fixed_point.
+      apply base_paths, eqtohomot in H.
+      apply H.
+    - intros H.
+      apply nat_trans_eq; [apply homset_property|].
+      intro n.
+      apply is_positive_oblique_negative_iff_pre_fixed_point, H.
+  Qed.
+
+  Corollary is_precategory_iff_oblique_idempotent_unit
+    : post_whisker η (L ∙ R) = pre_whisker (L ∙ R) η
+      <-> is_assoc_premagmoid oblique_duploid.
+  Proof.
+    refine (logeq_trans _ any_is_negative_iff_assoc).
+    split.
+    - intros H a.
+      induction a as [n | p].
+      1: apply oblique_negative_is_negative.
+      apply is_negative_oblique_positive_iff_pre_fixed_point.
+      apply base_paths, eqtohomot in H.
+      apply H.
+    - intros H.
+      apply nat_trans_eq; [apply homset_property|].
+      intro p.
+      apply is_negative_oblique_positive_iff_pre_fixed_point, H.
   Qed.
 
 End oblique_defs.

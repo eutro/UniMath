@@ -141,14 +141,28 @@ Section split_defs.
   Lemma decide_polarity {D : split_preduploid} (a : D) : is_positive a ⨿ is_negative a.
   Proof. use decide_polarity'; apply split_preduploid_polarity_mapping. Defined.
 
+  Definition polarity_mapping_respects_shifts {D : duploid} (mapping : polarity_mapping D)
+    : UU := (∏ (a : D), mapping (⇓a) = ⊕) × (∏ (a : D), mapping (⇑a) = ⊖).
+  Definition downshift_polarity_mapping {D : duploid} {mapping : polarity_mapping D}
+    (H : polarity_mapping_respects_shifts mapping) : ∏ (a : D), mapping (⇓a) = ⊕ := pr1 H.
+  Definition upshift_polarity_mapping {D : duploid} {mapping : polarity_mapping D}
+    (H : polarity_mapping_respects_shifts mapping) : ∏ (a : D), mapping (⇑a) = ⊖ := pr2 H.
+
+  Lemma isaprop_polarity_mapping_respects_shifts {D : duploid} (mapping : polarity_mapping D)
+    : isaprop (polarity_mapping_respects_shifts mapping).
+  Proof. apply isapropdirprod; apply impred; intro; apply isasetbool. Qed.
+
   (** *** Split duploid *)
   Definition split_duploid : UU
-    := ∑ (D : duploid), polarity_mapping D.
+    := ∑ (D : duploid) (mapping : polarity_mapping D), polarity_mapping_respects_shifts mapping.
   Definition make_split_duploid (D : duploid)
     (mapping : polarity_mapping D)
-    : split_duploid := D,,mapping.
+    (Hmapping : polarity_mapping_respects_shifts mapping)
+    : split_duploid := D,,mapping,,Hmapping.
   Coercion split_duploid_to_duploid (D : split_duploid) : duploid := pr1 D.
-  Definition split_duploid_polarity_mapping (D : split_duploid) : polarity_mapping D := pr2 D.
+  Definition split_duploid_polarity_mapping (D : split_duploid) : polarity_mapping D := pr12 D.
+  Coercion split_duploid_polarity_mapping_respects_shifts (D : split_duploid)
+    : polarity_mapping_respects_shifts (split_duploid_polarity_mapping D) := pr22 D.
 
   Coercion split_duploid_to_split_preduploid (D : split_duploid) : split_preduploid
     := make_split_preduploid D (split_duploid_polarity_mapping D).
@@ -161,6 +175,13 @@ Section split_defs.
     (** Instead, specify D explicitly. *)
     apply (decide_polarity (D:=D) a).
   Qed.
+
+  Lemma chosen_polarity_of_downshift {D : split_duploid} (a : D)
+    : chosen_polarity_of (D:=D) (⇓a) = ⊕.
+  Proof. apply (downshift_polarity_mapping D). Qed.
+  Lemma chosen_polarity_of_upshift {D : split_duploid} (a : D)
+    : chosen_polarity_of (D:=D) (⇑a) = ⊖.
+  Proof. apply (upshift_polarity_mapping D). Qed.
 
 End split_defs.
 
