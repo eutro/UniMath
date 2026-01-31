@@ -230,42 +230,42 @@ Definition are_inverses_wrap_unwrap {D : duploid} (a : D)
 (** ** 5. Lemmas about shifts *)
 
 Section shift_lemmas.
-  Context {C : duploid}.
+  Context {D : duploid}.
 
   (* [force] and [delay] lemmas. *)
-  Lemma force_delay_id (a : C) : force a · delay a = identity (⇑a).
+  Lemma force_delay_id (a : D) : force a · delay a = identity (⇑a).
   Proof. apply is_inverse_in_precat1, are_inverses_force_delay. Defined.
-  Lemma delay_force_id (a : C) : delay a · force a = identity a.
+  Lemma delay_force_id (a : D) : delay a · force a = identity a.
   Proof. apply is_inverse_in_precat2, are_inverses_force_delay. Defined.
-  Lemma delay_force_right {a b : C} (f : a --> b) : (f · delay b) · force b = f.
+  Lemma delay_force_right {a b : D} (f : a --> b) : (f · delay b) · force b = f.
   Proof. now rewrite (assoc'_linear _ (force b)), delay_force_id, magmoid_id_right. Qed.
-  Lemma delay_force_left {a b : C} (f : a --> b) : delay a · (force a · f) = f.
+  Lemma delay_force_left {a b : D} (f : a --> b) : delay a · (force a · f) = f.
   Proof. now rewrite (assoc_negative _ (⇑a)), delay_force_id, magmoid_id_left. Qed.
-  Lemma delay_force_interpose {a b c : C} (f : a --> b) (g : b --> c)
+  Lemma delay_force_interpose {a b c : D} (f : a --> b) (g : b --> c)
     : (f · delay b) · (force b · g) = f · g.
   Proof. now rewrite (assoc_negative _ (⇑b)), delay_force_right. Qed.
 
   (* [wrap] and [unwrap] lemmas. *)
-  Lemma wrap_unwrap_id (a : C) : wrap a · unwrap a = identity a.
+  Lemma wrap_unwrap_id (a : D) : wrap a · unwrap a = identity a.
   Proof. apply is_inverse_in_precat1, are_inverses_wrap_unwrap. Defined.
-  Lemma unwrap_wrap_id (a : C) : unwrap a · wrap a = identity (⇓a).
+  Lemma unwrap_wrap_id (a : D) : unwrap a · wrap a = identity (⇓a).
   Proof. apply is_inverse_in_precat2, are_inverses_wrap_unwrap. Defined.
-  Lemma wrap_unwrap_right {a b : C} (f : a <-- b) : (f · wrap a) · unwrap a = f.
+  Lemma wrap_unwrap_right {a b : D} (f : a <-- b) : (f · wrap a) · unwrap a = f.
   Proof. now rewrite (assoc'_positive _ (⇓a)), wrap_unwrap_id, magmoid_id_right. Qed.
-  Lemma wrap_unwrap_left {a b : C} (f : a <-- b) : wrap b · (unwrap b · f) = f.
+  Lemma wrap_unwrap_left {a b : D} (f : a <-- b) : wrap b · (unwrap b · f) = f.
   Proof. now rewrite (assoc_thunkable _ (wrap b)), wrap_unwrap_id, magmoid_id_left. Qed.
-  Lemma wrap_unwrap_interpose {a b c : C} (f : a --> b) (g : b --> c)
+  Lemma wrap_unwrap_interpose {a b c : D} (f : a --> b) (g : b --> c)
     : (f · wrap b) · (unwrap b · g) = f · g.
   Proof. now rewrite (assoc'_positive _ (⇓b)), wrap_unwrap_left. Qed.
 
   (** Characterisation of thunkable and linear morphisms *)
 
-  Lemma is_thunkable_of_delay_wrap {a b : C} (f : a --> b)
+  Lemma is_thunkable_of_delay_wrap {a b : D} (f : a --> b)
     : f · (delay b · wrap (⇑b)) = (f · delay b) · wrap (⇑b) ->
       is_thunkable f.
   Proof.
     intros Hf.
-    assert (H' : ∏ (d : C) (h : ⇑b --> d), f · (delay b · h) = (f · delay b) · h). {
+    assert (H' : ∏ (d : D) (h : ⇑b --> d), f · (delay b · h) = (f · delay b) · h). {
       intros d h.
       rewrite <- (wrap_unwrap_interpose (delay b) h).
       rewrite (assoc_positive _ (⇓⇑b)), Hf.
@@ -280,12 +280,21 @@ Section shift_lemmas.
     now rewrite delay_force_left.
   Qed.
 
-  Lemma is_linear_of_force_unwrap {a b : C} (f : b --> a)
+  Lemma is_thunkable_iff_delay_wrap {a b : D} (f : a --> b)
+    : f · (delay b · wrap (⇑b)) = (f · delay b) · wrap (⇑b) <->
+        is_thunkable f.
+  Proof.
+    split.
+    - apply is_thunkable_of_delay_wrap.
+    - intro H; apply assoc_thunkable, H.
+  Qed.
+
+  Lemma is_linear_of_force_unwrap {a b : D} (f : b --> a)
     : (force (⇓b) · unwrap b) · f = force (⇓b) · (unwrap b · f) ->
       is_linear f.
   Proof.
     intros Hf.
-    assert (H' : ∏ (d : C) (h : d --> ⇓b), (h · unwrap b) · f = h · (unwrap b · f)). {
+    assert (H' : ∏ (d : D) (h : d --> ⇓b), (h · unwrap b) · f = h · (unwrap b · f)). {
       intros d h.
       rewrite <- (delay_force_interpose h (unwrap b)).
       rewrite (assoc'_negative _ (⇑⇓b)), Hf.
@@ -299,4 +308,108 @@ Section shift_lemmas.
     rewrite (assoc'_positive _ (⇓b)), <- H'.
     now rewrite wrap_unwrap_right.
   Qed.
+
+  Lemma is_linear_iff_force_unwrap {a b : D} (f : a <-- b)
+    : (force (⇓b) · unwrap b) · f = force (⇓b) · (unwrap b · f) <->
+        is_linear f.
+  Proof.
+    split.
+    - apply is_linear_of_force_unwrap.
+    - intro H; apply assoc'_linear, H.
+  Qed.
+
+  (** Characterisation of positive and negative objects *)
+
+  (** For an object [a], the following statements are equivalent:
+  1. [a] is positive
+  2. [wrap a] is linear
+  3. [wrap a] is a linear-and-thunkable isomorphism *)
+
+  Lemma is_linear_unwrap (a : D) : is_linear (unwrap a).
+  Proof. apply is_linear_of_positive, (⇓a). Qed.
+  Lemma is_linear_and_thunkable_unwrap (a : D) : is_linear_and_thunkable (unwrap a).
+  Proof. apply make_is_linear_and_thunkable; first [apply is_linear_unwrap|apply (unwrap a)]. Qed.
+  (** 1 -> 2 *)
+  Lemma is_linear_wrap_of_positive (a : D) (H : is_positive a) : is_linear (wrap a).
+  Proof. apply is_linear_of_positive, H. Qed.
+  Lemma is_linear_and_thunkable_wrap_of_positive (a : D) (H : is_positive a) : is_linear_and_thunkable (wrap a).
+  Proof. apply make_is_linear_and_thunkable; first [apply is_linear_wrap_of_positive, H|apply (wrap a)]. Qed.
+
+  (** 2 -> 3 *)
+  Lemma is_lt_iso_unwrap_of_linear (a : D) (H : is_linear (wrap a)) : is_lt_iso (wrap a).
+  Proof.
+    use make_is_lt_iso'.
+    - abstract (apply make_is_linear_and_thunkable; first [exact H|apply (wrap a)]).
+    - exact (unwrap a).
+    - abstract (apply is_linear_and_thunkable_unwrap).
+    - abstract (split; apply are_inverses_wrap_unwrap).
+  Defined.
+
+  (** 1 -> 3 *)
+  Lemma is_lt_iso_unwrap_of_positive (a : D) (H : is_positive a) : is_lt_iso (wrap a).
+  Proof.
+    apply is_lt_iso_unwrap_of_linear.
+    abstract (apply is_linear_of_positive, H).
+  Defined.
+
+  (** 2 -> 1 (via 3) *)
+  Lemma is_positive_of_linear_wrap (a : D) (H : is_linear (wrap a)) : is_positive a.
+  Proof.
+    refine (is_positive_of_lt_iso _ (⇓a)).
+    eapply lt_iso_inv, make_lt_iso, is_lt_iso_unwrap_of_linear, H.
+  Qed.
+
+  Lemma is_positive_iff_linear_wrap (a : D) : is_linear (wrap a) <-> is_positive a.
+  Proof.
+    split.
+    - apply is_positive_of_linear_wrap.
+    - apply is_linear_wrap_of_positive.
+  Qed.
+
+  (** For an object [a], the following statements are equivalent:
+  1. [a] is negative
+  2. [force a] is thunkable
+  3. [force a] is a thunkable-and-linear isomorphism *)
+
+  Lemma is_thunkable_delay (a : D) : is_thunkable (delay a).
+  Proof. apply is_thunkable_of_negative, (⇑a). Qed.
+  Lemma is_linear_and_thunkable_delay (a : D) : is_linear_and_thunkable (delay a).
+  Proof. apply make_is_linear_and_thunkable; first [apply is_thunkable_delay|apply (delay a)]. Qed.
+  (** 1 -> 2 *)
+  Lemma is_thunkable_force_of_negative (a : D) (H : is_negative a) : is_thunkable (force a).
+  Proof. apply is_thunkable_of_negative, H. Qed.
+  Lemma is_linear_and_thunkable_force_of_negative (a : D) (H : is_negative a) : is_linear_and_thunkable (force a).
+  Proof. apply make_is_linear_and_thunkable; first [apply is_thunkable_force_of_negative, H|apply (force a)]. Qed.
+
+  (** 2 -> 3 *)
+  Lemma is_lt_iso_delay_of_thunkable (a : D) (H : is_thunkable (force a)) : is_lt_iso (force a).
+  Proof.
+    use make_is_lt_iso'.
+    - abstract (apply make_is_linear_and_thunkable; first [exact H|apply (force a)]).
+    - exact (delay a).
+    - abstract (apply is_linear_and_thunkable_delay).
+    - abstract (apply are_inverses_force_delay).
+  Defined.
+
+  (** 1 -> 3 *)
+  Lemma is_lt_iso_delay_of_negative (a : D) (H : is_negative a) : is_lt_iso (force a).
+  Proof.
+    apply is_lt_iso_delay_of_thunkable.
+    abstract (apply is_thunkable_of_negative, H).
+  Defined.
+
+  (** 2 -> 1 (via 3) *)
+  Lemma is_negative_of_thunkable_force (a : D) (H : is_thunkable (force a)) : is_negative a.
+  Proof.
+    refine (is_negative_of_lt_iso _ (⇑a)).
+    eapply make_lt_iso, is_lt_iso_delay_of_thunkable, H.
+  Qed.
+
+  Lemma is_negative_iff_thunkable_force (a : D) : is_thunkable (force a) <-> is_negative a.
+  Proof.
+    split.
+    - apply is_negative_of_thunkable_force.
+    - apply is_thunkable_force_of_negative.
+  Qed.
+
 End shift_lemmas.
