@@ -24,6 +24,7 @@ DisplayedCats/Fiber.v
 DisplayedCats/FullyFaithfulDispFunctor.v
 
 Nonassociative/Duploids/Core.v
+Nonassociative/Duploids/Envelope.v
 Nonassociative/Duploids/Functors.v
 Nonassociative/Duploids/Oblique.v
 Nonassociative/Duploids/ShiftFunctors.v

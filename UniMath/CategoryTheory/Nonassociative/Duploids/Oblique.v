@@ -49,8 +49,8 @@ Section oblique_defs.
   Definition oblique_positivise (a : oblique_ob) : P.
   Proof. induction a as [n | p]. exact (R n). exact p. Defined.
 
-  Notation "a '⁻'" := (oblique_negativise a) : duploid.
-  Notation "a '⁺'" := (oblique_positivise a) : duploid.
+  Local Notation "a '⁻'" := (oblique_negativise a) : duploid.
+  Local Notation "a '⁺'" := (oblique_positivise a) : duploid.
 
   Definition oblique_mor (a b : oblique_ob) := N⟦L (a⁺), b⁻⟧.
 

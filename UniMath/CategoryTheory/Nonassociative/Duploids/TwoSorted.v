@@ -65,13 +65,13 @@ Section split_defs.
 
   Lemma decide_polarity' {D : unital_premagmoid} {mapping : polarity_mapping_data D}
     (Hmapping : is_polarity_mapping mapping) (a : D)
-    : is_positive a ⨿ is_negative a.
+    : is_negative a ⨿ is_positive a.
   Proof.
     set (choice := mapping a).
-    assert (Hchoice : mapping a = choice). 1: reflexivity.
+    assert (Hchoice : mapping a = choice); [reflexivity|].
     induction choice.
-    - left; apply (polarity_mapping_positive' Hmapping), Hchoice.
-    - right; apply (polarity_mapping_negative' Hmapping), Hchoice.
+    - constructor; apply (polarity_mapping_positive' Hmapping), Hchoice.
+    - constructor; apply (polarity_mapping_negative' Hmapping), Hchoice.
   Defined.
 
   Lemma isaprop_is_polarity_mapping
@@ -138,7 +138,7 @@ Section split_defs.
     : chosen_polarity_of a = ⊖ -> is_negative a.
   Proof. apply polarity_mapping_negative', split_preduploid_polarity_mapping. Qed.
 
-  Lemma decide_polarity {D : split_preduploid} (a : D) : is_positive a ⨿ is_negative a.
+  Lemma decide_polarity {D : split_preduploid} (a : D) : is_negative a ⨿ is_positive a.
   Proof. use decide_polarity'; apply split_preduploid_polarity_mapping. Defined.
 
   Definition polarity_mapping_respects_shifts {D : duploid} (mapping : polarity_mapping D)
@@ -167,7 +167,7 @@ Section split_defs.
   Coercion split_duploid_to_split_preduploid (D : split_duploid) : split_preduploid
     := make_split_preduploid D (split_duploid_polarity_mapping D).
 
-  Goal ∏ {D : split_duploid} (a : D), is_positive a ⨿ is_negative a.
+  Goal ∏ {D : split_duploid} (a : D), is_negative a ⨿ is_positive a.
   Proof.
     intros D a.
     (** Due to association, applying [decide_polarity] alone does not work at time of writing. *)
@@ -309,14 +309,7 @@ Section functor_char3.
     use make_is_functor.
     - intro a; apply HF_id.
     - intros a b c f g.
-      induction (decide_polarity b) as [Hb_positive | Hb_negative].
-      + transparent assert (g' : (linear_mor b c)). {
-          apply (make_linear_mor g),
-            is_linear_of_positive, Hb_positive.
-        }
-        refine (_ @ HF_natural _ _ _ _ (thunkable_identity a) f g' @ _).
-        * now cbn; rewrite magmoid_id_left.
-        * now cbn; rewrite HF_id, magmoid_id_left.
+      induction (decide_polarity b) as [Hb_negative | Hb_positive].
       + transparent assert (f' : (thunkable_mor a b)). {
           apply (make_thunkable_mor f),
             is_thunkable_of_negative, Hb_negative.
@@ -324,6 +317,13 @@ Section functor_char3.
         refine (_ @ HF_natural _ _ _ _ f' g (linear_identity c) @ _).
         * now cbn; rewrite magmoid_id_right.
         * now cbn; rewrite HF_id, magmoid_id_right.
+      + transparent assert (g' : (linear_mor b c)). {
+          apply (make_linear_mor g),
+            is_linear_of_positive, Hb_positive.
+        }
+        refine (_ @ HF_natural _ _ _ _ (thunkable_identity a) f g' @ _).
+        * now cbn; rewrite magmoid_id_left.
+        * now cbn; rewrite HF_id, magmoid_id_left.
   Qed.
 
   Lemma make_split_duploid_functor_from_natural_prepostcomp : split_duploid_functor D D'.

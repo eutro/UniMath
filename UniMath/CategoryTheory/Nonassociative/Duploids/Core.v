@@ -152,11 +152,11 @@ Section polarities.
 
   (** Property to say that a is negative, positive, or both. *)
   Definition has_polarity {M : unital_premagmoid} (a : M) : UU
-    := ∥ is_positive a ⨿ is_negative a ∥.
-  Definition make_has_positive_polarity {M : unital_premagmoid} (a : M)
-    (H : is_positive a) : has_polarity a := hinhpr (ii1 H).
-  Definition make_has_negative_polarity {M : unital_premagmoid} (a : M)
-    (H : is_negative a) : has_polarity a := hinhpr (ii2 H).
+    := ∥ is_negative a ⨿ is_positive a ∥.
+  Definition make_has_polarity_negative {M : unital_premagmoid} (a : M)
+    (H : is_negative a) : has_polarity a := hinhpr (ii1 H).
+  Definition make_has_polarity_positive {M : unital_premagmoid} (a : M)
+    (H : is_positive a) : has_polarity a := hinhpr (ii2 H).
 
   Lemma isaprop_has_polarity {M : unital_premagmoid} (a : M) : isaprop (has_polarity a).
   Proof. apply isapropishinh. Qed.
@@ -173,8 +173,8 @@ Section polarities.
   Lemma has_polarity_rec {M : unital_premagmoid}
     {a : M} (H : has_polarity a)
     {P : UU} (HP : isaprop P)
-    (H1 : ∏ (posp : is_positive a), P)
-    (H2 : ∏ (negp : is_negative a), P)
+    (H1 : ∏ (negp : is_negative a), P)
+    (H2 : ∏ (posp : is_positive a), P)
     : P.
   Proof.
     refine (factor_through_squash HP _ H).
