@@ -250,6 +250,7 @@ The packages and files are listed here in logical order: each file depends only 
    - [Nonassociative/Duploids/Oblique.v](CategoryTheory/Nonassociative/Duploids/Oblique.v)
    - [Nonassociative/Duploids/ShiftFunctors.v](CategoryTheory/Nonassociative/Duploids/ShiftFunctors.v)
    - [Nonassociative/Duploids/TwoSorted.v](CategoryTheory/Nonassociative/Duploids/TwoSorted.v)
+   - [Nonassociative/Duploids/Isos.v](CategoryTheory/Nonassociative/Duploids/Isos.v)
    - [Nonassociative/UnitalMagmoids/Core.v](CategoryTheory/Nonassociative/UnitalMagmoids/Core.v)
    - [Nonassociative/UnitalMagmoids/FromCategory.v](CategoryTheory/Nonassociative/UnitalMagmoids/FromCategory.v)
    - [Nonassociative/UnitalMagmoids/Functors.v](CategoryTheory/Nonassociative/UnitalMagmoids/Functors.v)

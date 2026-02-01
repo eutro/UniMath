@@ -8,6 +8,7 @@
  Contents:
  1. Definition of a linearity and thunkability preserving functor
  2. Definition of a (pre)duploid functor
+ 3. Properties of (pre)duploid functors
 
  ********************************************************************************)
 
@@ -19,7 +20,9 @@ Require Import UniMath.CategoryTheory.Core.Functors.
 
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Subcategories.
+Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Isos.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Core.
+Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Isos.
 
 Local Open Scope cat.
 Local Open Scope unital_magmoid.
@@ -245,3 +248,59 @@ Section duploid_functor.
   Defined.
 
 End duploid_functor.
+
+(** ** 3. Properties of (pre)duploid functors *)
+
+Definition lt_essentially_surjective {C : precategory_data} {D : unital_magmoid} (F : functor_data C D) : UU
+  := ∏ (b : D), ∃ (a : C), lt_iso (F a) b.
+
+Section full.
+  Context {M : unital_premagmoid} {D : preduploid} (F : M ⟶ D).
+  Hypothesis (Hfull : full F) (Hltsurj : lt_essentially_surjective F).
+
+  Lemma preserves_linearity_of_full_and_lt_essentially_surjective : preserves_linearity F.
+  Proof.
+    intros a b f Hf c d g h.
+    isaprop_goal Hprop; [apply unital_magmoid_has_homsets|].
+    refine (factor_through_squash Hprop (λ Hc, _) (Hltsurj c)).
+    refine (factor_through_squash Hprop (λ Hd, _) (Hltsurj d)).
+    induction Hc as [c' Hc'], Hd as [d' Hd'].
+    refine (factor_through_squash Hprop (λ Hh, _) (Hfull _ _ (Hd' · h · lt_iso_inverse Hc'))).
+    refine (factor_through_squash Hprop (λ Hg, _) (Hfull _ _ (Hc' · g))).
+    induction Hh as [h' Hh'], Hg as [g' Hg'].
+    rewrite <- (preduploid_lt_iso_inv_interpose Hc' h g).
+    rewrite <- (preduploid_lt_iso_inv_interpose Hc' h (g · #F f)).
+    apply (cancel_lt_iso_left Hd').
+    rewrite !(assoc_thunkable _ Hd'), !(assoc_thunkable _ Hc').
+    cbn; rewrite <- Hh', <- Hg', <- !functor_comp.
+    apply maponpaths, assoc'_linear, Hf.
+  Qed.
+
+  Lemma preserves_thunkability_of_full_and_lt_essentially_surjective : preserves_thunkability F.
+  Proof.
+    intros a b f Hf c d g h.
+    isaprop_goal Hprop; [apply unital_magmoid_has_homsets|].
+    refine (factor_through_squash Hprop (λ Hc, _) (Hltsurj c)).
+    refine (factor_through_squash Hprop (λ Hd, _) (Hltsurj d)).
+    induction Hc as [c' Hc'], Hd as [d' Hd'].
+    refine (factor_through_squash Hprop (λ Hh, _) (Hfull _ _ (Hc' · (h · lt_iso_inverse Hd')))).
+    refine (factor_through_squash Hprop (λ Hg, _) (Hfull _ _ (g · lt_iso_inverse Hc'))).
+    induction Hh as [h' Hh'], Hg as [g' Hg'].
+    rewrite <- (preduploid_lt_iso_inv_interpose Hc' g h).
+    rewrite <- (preduploid_lt_iso_inv_interpose Hc' (#F f · g) h).
+    apply (cancel_lt_iso_right (lt_iso_inv Hd')).
+    rewrite !(assoc'_linear _ (lt_iso_inv Hd')).
+    rewrite !(assoc'_linear _ (lt_iso_inverse Hc')).
+    cbn; rewrite <- Hh', <- Hg', <- !functor_comp.
+    apply maponpaths, assoc_thunkable, Hf.
+  Qed.
+
+  Theorem full_and_lt_essentially_surjective_preserves_linearity_and_thunkability
+    : preserves_linearity_and_thunkability F.
+  Proof.
+    use make_preserves_linearity_and_thunkability.
+    - apply preserves_linearity_of_full_and_lt_essentially_surjective.
+    - apply preserves_thunkability_of_full_and_lt_essentially_surjective.
+  Qed.
+
+End full.

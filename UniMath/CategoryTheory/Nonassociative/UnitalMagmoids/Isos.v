@@ -305,6 +305,12 @@ Section isos.
         [apply Hf | apply Hg].
   Qed.
 
+  Definition is_lt_iso_to_is_z_isomorphism {a b : M} (f : a --> b) (g : is_lt_iso f) : is_z_isomorphism f.
+  Proof.
+    exists g; cbn.
+    apply has_linear_and_thunkable_inverse_is_inverse.
+  Defined.
+
   Definition lt_iso (a b : M) : UU :=
     ∑ f : a --> b, is_lt_iso f.
   Definition make_lt_iso {a b : M}
@@ -319,6 +325,9 @@ Section isos.
     : linear_and_thunkable_mor b a := lt_iso_is_lt_iso f.
   Definition lt_iso_is_inverse {a b : M} (f : lt_iso a b)
     : is_inverse_in_precat f (lt_iso_inverse f) := lt_iso_is_lt_iso f.
+
+  Coercion lt_iso_to_z_iso {a b : M} (f : lt_iso a b) : z_iso a b
+    := make_z_iso' f (is_lt_iso_to_is_z_isomorphism _ (lt_iso_is_lt_iso f)).
 
   Definition make_lt_iso' {a b : M}
     (f : linear_and_thunkable_mor a b)
@@ -356,6 +365,7 @@ Section isos.
         [ apply (lt_iso_is_lt_iso f)
         | apply (lt_iso_is_lt_iso g) ].
   Defined.
+
 End isos.
 
 (** ** 4. Lemmas about linear-and-thunkable isomorphisms *)
@@ -426,6 +436,29 @@ Section isos_facts.
     eapply cancel_postcomposition in H.
     refine (!lt_iso_right _ _ @ H @ lt_iso_right _ _).
   Qed.
+
+  (** Any [z_iso] can be "interposed", putting it in the middle, so long as it is an
+      intermediate morphism. *)
+
+  Lemma intermediate_z_iso_interpose {a b b' c : M}
+    (p : z_iso b b') (f : a --> b) (g : b --> c)
+    (Hp : is_intermediate p) (Hpinv : is_intermediate (inv_from_z_iso p))
+    : (f · p) · (inv_from_z_iso p · g) = f · g.
+  Proof.
+    rewrite (assoc'_intermediate _ Hp), (assoc_intermediate _ Hpinv).
+    now rewrite (is_inverse_in_precat1 p), magmoid_id_left.
+  Qed.
+
+  Lemma intermediate_z_iso_inv_interpose {a b b' c : M}
+    (p : z_iso b' b) (f : a --> b) (g : b --> c)
+    (Hp : is_intermediate p) (Hpinv : is_intermediate (inv_from_z_iso p))
+    : (f · inv_from_z_iso p) · (p · g) = f · g.
+  Proof.
+    apply (intermediate_z_iso_interpose (z_iso_inv p)); assumption.
+  Qed.
+
+  Lemma is_intermediate_idtomor {a b : M} (p : a = b) : is_intermediate (idtomor _ _ p).
+  Proof. induction p; apply is_intermediate_identity. Qed.
 
   (** [lt_iso]s preserve polarities *)
 
