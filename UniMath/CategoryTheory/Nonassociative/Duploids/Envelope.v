@@ -7,6 +7,7 @@
 
  Contents:
  1. Definition of the envelope duploid
+ 2. Weak equivalence with the oblique duploid
 
  ********************************************************************************)
 
@@ -368,8 +369,9 @@ Section envelope_defs.
   Defined.
 
   Ltac envelope_induction' a
-    := generalize (a : envelope_polarization a);
-       apply (envelope_polarization_rec' (a:=a)).
+    := let a' := uconstr:(a : envelope_ob) in
+       generalize (a' : envelope_polarization a');
+       apply (envelope_polarization_rec' (a:=a')).
 
   Lemma is_positive_of_envelope_chosen_positive (a : envelope_unital_magmoid)
     (H : envelope_chosen_positive (a : envelope_ob)) : is_positive a.
@@ -441,48 +443,10 @@ Section envelope_defs.
     : oblique_to_envelope_ob a --> oblique_to_envelope_ob b.
   Proof. induction a, b; exact f. Defined.
 
-  Definition oblique_to_envelope_data : functor_data (oblique_duploid θ) envelope_preduploid.
-  Proof.
-    use make_functor_data.
-    - exact oblique_to_envelope_ob.
-    - exact @oblique_to_envelope_mor.
-  Defined.
-
-  Definition is_functor_oblique_to_envelope : is_functor oblique_to_envelope_data.
-  Proof.
-    use make_is_functor.
-    - intro a; now induction a.
-    - intros a b c g f.
-      induction a as [n | p], b as [m | q], c as [o | r]; cbn;
-        unfold envelope_mor_factor_chosen_negative,
-        envelope_mor_factor_chosen_positive; cbn;
-        first [rewrite id_right | rewrite id_left];
-        reflexivity.
-  Qed.
-
-  Definition oblique_to_envelope : functor (oblique_duploid θ) envelope_preduploid
-    := make_functor _ is_functor_oblique_to_envelope.
-
-  Lemma fully_faithful_oblique_to_envelope : fully_faithful oblique_to_envelope.
-  Proof.
-    intros a b.
-    use isweq_iso.
-    1: intro f; induction a, b; exact f.
-    all: abstract (intro f; now induction a, b).
-  Defined.
-
   Definition envelope_downshift (a : envelope_preob) : envelope_ob
     := envelope_ob_of_positive (a⁺).
   Definition envelope_upshift (a : envelope_preob)
     : envelope_ob := envelope_ob_of_negative (a⁻).
-
-  (* This is a nice sanity check, rather than being load-bearing. *)
-  Lemma oblique_to_envelope_preserves_downshift (a : oblique_duploid θ)
-    : envelope_downshift (oblique_to_envelope a : envelope_ob) = oblique_to_envelope (⇓a).
-  Proof. now induction a as [n | p]. Defined.
-  Lemma oblique_to_envelope_preserves_upshift (a : oblique_duploid θ)
-    : envelope_upshift (oblique_to_envelope a : envelope_ob) = oblique_to_envelope (⇑a).
-  Proof. now induction a as [n | p]. Defined.
 
   Definition envelope_force
     (a : envelope_preob) : envelope_mor (envelope_upshift a) a.
@@ -663,5 +627,71 @@ Section envelope_defs.
 
   Definition envelope_duploid : duploid
     := make_duploid _ envelope_has_polarity_shifts.
+
+  (** ** 2. Weak equivalence with the oblique duploid *)
+
+  Definition oblique_to_envelope_data : functor_data (oblique_duploid θ) envelope_duploid.
+  Proof.
+    use make_functor_data.
+    - exact oblique_to_envelope_ob.
+    - exact @oblique_to_envelope_mor.
+  Defined.
+
+  Definition is_functor_oblique_to_envelope : is_functor oblique_to_envelope_data.
+  Proof.
+    use make_is_functor.
+    - intro a; now induction a.
+    - intros a b c g f.
+      induction a as [n | p], b as [m | q], c as [o | r]; cbn;
+        unfold envelope_mor_factor_chosen_negative,
+        envelope_mor_factor_chosen_positive; cbn;
+        first [rewrite id_right | rewrite id_left];
+        reflexivity.
+  Qed.
+
+  Definition oblique_to_envelope : functor (oblique_duploid θ) envelope_duploid
+    := make_functor _ is_functor_oblique_to_envelope.
+
+  Lemma fully_faithful_oblique_to_envelope : fully_faithful oblique_to_envelope.
+  Proof.
+    intros a b.
+    use isweq_iso.
+    1: intro f; induction a, b; exact f.
+    all: abstract (intro f; now induction a, b).
+  Defined.
+
+  (* This is a nice sanity check; it is not load-bearing. *)
+  Lemma oblique_to_envelope_preserves_downshift (a : oblique_duploid θ)
+    : (⇓oblique_to_envelope a : ob _) = oblique_to_envelope (⇓a).
+  Proof. now induction a as [n | p]. Defined.
+  Lemma oblique_to_envelope_preserves_upshift (a : oblique_duploid θ)
+    : (⇑oblique_to_envelope a : ob _) = oblique_to_envelope (⇑a).
+  Proof. now induction a as [n | p]. Defined.
+
+  Lemma lt_essentially_surjective_oblique_to_envelope : lt_essentially_surjective oblique_to_envelope.
+  Proof.
+    intro a; envelope_induction' a.
+    1: intro; apply isapropishinh.
+    - intro Hn; apply hinhpr.
+      exists (oblique_negative θ ((a : envelope_ob) ⁻)).
+      refine (make_lt_iso _ (is_lt_iso_delay_of_negative a _)).
+      apply is_negative_of_envelope_chosen_negative, Hn.
+    - intro Hp; apply hinhpr.
+      exists (oblique_positive θ ((a : envelope_ob) ⁺)).
+      apply lt_iso_inv.
+      refine (make_lt_iso _ (is_lt_iso_unwrap_of_positive a _)).
+      apply is_positive_of_envelope_chosen_positive, Hp.
+  Qed.
+
+  Lemma preserves_linearity_and_thunkability_oblique_to_envelope
+    : preserves_linearity_and_thunkability oblique_to_envelope.
+  Proof.
+    apply full_and_lt_essentially_surjective_preserves_linearity_and_thunkability.
+    - apply fully_faithful_implies_full_and_faithful, fully_faithful_oblique_to_envelope.
+    - apply lt_essentially_surjective_oblique_to_envelope.
+  Qed.
+
+  Definition oblique_to_envelope_duploid : oblique_duploid θ ⟶d envelope_duploid
+    := make_duploid_functor _ preserves_linearity_and_thunkability_oblique_to_envelope.
 
 End envelope_defs.
