@@ -163,10 +163,15 @@ Section polarity_defs.
   Definition is_thunkable {a b : M} (f : b --> a) : UU
     := ∏ (c d : M) (g : a --> c) (h : c --> d),
       f · (g · h) = (f · g) · h.
+  Definition is_intermediate {a b : M} (f : a --> b) : UU
+    :=  ∏ (c d : M) (g : c --> a) (h : b --> d),
+      g · (f · h) = (g · f) · h.
 
   Lemma isaprop_is_linear' {a b : M} (f : a --> b) : isaprop (is_linear f).
   Proof. do 4 (apply impred; intro); apply hs. Qed.
   Lemma isaprop_is_thunkable' {a b : M} (f : a --> b) : isaprop (is_thunkable f).
+  Proof. do 4 (apply impred; intro); apply hs. Qed.
+  Lemma isaprop_is_intermediate' {a b : M} (f : a --> b) : isaprop (is_intermediate f).
   Proof. do 4 (apply impred; intro); apply hs. Qed.
 
   (** Positive and negative *)
@@ -219,7 +224,8 @@ Section polarity_lemmas.
     (g : c --> a) (h : d --> c) : h · (g · f) = (h · g) · f.
   Proof. apply pathsinv0, H. Defined.
   Lemma assoc'_linear {a b c d : M} (f : a --> b) (H : is_linear f)
-    (g : c --> a) (h : d --> c) : (h · g) · f = h · (g · f).
+    (g : c --> a) (h : d --> c)
+    : (h · g) · f = h · (g · f).
   Proof. apply H. Defined.
 
   Lemma assoc_thunkable {a b c d : M} (f : b --> a) (H : is_thunkable f)
@@ -227,7 +233,8 @@ Section polarity_lemmas.
     : f · (g · h) = (f · g) · h.
   Proof. apply H. Defined.
   Lemma assoc'_thunkable {a b c d : M} (f : b --> a) (H : is_thunkable f)
-    (g : a --> c) (h : c --> d) : (f · g) · h = f · (g · h).
+    (g : a --> c) (h : c --> d)
+    : (f · g) · h = f · (g · h).
   Proof. apply pathsinv0, H. Defined.
 
   Lemma assoc_positive {a b d : M} (c : M) (H : is_positive c)
@@ -248,6 +255,15 @@ Section polarity_lemmas.
     : (f · g) · h = f · (g · h).
   Proof. apply assoc'_thunkable, is_thunkable_of_negative, H. Defined.
 
+  Lemma assoc_intermediate {a b c d : M} (f : b --> c) (H : is_intermediate f)
+    (g : a --> b) (h : c --> d)
+    : g · (f · h) = (g · f) · h.
+  Proof. apply H. Defined.
+  Lemma assoc'_intermediate {a b c d : M} (f : b --> c) (H : is_intermediate f)
+    (g : a --> b) (h : c --> d)
+    : (g · f) · h = g · (f · h).
+  Proof. apply pathsinv0, H. Defined.
+
   (** Linearity and thunkability are preserved under composition. *)
   Lemma is_linear_compose {a b c : M} (f : a --> b) (g : b --> c)
     : is_linear f -> is_linear g -> is_linear (f · g).
@@ -262,6 +278,21 @@ Section polarity_lemmas.
     apply make_is_linear_and_thunkable.
     - apply (is_linear_compose _ _ Hf Hg).
     - apply (is_thunkable_compose _ _ Hf Hg).
+  Qed.
+
+  (** Intermediate morphisms *)
+
+  Lemma is_intermediate_of_positive {a b : M} (f : a --> b)
+    : is_positive b -> is_intermediate f.
+  Proof. intros H c d g h; apply assoc_positive, H. Qed.
+  Lemma is_intermediate_of_negative {a b : M} (f : a --> b)
+    : is_negative a -> is_intermediate f.
+  Proof. intros H c d g h; apply assoc_negative, H. Qed.
+  Lemma is_intermediate_compose {a b c : M} (f : a --> b) (g : b --> c)
+    : is_intermediate f -> is_intermediate g -> is_intermediate (f · g).
+  Proof.
+    intros Hf Hg d e h k.
+    now rewrite <- Hg, !Hf, Hg.
   Qed.
 
 End polarity_lemmas.
@@ -280,6 +311,8 @@ Section polarity_lemmas.
     - apply is_linear_identity.
     - apply is_thunkable_identity.
   Defined.
+  Lemma is_intermediate_identity (a : M) : is_intermediate (identity a).
+  Proof. intros b c g h. now rewrite magmoid_id_left, magmoid_id_right. Qed.
 
   (** Characterisations of [is_assoc_premagmoid] in a unital magmoid *)
   Lemma any_is_linear_iff_assoc
@@ -418,6 +451,12 @@ Section polarized_subtypes.
     - apply hs.
     - intro x. apply isasetaprop, propproperty.
   Qed.
+
+  (** Intermediate morphisms *)
+  Lemma isaprop_is_intermediate {a b : M} (f : a --> b) : isaprop (is_intermediate f).
+  Proof. apply isaprop_is_intermediate', hs. Qed.
+  Definition ish_intermediate {a b : M} (f : a --> b) : hProp
+    := make_hProp (is_intermediate f) (isaprop_is_intermediate f).
 
   (** Positive objects *)
   Definition isaprop_is_positive (a : M) : isaprop (is_positive a).
