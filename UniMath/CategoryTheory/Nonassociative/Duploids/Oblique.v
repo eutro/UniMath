@@ -377,13 +377,10 @@ Section oblique_defs.
   Proof.
     intro H.
     apply is_positive_oblique_negative_iff_pre_fixed_point.
-    apply (Injectivity (λ h, #_ (is_z_isomorphism_mor H) · h)).
-    1: {
-      apply isweqonpathsincl, isinclweq.
-      apply is_iso_from_is_z_iso.
-      apply functor_on_is_z_isomorphism.
-      apply is_z_isomorphism_inv.
-    }
+    refine (pre_comp_with_z_iso_is_inj'
+              (_ : is_z_isomorphism (#(R ∙ L) (is_z_isomorphism_mor H)))
+              _ _ _).
+    1: apply functor_on_is_z_isomorphism, is_z_isomorphism_inv.
     intermediate_path (identity ((R ∙ L) n)).
     - rewrite <- functor_comp, <- functor_id.
       apply maponpaths.
@@ -442,15 +439,10 @@ Section oblique_defs.
   Proof.
     intro H.
     apply is_negative_oblique_positive_iff_pre_fixed_point.
-    apply (Injectivity (λ h, h · #_ (is_z_isomorphism_mor H))).
-    1: {
-      eenough (Ha : is_iso' (#_ (is_z_isomorphism_mor H))).
-      1: apply isweqonpathsincl, isinclweq, Ha.
-      change (is_iso (#(L ∙ R) (is_z_isomorphism_mor H) : P^op⟦_, _⟧)).
-      apply is_iso_from_is_z_iso.
-      apply opp_is_z_isomorphism, functor_on_is_z_isomorphism.
-      apply is_z_isomorphism_inv.
-    }
+    refine (post_comp_with_z_iso_is_inj
+              (_ : is_z_isomorphism (#(L ∙ R) (is_z_isomorphism_mor H)))
+              _ _ _).
+    1: apply functor_on_is_z_isomorphism, is_z_isomorphism_inv.
     intermediate_path (identity ((L ∙ R) p)).
     - rewrite <- functor_comp, <- functor_id.
       apply maponpaths.

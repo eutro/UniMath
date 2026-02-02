@@ -254,6 +254,9 @@ End duploid_functor.
 Definition lt_essentially_surjective {C : precategory_data} {D : unital_magmoid} (F : functor_data C D) : UU
   := ∏ (b : D), ∃ (a : C), lt_iso (F a) b.
 
+Definition split_lt_essentially_surjective {C : precategory_data} {D : unital_magmoid} (F : functor_data C D) : UU
+  := ∏ (b : D), ∑ (a : C), lt_iso (F a) b.
+
 Section full.
   Context {M : unital_premagmoid} {D : preduploid} (F : M ⟶ D).
   Hypothesis (Hfull : full F) (Hltsurj : lt_essentially_surjective F).

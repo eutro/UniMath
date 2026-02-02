@@ -174,7 +174,7 @@ Section envelope_defs.
     : # R (is_z_isomorphism_mor positive) = φ_adj HFG (# L (is_z_isomorphism_mor negative)).
   Proof.
     apply (pre_comp_with_z_iso_is_inj' negative).
-    apply (Injectivity (φ_adj_inv HFG) isInjective_φ_adj_inv).
+    cancel_φ_adj_inv.
     intermediate_path (identity (L a ⁺)).
     - rewrite φ_adj_inv_natural_postcomp.
       etrans; [apply cancel_postcomposition, φ_adj_inv_after_φ_adj|].
@@ -668,19 +668,48 @@ Section envelope_defs.
     : (⇑oblique_to_envelope a : ob _) = oblique_to_envelope (⇑a).
   Proof. now induction a as [n | p]. Defined.
 
+  Lemma oblique_to_envelope_inverse_of_chosen_negative
+    (b : envelope_duploid) (Hn : envelope_chosen_negative (b : envelope_ob))
+    : ∑ (a : oblique_duploid θ), lt_iso (oblique_to_envelope a) b.
+  Proof.
+    exists (oblique_negative θ ((b : envelope_ob) ⁻)).
+    exists (force b).
+    refine (is_lt_iso_delay_of_negative b _).
+    abstract (apply is_negative_of_envelope_chosen_negative, Hn).
+  Defined.
+
+  Lemma oblique_to_envelope_inverse_of_chosen_positive
+    (b : envelope_duploid) (Hn : envelope_chosen_positive (b : envelope_ob))
+    : ∑ (a : oblique_duploid θ), lt_iso (oblique_to_envelope a) b.
+  Proof.
+    exists (oblique_positive θ ((b : envelope_ob) ⁺)).
+    apply lt_iso_inv.
+    exists (wrap b).
+    refine (is_lt_iso_unwrap_of_positive b _).
+    abstract (apply is_positive_of_envelope_chosen_positive, Hn).
+  Defined.
+
   Lemma lt_essentially_surjective_oblique_to_envelope : lt_essentially_surjective oblique_to_envelope.
   Proof.
     intro a; envelope_induction' a.
     1: intro; apply isapropishinh.
-    - intro Hn; apply hinhpr.
-      exists (oblique_negative θ ((a : envelope_ob) ⁻)).
-      refine (make_lt_iso _ (is_lt_iso_delay_of_negative a _)).
-      apply is_negative_of_envelope_chosen_negative, Hn.
-    - intro Hp; apply hinhpr.
-      exists (oblique_positive θ ((a : envelope_ob) ⁺)).
-      apply lt_iso_inv.
-      refine (make_lt_iso _ (is_lt_iso_unwrap_of_positive a _)).
-      apply is_positive_of_envelope_chosen_positive, Hp.
+    - intro Hn; apply hinhpr, oblique_to_envelope_inverse_of_chosen_negative, Hn.
+    - intro Hp; apply hinhpr, oblique_to_envelope_inverse_of_chosen_positive, Hp.
+  Qed.
+
+  Lemma lt_split_essentially_surjective_oblique_to_envelope_from_LEM
+    : LEM -> lt_essentially_surjective oblique_to_envelope.
+  Proof.
+    intros lem a.
+    set (Hlemn := lem (make_hProp (envelope_chosen_negative (a : envelope_ob)) (isaprop_is_z_isomorphism _))).
+    induction Hlemn as [Hn | Hnotn].
+    - apply hinhpr, oblique_to_envelope_inverse_of_chosen_negative, Hn.
+    - assert (Hp : envelope_chosen_positive (a : envelope_ob)). {
+        envelope_induction' a; intro.
+        apply isaprop_is_z_isomorphism.
+        all: easy.
+      }
+      apply hinhpr, oblique_to_envelope_inverse_of_chosen_positive, Hp.
   Qed.
 
   Lemma preserves_linearity_and_thunkability_oblique_to_envelope
