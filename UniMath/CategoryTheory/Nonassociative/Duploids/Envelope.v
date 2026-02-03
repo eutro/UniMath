@@ -697,19 +697,19 @@ Section envelope_defs.
     - intro Hp; apply hinhpr, oblique_to_envelope_inverse_of_chosen_positive, Hp.
   Qed.
 
-  Lemma lt_split_essentially_surjective_oblique_to_envelope_from_LEM
-    : LEM -> lt_essentially_surjective oblique_to_envelope.
+  Lemma split_lt_essentially_surjective_oblique_to_envelope_from_LEM
+    : LEM -> split_lt_essentially_surjective oblique_to_envelope.
   Proof.
     intros lem a.
     set (Hlemn := lem (make_hProp (envelope_chosen_negative (a : envelope_ob)) (isaprop_is_z_isomorphism _))).
     induction Hlemn as [Hn | Hnotn].
-    - apply hinhpr, oblique_to_envelope_inverse_of_chosen_negative, Hn.
+    - apply oblique_to_envelope_inverse_of_chosen_negative, Hn.
     - assert (Hp : envelope_chosen_positive (a : envelope_ob)). {
         envelope_induction' a; intro.
         apply isaprop_is_z_isomorphism.
         all: easy.
       }
-      apply hinhpr, oblique_to_envelope_inverse_of_chosen_positive, Hp.
+      apply oblique_to_envelope_inverse_of_chosen_positive, Hp.
   Qed.
 
   Lemma preserves_linearity_and_thunkability_oblique_to_envelope
