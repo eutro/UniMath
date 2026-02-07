@@ -26,7 +26,7 @@ Local Open Scope cat.
 
 (** * 1. Retractions *)
 Section SectionsAndRetractions.
-  Context {C : precategory}.
+  Context {C : precategory_data}.
 
   Definition is_retraction
     {A B : C}
@@ -94,6 +94,11 @@ Section SectionsAndRetractions.
     apply H.
   Qed.
 
+End SectionsAndRetractions.
+
+Section SectionsAndRetractionsComp.
+  Context {C : precategory}.
+
   Definition compose_retraction
     {X Y Z : C}
     (f : retraction X Y)
@@ -111,8 +116,7 @@ Section SectionsAndRetractions.
         apply retraction_is_retraction
       ).
   Defined.
-
-End SectionsAndRetractions.
+End SectionsAndRetractionsComp.
 
 (** * 2. Idempotents and split idempotents *)
 Section Idempotents.
