@@ -572,12 +572,9 @@ Section envelope_defs.
   Qed.
 
   Lemma is_inverse_in_precat_envelope_unwrap_wrap (a : envelope_ob)
-    : is_inverse_in_precat (C:=envelope_preduploid) (envelope_wrap a) (envelope_unwrap a).
+    : is_inverse_in_precat (C:=envelope_preduploid) (envelope_unwrap a) (envelope_wrap a).
   Proof.
     split; cbn.
-    - unfold envelope_mor_factor_chosen_negative, envelope_unwrap; cbn.
-      unfold envelope_mor_factor_chosen_positive, envelope_wrap; cbn.
-      now rewrite !id_left.
     - envelope_induction' a.
       1: intro; apply homset_property.
       + intro Hn; cbn.
@@ -590,6 +587,9 @@ Section envelope_defs.
         unfold envelope_mor_factor_chosen_negative, envelope_unwrap; cbn.
         unfold envelope_mor_factor_chosen_positive, envelope_wrap; cbn.
         now rewrite id_right, (is_inverse_in_precat1 Hp).
+    - unfold envelope_mor_factor_chosen_negative, envelope_unwrap; cbn.
+      unfold envelope_mor_factor_chosen_positive, envelope_wrap; cbn.
+      now rewrite !id_left.
   Qed.
 
   Definition has_thunkable_inverse_envelope_wrap (a : envelope_ob)

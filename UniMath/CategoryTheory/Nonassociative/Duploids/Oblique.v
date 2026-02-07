@@ -256,13 +256,12 @@ Section oblique_defs.
     - now rewrite φ_adj_after_φ_adj_inv, id_right, φ_adj_inv_after_φ_adj.
   Qed.
 
-  Definition is_inverse_in_precat_oblique_wrap_unwrap (a : oblique_preduploid)
-    : is_inverse_in_precat (oblique_wrap a) (oblique_unwrap a).
+  Definition is_inverse_in_precat_oblique_unwrap_wrap (a : oblique_preduploid)
+    : is_inverse_in_precat (oblique_unwrap a) (oblique_wrap a).
   Proof.
-    induction a as [n | p]; simpl; split; unfold identity, compose; simpl;
-      fold (identity (C:=P)); fold (identity (C:=N)).
-    - now rewrite id_left.
+    induction a as [n | p]; split; cbn.
     - now rewrite φ_adj_after_φ_adj_inv, id_left, φ_adj_inv_after_φ_adj.
+    - now rewrite id_left.
     - apply id_left.
     - apply id_left.
   Qed.
@@ -280,7 +279,7 @@ Section oblique_defs.
     use make_has_thunkable_inverse.
     - apply (make_thunkable_mor (oblique_unwrap a)).
       apply is_thunkable_oblique_unwrap.
-    - apply is_inverse_in_precat_oblique_wrap_unwrap.
+    - apply is_inverse_in_precat_oblique_unwrap_wrap.
   Defined.
 
   Definition oblique_negative_shift_data : negative_shift_data oblique_preduploid

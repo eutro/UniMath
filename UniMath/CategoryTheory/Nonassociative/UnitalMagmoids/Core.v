@@ -35,7 +35,8 @@
  associates if any one of the annotations holds:
 
  <<
-                       thunkable ↓           ↓ linear
+                                  intermediate
+                       thunkable ↓     ↓     ↓ linear
                                  f     g     h
                               A --> B --> C --> D
                            negative ↑     ↑ positive
