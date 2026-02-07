@@ -20,15 +20,17 @@ Require Import UniMath.CategoryTheory.Core.Categories.
 Require Import UniMath.CategoryTheory.Core.Isos.
 
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
+Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Opposite.
 
 Local Open Scope cat.
 
 (** ** 1. Inverses and when they are unique *)
+Lemma isaprop_is_inverse_in_precat_of_magmoid
+  {M : unital_magmoid} {a b : M} (f : a --> b) (g : a <-- b) : isaprop (is_inverse_in_precat f g).
+Proof. apply isapropdirprod; apply unital_magmoid_has_homsets. Qed.
+
 Section inverses.
   Context {M : unital_magmoid} {a b : M} (f : a --> b).
-
-  Lemma isaprop_is_inverse_in_precat_of_magmoid (g : a <-- b) : isaprop (is_inverse_in_precat f g).
-  Proof. apply isapropdirprod; apply unital_magmoid_has_homsets. Qed.
 
   (* Linear inverses are unique *)
   Lemma inverse_unique_linear
@@ -48,7 +50,7 @@ Section inverses.
     (g : linear_mor b a) (H : is_inverse_in_precat f g)
     : has_linear_inverse := g,,H.
   Coercion has_linear_inverse_to_mor (I : has_linear_inverse) : linear_mor b a := pr1 I.
-  Coercion has_linear_inverse_is_inverse (I : has_linear_inverse) : is_inverse_in_precat f I := pr2 I.
+  Definition has_linear_inverse_is_inverse (I : has_linear_inverse) : is_inverse_in_precat f I := pr2 I.
 
   Lemma isaprop_has_linear_inverse : isaprop has_linear_inverse.
   Proof.
@@ -64,22 +66,22 @@ Section inverses.
   (* Thunkable inverses are unique *)
   Lemma inverse_unique_thunkable
     (g g' : a <-- b) (H : is_thunkable g)
-    (Hg : is_inverse_in_precat f g)
-    (Hg' : is_inverse_in_precat f g')
+    (Hg : is_inverse_in_precat g f)
+    (Hg' : is_inverse_in_precat g' f)
     : g = g'.
   Proof.
     refine (!magmoid_id_right _ @ _ @ magmoid_id_left _).
-    now rewrite <- (is_inverse_in_precat2 Hg),
-      <- (is_inverse_in_precat1 Hg'), (assoc_thunkable _ H).
+    now rewrite <- (is_inverse_in_precat1 Hg),
+      <- (is_inverse_in_precat2 Hg'), (assoc_thunkable _ H).
   Qed.
 
   Definition has_thunkable_inverse : UU
-    := ∑ (g : thunkable_mor b a), is_inverse_in_precat f g.
+    := ∑ (g : thunkable_mor b a), is_inverse_in_precat g f.
   Definition make_has_thunkable_inverse
-    (g : thunkable_mor b a) (H : is_inverse_in_precat f g)
+    (g : thunkable_mor b a) (H : is_inverse_in_precat g f)
     : has_thunkable_inverse := g,,H.
   Coercion has_thunkable_inverse_to_mor (I : has_thunkable_inverse) : thunkable_mor b a := pr1 I.
-  Coercion has_thunkable_inverse_is_inverse (I : has_thunkable_inverse) : is_inverse_in_precat f I := pr2 I.
+  Definition has_thunkable_inverse_is_inverse (I : has_thunkable_inverse) : is_inverse_in_precat I f := pr2 I.
 
   Lemma isaprop_has_thunkable_inverse : isaprop has_thunkable_inverse.
   Proof.
@@ -100,12 +102,12 @@ Section inverses.
     : has_linear_and_thunkable_inverse := g,,H.
   Coercion has_linear_and_thunkable_inverse_to_mor (I : has_linear_and_thunkable_inverse)
     : linear_and_thunkable_mor b a := pr1 I.
-  Coercion has_linear_and_thunkable_inverse_is_inverse (I : has_linear_and_thunkable_inverse)
+  Definition has_linear_and_thunkable_inverse_is_inverse (I : has_linear_and_thunkable_inverse)
     : is_inverse_in_precat f I := pr2 I.
   Coercion has_linear_and_thunkable_inverse_to_has_linear_inverse (I : has_linear_and_thunkable_inverse)
-    : has_linear_inverse := make_has_linear_inverse I I.
+    : has_linear_inverse := make_has_linear_inverse I (has_linear_and_thunkable_inverse_is_inverse I).
   Coercion has_linear_and_thunkable_inverse_to_has_thunkable_inverse (I : has_linear_and_thunkable_inverse)
-    : has_thunkable_inverse := make_has_thunkable_inverse I I.
+    : has_thunkable_inverse := make_has_thunkable_inverse I (is_inverse_in_precat_inv (has_linear_and_thunkable_inverse_is_inverse I)).
 
   Lemma isaprop_has_linear_and_thunkable_inverse : isaprop has_linear_and_thunkable_inverse.
   Proof.
@@ -119,6 +121,24 @@ Section inverses.
   Qed.
 
 End inverses.
+
+Goal ∏ (M : unital_magmoid) (a b : M) (f : a --> b),
+  has_thunkable_inverse (M:=opp_magmoid M) f = has_linear_inverse f.
+  reflexivity.
+Qed.
+
+Definition opp_magmoid_has_linear_and_thunkable_inverse {M : unital_magmoid} {a b : M} (f : a --> b)
+  : has_linear_and_thunkable_inverse (M:=opp_magmoid M) f -> has_linear_and_thunkable_inverse f.
+Proof.
+  intro H.
+  use make_has_linear_and_thunkable_inverse.
+  - apply opp_magmoid_linear_and_thunkable_mor; exact H.
+  - apply is_inverse_in_precat_inv, (has_linear_and_thunkable_inverse_is_inverse _ H).
+Defined.
+
+Lemma isweq_opp_magmoid_has_linear_and_thunkable_inverse {M : unital_magmoid} {a b : M} (f : a --> b)
+  : isweq (opp_magmoid_has_linear_and_thunkable_inverse f).
+Proof. opp_magmoid_involution. Defined.
 
 (** ** 2. Composition of inverses when they exist *)
 
@@ -197,13 +217,13 @@ Section composition.
       + apply is_inverse_in_magmoid_comp_2linear.
         * apply (g : linear_mor _ _).
         * apply (g' : linear_mor _ _).
-        * apply (is_inverse_in_precat1 g).
-        * apply (is_inverse_in_precat1 g').
+        * apply (is_inverse_in_precat1 (has_linear_and_thunkable_inverse_is_inverse _ g)).
+        * apply (is_inverse_in_precat1 (has_linear_and_thunkable_inverse_is_inverse _ g')).
       + apply is_inverse_in_magmoid_comp_2thunkable.
         * apply (g' : thunkable_mor _ _).
         * apply (g : thunkable_mor _ _).
-        * apply (is_inverse_in_precat2 g').
-        * apply (is_inverse_in_precat2 g).
+        * apply (is_inverse_in_precat2 (has_linear_and_thunkable_inverse_is_inverse _ g')).
+        * apply (is_inverse_in_precat2 (has_linear_and_thunkable_inverse_is_inverse _ g)).
   Defined.
 
   (** Linear inverses of linear maps compose -- but this is just the linear
@@ -219,13 +239,13 @@ Section composition.
       + apply is_inverse_in_magmoid_comp_2linear.
         * apply (g : linear_mor _ _).
         * apply (g' : linear_mor _ _).
-        * apply (is_inverse_in_precat1 g).
-        * apply (is_inverse_in_precat1 g').
+        * apply (is_inverse_in_precat1 (has_linear_inverse_is_inverse _ g)).
+        * apply (is_inverse_in_precat1 (has_linear_inverse_is_inverse _ g')).
       + apply is_inverse_in_magmoid_comp_2linear.
         * apply (f' : linear_mor _ _).
         * apply (f : linear_mor _ _).
-        * apply (is_inverse_in_precat2 g').
-        * apply (is_inverse_in_precat2 g).
+        * apply (is_inverse_in_precat2 (has_linear_inverse_is_inverse _ g')).
+        * apply (is_inverse_in_precat2 (has_linear_inverse_is_inverse _ g)).
   Defined.
 
   (** Thunkable inverses of thunkable maps compose -- but this is just the
@@ -239,15 +259,15 @@ Section composition.
     - apply (thunkable_compose g' g).
     - use make_is_inverse_in_precat.
       + apply is_inverse_in_magmoid_comp_2thunkable.
-        * apply (f : thunkable_mor _ _).
-        * apply (f' : thunkable_mor _ _).
-        * apply (is_inverse_in_precat1 g).
-        * apply (is_inverse_in_precat1 g').
-      + apply is_inverse_in_magmoid_comp_2thunkable.
         * apply (g' : thunkable_mor _ _).
         * apply (g : thunkable_mor _ _).
-        * apply (is_inverse_in_precat2 g').
-        * apply (is_inverse_in_precat2 g).
+        * apply (is_inverse_in_precat1 (has_thunkable_inverse_is_inverse _ g')).
+        * apply (is_inverse_in_precat1 (has_thunkable_inverse_is_inverse _ g)).
+      + apply is_inverse_in_magmoid_comp_2thunkable.
+        * apply (f : thunkable_mor _ _).
+        * apply (f' : thunkable_mor _ _).
+        * apply (is_inverse_in_precat2 (has_thunkable_inverse_is_inverse _ g)).
+        * apply (is_inverse_in_precat2 (has_thunkable_inverse_is_inverse _ g')).
   Defined.
 End composition.
 
@@ -278,7 +298,7 @@ Section isos.
     : is_linear_and_thunkable f := pr1 H.
   Coercion is_lt_iso_to_has_linear_and_thunkable_inverse {a b : M} (f : a --> b) (H : is_lt_iso f)
     : has_linear_and_thunkable_inverse f := pr2 H.
-  Definition isaprop_is_lt_iso {a b : M} (f : linear_and_thunkable_mor a b)
+  Definition isaprop_is_lt_iso {a b : M} (f : a --> b)
     : isaprop (is_lt_iso f).
   Proof.
     apply isofhleveldirprod.
@@ -292,7 +312,7 @@ Section isos.
     2: apply (identity a).
     1, 2: apply is_linear_and_thunkable_identity.
     apply is_inverse_in_precat_identity_of_magmoid.
-  Qed.
+  Defined.
 
   Lemma is_lt_iso_compose {a b c : M} (f : a --> b) (g : b --> c)
     (Hf : is_lt_iso f) (Hg : is_lt_iso g) : is_lt_iso (f · g).
@@ -324,7 +344,8 @@ Section isos.
   Definition lt_iso_inverse {a b : M} (f : lt_iso a b)
     : linear_and_thunkable_mor b a := lt_iso_is_lt_iso f.
   Definition lt_iso_is_inverse {a b : M} (f : lt_iso a b)
-    : is_inverse_in_precat f (lt_iso_inverse f) := lt_iso_is_lt_iso f.
+    : is_inverse_in_precat f (lt_iso_inverse f)
+    := has_linear_and_thunkable_inverse_is_inverse _ _.
 
   Coercion lt_iso_to_z_iso {a b : M} (f : lt_iso a b) : z_iso a b
     := make_z_iso' f (is_lt_iso_to_is_z_isomorphism _ (lt_iso_is_lt_iso f)).
@@ -337,6 +358,11 @@ Section isos.
     := make_lt_iso _
          (make_is_lt_iso f
             (make_has_linear_and_thunkable_inverse f g H)).
+
+  Lemma lt_iso_eq {a b : M} (f g : lt_iso a b)
+    (H : lt_iso_mor f = lt_iso_mor g)
+    : f = g.
+  Proof. apply (subtypePath' H), isaprop_is_lt_iso. Defined.
 
   Definition lt_iso_inv {a b : M} (f : lt_iso a b) : lt_iso b a.
   Proof.
@@ -366,7 +392,47 @@ Section isos.
         | apply (lt_iso_is_lt_iso g) ].
   Defined.
 
+  Definition is_lt_iso_idtomor {a b : M} (p : a = b) : is_lt_iso (idtomor _ _ p).
+  Proof.
+    induction p.
+    apply is_lt_iso_identity.
+  Defined.
+
+  Definition id_to_lt_iso {a b : M} (p : a = b) : lt_iso a b.
+  Proof.
+    induction p.
+    apply lt_iso_identity.
+  Defined.
+
 End isos.
+
+Lemma opp_magmoid_is_lt_iso {M : unital_magmoid} {a b : M} (f : a --> b)
+  : is_lt_iso (M:=opp_magmoid M) f -> is_lt_iso f.
+Proof.
+  intro H.
+  use make_is_lt_iso.
+  - apply opp_magmoid_is_linear_and_thunkable,
+      (is_lt_iso_to_is_linear_and_thunkable _ H).
+  - apply opp_magmoid_has_linear_and_thunkable_inverse,
+      (is_lt_iso_to_has_linear_and_thunkable_inverse _ H).
+Defined.
+
+Lemma isweq_opp_magmoid_is_lt_iso {M : unital_magmoid} {a b : M} (f : a --> b)
+  : isweq (opp_magmoid_is_lt_iso f).
+Proof. opp_magmoid_involution. Defined.
+
+Lemma opp_magmoid_lt_iso {M : unital_magmoid} (a b : M)
+  : lt_iso (M:=opp_magmoid M) a b -> lt_iso a b.
+Proof.
+  intro f.
+  use make_lt_iso.
+  - exact (lt_iso_inverse f).
+  - apply opp_magmoid_is_lt_iso, (lt_iso_inv f).
+Defined.
+
+Lemma isweq_opp_magmoid_lt_iso {M : unital_magmoid} (a b : M)
+  : isweq (opp_magmoid_lt_iso a b).
+Proof. opp_magmoid_involution. Defined.
 
 (** ** 4. Lemmas about linear-and-thunkable isomorphisms *)
 

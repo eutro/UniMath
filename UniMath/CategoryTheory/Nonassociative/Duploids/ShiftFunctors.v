@@ -503,9 +503,9 @@ Section shift_functor_adjunctions.
     - eapply are_adjoints_to_is_right_adjoint,
         downshift_thunkable_to_positive_thunkable_are_adjoints.
     - abstract (intro a; exists (unwrap (pr1 a),,tt);
-                split; do 2 apply carrier_eq; apply are_inverses_wrap_unwrap).
+                split; do 2 apply carrier_eq; apply are_inverses_unwrap_wrap).
     - abstract (intro a; exists (wrap a);
-                split; apply carrier_eq, are_inverses_wrap_unwrap).
+                split; apply carrier_eq, are_inverses_unwrap_wrap).
   Defined.
 
   (** I ⊣ ⇑ : Dₗ ≃ D⁻ₗ *)

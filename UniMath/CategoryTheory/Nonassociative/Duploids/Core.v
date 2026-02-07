@@ -36,13 +36,22 @@ Section shifts.
 
   (** Upshifts, or negative shifts. *)
   Definition negative_shift_data (M : unital_magmoid) : UU :=
-    ∑ upshift : M -> M, ∏ a : M, upshift a --> a.
+    ∏ a : M, ∑ upshift : M, upshift --> a.
   Definition make_negative_shift_data {M : unital_magmoid}
     (upshift : M -> M) (force : ∏ (a : M), upshift a --> a)
     : negative_shift_data M :=
-    upshift,,force.
-  Definition upshift' {M : unital_magmoid} (D : negative_shift_data M) : M -> M := pr1 D.
-  Definition force' {M : unital_magmoid} (D : negative_shift_data M) (a : M) : upshift' D a --> a := pr2 D a.
+    λ a, upshift a,,force a.
+  Definition upshift' {M : unital_magmoid} (D : negative_shift_data M) : M -> M := λ a, pr1 (D a).
+  Definition force' {M : unital_magmoid} (D : negative_shift_data M) (a : M) : upshift' D a --> a := pr2 (D a).
+
+  Lemma negative_shift_data_eq {M : unital_magmoid} (D D' : negative_shift_data M)
+    (H1 : ∏ a, upshift' D a = upshift' D' a)
+    (H2 : ∏ a, transportf (λ u, u --> a) (H1 a) (force' D a) = force' D' a)
+    : D = D'.
+  Proof.
+    apply funextsec; intro a.
+    apply (total2_paths_f (H1 a) (H2 a)).
+  Defined.
 
   Definition negative_shift_axioms {M : unital_magmoid} (D : negative_shift_data M) : UU
     := (∏ (a : M), is_linear (force' D a)) ×
@@ -60,8 +69,11 @@ Section shifts.
     (H : negative_shift_axioms D) (a : M) : is_linear (force' D a) := pr1 H a.
   Definition is_negative_upshift' {M : unital_magmoid} {D : negative_shift_data M}
     (H : negative_shift_axioms D) (a : M) : is_negative (upshift' D a) := pr12 H a.
-  Definition has_linear_inverse_force' {M : unital_magmoid} {D : negative_shift_data M}
+  Definition delay' {M : unital_magmoid} {D : negative_shift_data M}
     (H : negative_shift_axioms D) (a : M) : has_linear_inverse (force' D a) := pr22 H a.
+  Definition has_linear_inverse_force' {M : unital_magmoid} {D : negative_shift_data M}
+    (H : negative_shift_axioms D) (a : M) : is_inverse_in_precat (force' D a) (delay' H a) :=
+    has_linear_inverse_is_inverse _ (delay' H a).
 
   Lemma isaprop_negative_shift_axioms {M : unital_magmoid} (D : negative_shift_data M)
     : isaprop (negative_shift_axioms D).
@@ -83,15 +95,53 @@ Section shifts.
   Coercion has_negative_shifts_to_negative_shift_axioms (M : unital_magmoid)
     (H : has_negative_shifts M) : negative_shift_axioms H := pr2 H.
 
+  Lemma upshift_unique_up_to_lt_iso (M : unital_magmoid)
+    (U1 U2 : has_negative_shifts M) (a : M)
+    : lt_iso (upshift' U1 a) (upshift' U2 a).
+  Proof.
+    use make_lt_iso; [|use make_is_lt_iso'].
+    1,3: refine (force' _ a · delay' _ a); first [exact U2|exact U1].
+    1,2: abstract (
+             apply make_is_linear_and_thunkable;
+             first [ apply is_thunkable_of_negative, is_negative_upshift'
+                   | apply is_linear_compose; first [ apply is_linear_force' | apply linear_mor_is_linear ] ];
+             first [apply U2|apply U1]).
+    apply make_is_inverse_in_precat.
+    all: abstract (
+             etrans; [apply assoc_linear, linear_mor_is_linear|];
+             etrans; [apply cancel_postcomposition, assoc'_linear, is_linear_force'; first [apply U2|apply U1]|];
+             etrans; [apply cancel_postcomposition, cancel_precomposition, has_linear_inverse_is_inverse|];
+             etrans; [apply cancel_postcomposition, magmoid_id_right|];
+             apply has_linear_inverse_is_inverse).
+  Defined.
+
+  Lemma force_unique_up_to_lt_iso (M : unital_magmoid)
+    (U1 U2 : has_negative_shifts M) (a : M)
+    : upshift_unique_up_to_lt_iso M _ _ a · force' U2 a = force' U1 a.
+  Proof.
+    etrans; [apply assoc'_linear, is_linear_force', U2|].
+    etrans; [apply cancel_precomposition, has_linear_inverse_is_inverse|].
+    apply magmoid_id_right.
+  Qed.
+
   (** Downshifts, or positive shifts. *)
   Definition positive_shift_data (M : unital_magmoid) : UU :=
-    ∑ downshift : M -> M, ∏ a : M, downshift a <-- a.
+    ∏ a : M, ∑ downshift : M, downshift <-- a.
   Definition make_positive_shift_data {M : unital_magmoid}
     (downshift : M -> M) (wrap : ∏ (a : M), downshift a <-- a)
     : positive_shift_data M :=
-    downshift,,wrap.
-  Definition downshift' {M : unital_magmoid} (D : positive_shift_data M) : M -> M := pr1 D.
-  Definition wrap' {M : unital_magmoid} (D : positive_shift_data M) (a : M) : downshift' D a <-- a := pr2 D a.
+    λ a, downshift a,,wrap a.
+  Definition downshift' {M : unital_magmoid} (D : positive_shift_data M) : M -> M := λ a, pr1 (D a).
+  Definition wrap' {M : unital_magmoid} (D : positive_shift_data M) (a : M) : downshift' D a <-- a := pr2 (D a).
+
+  Lemma positive_shift_data_eq {M : unital_magmoid} (D D' : positive_shift_data M)
+    (H1 : ∏ a, downshift' D a = downshift' D' a)
+    (H2 : ∏ a, transportf (λ u, u <-- a) (H1 a) (wrap' D a) = wrap' D' a)
+    : D = D'.
+  Proof.
+    apply funextsec; intro a.
+    apply (total2_paths_f (H1 a) (H2 a)).
+  Defined.
 
   Definition positive_shift_axioms {M : unital_magmoid} (D : positive_shift_data M) : UU
     := (∏ (a : M), is_thunkable (wrap' D a)) ×
@@ -109,8 +159,11 @@ Section shifts.
     (H : positive_shift_axioms D) (a : M) : is_thunkable (wrap' D a) := pr1 H a.
   Definition is_positive_downshift' {M : unital_magmoid} {D : positive_shift_data M}
     (H : positive_shift_axioms D) (a : M) : is_positive (downshift' D a) := pr12 H a.
-  Definition has_thunkable_inverse_wrap' {M : unital_magmoid} {D : positive_shift_data M}
+  Definition unwrap' {M : unital_magmoid} {D : positive_shift_data M}
     (H : positive_shift_axioms D) (a : M) : has_thunkable_inverse (wrap' D a) := pr22 H a.
+  Definition has_thunkable_inverse_wrap' {M : unital_magmoid} {D : positive_shift_data M}
+    (H : positive_shift_axioms D) (a : M) : is_inverse_in_precat (unwrap' H a) (wrap' D a) :=
+    has_thunkable_inverse_is_inverse _ (unwrap' H a).
 
   Lemma isaprop_positive_shift_axioms {M : unital_magmoid} (D : positive_shift_data M)
     : isaprop (positive_shift_axioms D).
@@ -131,6 +184,35 @@ Section shifts.
     (H : has_positive_shifts M) : positive_shift_data M := pr1 H.
   Coercion has_positive_shifts_to_positive_shift_axioms (M : unital_magmoid)
     (H : has_positive_shifts M) : positive_shift_axioms H := pr2 H.
+
+  Lemma downshift_unique_up_to_lt_iso (M : unital_magmoid)
+    (U1 U2 : has_positive_shifts M) (a : M)
+    : lt_iso (downshift' U1 a) (downshift' U2 a).
+  Proof.
+    use make_lt_iso; [|use make_is_lt_iso'].
+    1,3: refine (wrap' _ a ∘ unwrap' _ a); first [exact U2|exact U1].
+    1,2: abstract (
+             apply make_is_linear_and_thunkable;
+             first [ apply is_linear_of_positive, is_positive_downshift'
+                   | apply is_thunkable_compose; first [ apply is_thunkable_wrap' | apply thunkable_mor_is_thunkable ] ];
+             first [apply U2|apply U1]).
+    apply make_is_inverse_in_precat.
+    all: abstract (
+             etrans; [apply assoc'_thunkable, thunkable_mor_is_thunkable|];
+             etrans; [apply cancel_precomposition, assoc_thunkable, is_thunkable_wrap'; first [apply U2|apply U1]|];
+             etrans; [apply cancel_precomposition, cancel_postcomposition, has_thunkable_inverse_is_inverse|];
+             etrans; [apply cancel_precomposition, magmoid_id_left|];
+             apply has_thunkable_inverse_is_inverse).
+  Defined.
+
+  Lemma wrap_unique_up_to_lt_iso (M : unital_magmoid)
+    (U1 U2 : has_positive_shifts M) (a : M)
+    : downshift_unique_up_to_lt_iso M _ _ a ∘ wrap' U2 a = wrap' U1 a.
+  Proof.
+    etrans; [apply assoc_thunkable, is_thunkable_wrap', U2|].
+    etrans; [apply cancel_postcomposition, has_thunkable_inverse_is_inverse|].
+    apply magmoid_id_left.
+  Qed.
 
   (** Combined shifts *)
   Definition has_polarity_shifts (M : unital_magmoid) : UU
@@ -209,7 +291,7 @@ Notation "'⇑' a" := (upshift a) (at level 40) : duploid.
 Definition force {D : duploid} (a : D) : linear_mor (⇑a) a
   := make_linear_mor (force' D a) (is_linear_force' D a).
 Definition delay {D : duploid} (a : D) : linear_mor a (⇑a)
-  := has_linear_inverse_force' D a.
+  := delay' D a.
 Definition are_inverses_force_delay {D : duploid} (a : D)
   : is_inverse_in_precat (force a) (delay a)
   := has_linear_inverse_force' D a.
@@ -222,9 +304,9 @@ Notation "'⇓' a" := (downshift a) (at level 40) : duploid.
 Definition wrap {D : duploid} (a : D) : thunkable_mor a (⇓a)
   := make_thunkable_mor (wrap' D a) (is_thunkable_wrap' D a).
 Definition unwrap {D : duploid} (a : D) : thunkable_mor (⇓a) a
-  := has_thunkable_inverse_wrap' D a.
-Definition are_inverses_wrap_unwrap {D : duploid} (a : D)
-  : is_inverse_in_precat (wrap a) (unwrap a)
+  := unwrap' D a.
+Definition are_inverses_unwrap_wrap {D : duploid} (a : D)
+  : is_inverse_in_precat (unwrap a) (wrap a)
   := has_thunkable_inverse_wrap' D a.
 
 (** ** 5. Lemmas about shifts *)
@@ -246,10 +328,10 @@ Section shift_lemmas.
   Proof. now rewrite (assoc_negative _ (⇑b)), delay_force_right. Qed.
 
   (* [wrap] and [unwrap] lemmas. *)
-  Lemma wrap_unwrap_id (a : D) : wrap a · unwrap a = identity a.
-  Proof. apply is_inverse_in_precat1, are_inverses_wrap_unwrap. Defined.
   Lemma unwrap_wrap_id (a : D) : unwrap a · wrap a = identity (⇓a).
-  Proof. apply is_inverse_in_precat2, are_inverses_wrap_unwrap. Defined.
+  Proof. apply is_inverse_in_precat1, are_inverses_unwrap_wrap. Defined.
+  Lemma wrap_unwrap_id (a : D) : wrap a · unwrap a = identity a.
+  Proof. apply is_inverse_in_precat2, are_inverses_unwrap_wrap. Defined.
   Lemma wrap_unwrap_right {a b : D} (f : a <-- b) : (f · wrap a) · unwrap a = f.
   Proof. now rewrite (assoc'_positive _ (⇓a)), wrap_unwrap_id, magmoid_id_right. Qed.
   Lemma wrap_unwrap_left {a b : D} (f : a <-- b) : wrap b · (unwrap b · f) = f.
@@ -342,7 +424,7 @@ Section shift_lemmas.
     - abstract (apply make_is_linear_and_thunkable; first [exact H|apply (wrap a)]).
     - exact (unwrap a).
     - abstract (apply is_linear_and_thunkable_unwrap).
-    - abstract (split; apply are_inverses_wrap_unwrap).
+    - abstract (split; apply are_inverses_unwrap_wrap).
   Defined.
 
   (** 1 -> 3 *)

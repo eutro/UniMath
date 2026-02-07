@@ -251,11 +251,115 @@ End duploid_functor.
 
 (** ** 3. Properties of (pre)duploid functors *)
 
-Definition lt_essentially_surjective {C : precategory_data} {D : unital_magmoid} (F : functor_data C D) : UU
-  := ∏ (b : D), ∃ (a : C), lt_iso (F a) b.
+Section equivalences.
+  Definition lt_essentially_surjective {C : precategory_data} {D : unital_magmoid} (F : functor_data C D) : UU
+    := ∏ (b : D), ∃ (a : C), lt_iso (F a) b.
 
-Definition split_lt_essentially_surjective {C : precategory_data} {D : unital_magmoid} (F : functor_data C D) : UU
-  := ∏ (b : D), ∑ (a : C), lt_iso (F a) b.
+  Definition is_weak_duploid_equivalence {D D' : unital_magmoid} (F : D ⟶ D') : UU
+    := fully_faithful F × lt_essentially_surjective F.
+  Coercion is_weak_duploid_equivalence_to_fully_faithful {D D' : unital_magmoid} (F : D ⟶ D')
+    (H : is_weak_duploid_equivalence F) : fully_faithful F := pr1 H.
+  Coercion is_weak_duploid_equivalence_to_lt_essentially_surjective {D D' : unital_magmoid} (F : D ⟶ D')
+    (H : is_weak_duploid_equivalence F) : lt_essentially_surjective F := pr2 H.
+  Definition make_is_weak_duploid_equivalence {D D' : unital_magmoid} (F : D ⟶ D')
+    (H1 : fully_faithful F) (H2 : lt_essentially_surjective F)
+    : is_weak_duploid_equivalence F
+    := H1,,H2.
+
+  Definition weak_duploid_equivalence (D D' : unital_magmoid)
+    := ∑ (F : D ⟶ D'), is_weak_duploid_equivalence F.
+  Coercion weak_duploid_equivalence_functor {D D' : unital_magmoid}
+    (F : weak_duploid_equivalence D D') : D ⟶ D' := pr1 F.
+  Coercion weak_duploid_equivalence_is_weak_duploid_equivalence {D D' : unital_magmoid}
+    (F : weak_duploid_equivalence D D') : is_weak_duploid_equivalence F := pr2 F.
+  Definition make_weak_duploid_equivalence {D D' : unital_magmoid}
+    (F : D ⟶ D') (H : is_weak_duploid_equivalence F)
+    : weak_duploid_equivalence D D' := F,,H.
+
+  Definition split_lt_essentially_surjective {C : precategory_data} {D : unital_magmoid} (F : functor_data C D) : UU
+    := ∏ (b : D), ∑ (a : C), lt_iso (F a) b.
+
+  Definition lt_surjective_inverse_ob {C : precategory_data} {D : unital_magmoid}
+    (F : functor_data C D) (H : split_lt_essentially_surjective F) (b : D) : C := pr1 (H b).
+  Definition lt_surjective_inverse_ob_iso {C : precategory_data} {D : unital_magmoid}
+    (F : functor_data C D) (H : split_lt_essentially_surjective F) (b : D)
+    : lt_iso (F (lt_surjective_inverse_ob F H b)) b := pr2 (H b).
+
+  Definition is_duploid_equivalence {D D' : unital_magmoid} (F : D ⟶ D') : UU
+    := fully_faithful F × split_lt_essentially_surjective F.
+  Coercion is_duploid_equivalence_to_fully_faithful {D D' : unital_magmoid} (F : D ⟶ D')
+    (H : is_duploid_equivalence F) : fully_faithful F := pr1 H.
+  Coercion is_duploid_equivalence_to_split_lt_essentially_surjective {D D' : unital_magmoid} (F : D ⟶ D')
+    (H : is_duploid_equivalence F) : split_lt_essentially_surjective F := pr2 H.
+  Definition make_is_duploid_equivalence {D D' : unital_magmoid} (F : D ⟶ D')
+    (H1 : fully_faithful F) (H2 : split_lt_essentially_surjective F)
+    : is_duploid_equivalence F
+    := H1,,H2.
+
+  Definition duploid_equivalence (D D' : unital_magmoid)
+    := ∑ (F : D ⟶ D'), is_duploid_equivalence F.
+  Coercion duploid_equivalence_functor {D D' : unital_magmoid}
+    (F : duploid_equivalence D D') : D ⟶ D' := pr1 F.
+  Coercion duploid_equivalence_is_duploid_equivalence {D D' : unital_magmoid}
+    (F : duploid_equivalence D D') : is_duploid_equivalence F := pr2 F.
+  Definition make_duploid_equivalence {D D' : unital_magmoid}
+    (F : D ⟶ D') (H : is_duploid_equivalence F)
+    : duploid_equivalence D D' := F,,H.
+
+  Coercion duploid_equivalence_to_weak_duploid_equivalence {D D' : unital_magmoid}
+    (F : duploid_equivalence D D') : weak_duploid_equivalence D D'.
+  Proof.
+    use make_weak_duploid_equivalence.
+    - exact F.
+    - use make_dirprod.
+      + exact F.
+      + intros a.
+        apply hinhpr.
+        apply (F : split_lt_essentially_surjective _).
+  Defined.
+
+  Definition is_duploid_equivalence_to_inverse_functor_data {M M' : preduploid}
+    (F : M ⟶ M') (H : is_duploid_equivalence F) : functor_data M' M.
+  Proof.
+    use make_functor_data.
+    - intro a.
+      exact (lt_surjective_inverse_ob F H a).
+    - intros a b f; cbn.
+      apply (fully_faithful_inv_hom H).
+      exact (lt_surjective_inverse_ob_iso F H a · f ·
+               lt_iso_inverse (lt_surjective_inverse_ob_iso F H b)).
+  Defined.
+
+  Lemma is_duploid_equivalence_to_inverse_is_functor  {M M' : preduploid}
+    (F : M ⟶ M') (H : is_duploid_equivalence F)
+    : is_functor (is_duploid_equivalence_to_inverse_functor_data F H).
+  Proof.
+    use make_is_functor.
+    - intro a; cbn.
+      apply pathsinv0, pathsweq1, pathsinv0.
+      etrans; [apply cancel_postcomposition, magmoid_id_right|].
+      etrans; [apply lt_iso_is_inverse|].
+      apply pathsinv0, functor_id.
+    - intros a b c g f; cbn.
+      apply pathsinv0, pathsweq1, pathsinv0.
+      etrans. {
+        apply cancel_postcomposition, cancel_precomposition.
+        apply pathsinv0, (preduploid_lt_iso_inv_interpose (lt_surjective_inverse_ob_iso F H b)).
+      }
+      etrans; [|apply pathsinv0, (functor_comp F)].
+      etrans; [|apply cancel_postcomposition, pathsinv0, (homotweqinvweq (weq_from_fully_faithful H _ _))].
+      etrans; [|apply cancel_precomposition, pathsinv0, (homotweqinvweq (weq_from_fully_faithful H _ _))].
+      etrans; [apply cancel_postcomposition, assoc_thunkable, (lt_surjective_inverse_ob_iso F H a)|].
+      etrans; [apply assoc'_linear, (lt_iso_inverse _)|].
+      apply cancel_postcomposition.
+      apply assoc_linear, (lt_iso_inverse _).
+  Qed.
+
+  Definition is_duploid_equivalence_to_inverse_functor {M M' : preduploid}
+    (F : M ⟶ M') (H : is_duploid_equivalence F)
+    : M' ⟶ M := make_functor _ (is_duploid_equivalence_to_inverse_is_functor F H).
+
+End equivalences.
 
 Section full.
   Context {M : unital_premagmoid} {D : preduploid} (F : M ⟶ D).
