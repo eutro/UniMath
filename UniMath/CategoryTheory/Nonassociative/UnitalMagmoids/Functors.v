@@ -15,8 +15,10 @@ Require Import UniMath.MoreFoundations.All.
 
 Require Import UniMath.CategoryTheory.Core.Categories.
 Require Import UniMath.CategoryTheory.Core.Functors.
+Require Import UniMath.CategoryTheory.Core.Isos.
 
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
+Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Isos.
 
 Local Open Scope cat.
 
@@ -63,13 +65,14 @@ Definition functor_full_image_magmoid
 Proof. apply (functor_full_image_magmoid' F), unital_magmoid_has_homsets. Defined.
 
 Section functor_facts.
-  Context {M : unital_premagmoid} {M' : unital_magmoid} (F : M ⟶ M').
+  Context {M M' : unital_magmoid} (F : M ⟶ M').
+  Hypothesis (Hfull : full F) (Hff : fully_faithful F).
 
   (** F applied to a linear morphism is not necessarily linear in the codomain
       of F, even if it is full, as there may extra objects in the codomain
       unrelated to those in F's image. *)
   Lemma is_linear_in_full_functor {a b : M} (f : a --> b)
-    (Hfull : full F) (H : is_linear f) : is_linear (#F f).
+    (H : is_linear f) : is_linear (#F f).
   Proof.
     intros c d g h.
     Fail Check (Hfull _ _ h). (* Fails because h is not of the form M'⟦F _, F _⟧ *)
@@ -78,7 +81,7 @@ Section functor_facts.
   (** However, once restricted to the full subcategory of objects in F's image, fullness is
       sufficient. *)
   Lemma is_linear_in_full_functor_image {a b : M} (f : a --> b)
-    (Hfull : full F) (Hlinear : is_linear f) : is_linear (M:=functor_full_image_magmoid F) (#F f).
+    (Hlinear : is_linear f) : is_linear (M:=functor_full_image_magmoid F) (#F f).
   Proof.
     intros c d g h.
     eset (Hprop := unital_magmoid_has_homsets _ _ _ _ _).
@@ -91,7 +94,7 @@ Section functor_facts.
   Qed.
 
   Lemma is_thunkable_in_full_functor_image {a b : M} (f : a --> b)
-    (Hfull : full F) (Hthunkable : is_thunkable f) : is_thunkable (M:=functor_full_image_magmoid F) (#F f).
+    (Hthunkable : is_thunkable f) : is_thunkable (M:=functor_full_image_magmoid F) (#F f).
   Proof.
     intros c d g h.
     eset (Hprop := unital_magmoid_has_homsets _ _ _ _ _).
@@ -104,12 +107,61 @@ Section functor_facts.
   Qed.
 
   Lemma is_linear_and_thunkable_in_full_functor_image {a b : M} (f : a --> b)
-    (Hfull : full F) (Hlt : is_linear_and_thunkable f)
+    (Hlt : is_linear_and_thunkable f)
     : is_linear_and_thunkable (M:=functor_full_image_magmoid F) (#F f).
   Proof.
     use make_is_linear_and_thunkable.
-    - apply (is_linear_in_full_functor_image f Hfull Hlt).
-    - apply (is_thunkable_in_full_functor_image f Hfull Hlt).
+    - apply (is_linear_in_full_functor_image f Hlt).
+    - apply (is_thunkable_in_full_functor_image f Hlt).
   Qed.
+
+  (** Fully faithful functors reflect linearity and thunkability *)
+  Lemma is_linear_from_fully_faithful_functor_image {a b : M} (f : F a --> F b)
+    (Hlinear : is_linear f) : is_linear (fully_faithful_inv_hom Hff _ _ f).
+  Proof.
+    intros c d g h.
+    apply (Injectivity (#F)).
+    1: apply isweqonpathsincl, fully_faithful_implies_full_and_faithful, Hff.
+    rewrite !functor_comp.
+    etrans; [apply cancel_precomposition,
+        (homotweqinvweq (weq_from_fully_faithful Hff a b) f)|].
+    etrans; [|apply cancel_precomposition, cancel_precomposition,
+              (!homotweqinvweq (weq_from_fully_faithful Hff a b) f)].
+    apply assoc'_linear, Hlinear.
+  Qed.
+
+  Lemma is_thunkable_from_fully_faithful_functor_image {a b : M} (f : F a <-- F b)
+    (Hthunkable : is_thunkable f) : is_thunkable (fully_faithful_inv_hom Hff _ _ f).
+  Proof.
+    intros c d g h.
+    apply (Injectivity (#F)).
+    1: apply isweqonpathsincl, fully_faithful_implies_full_and_faithful, Hff.
+    rewrite !functor_comp.
+    etrans; [apply cancel_postcomposition,
+        (homotweqinvweq (weq_from_fully_faithful Hff b a) f)|].
+    etrans; [|apply cancel_postcomposition, cancel_postcomposition,
+              (!homotweqinvweq (weq_from_fully_faithful Hff b a) f)].
+    apply assoc_thunkable, Hthunkable.
+  Qed.
+
+  Lemma is_linear_and_thunkable_from_fully_faithful_functor_image {a b : M} (f : F a --> F b)
+    (Hlt : is_linear_and_thunkable f)
+    : is_linear_and_thunkable (fully_faithful_inv_hom Hff _ _ f).
+  Proof.
+    use make_is_linear_and_thunkable.
+    - apply (is_linear_from_fully_faithful_functor_image f Hlt).
+    - apply (is_thunkable_from_fully_faithful_functor_image f Hlt).
+  Qed.
+
+  Lemma is_lt_iso_from_fully_faithful_functor_image {a b : M} (f : F a --> F b)
+    (Hlt_iso : is_lt_iso f) : is_lt_iso (M:=M) (fully_faithful_inv_hom Hff _ _ f).
+  Proof.
+    use make_is_lt_iso'.
+    - abstract (apply is_linear_and_thunkable_from_fully_faithful_functor_image, Hlt_iso).
+    - exact (fully_faithful_inv_hom Hff _ _ Hlt_iso).
+    - abstract (apply is_linear_and_thunkable_from_fully_faithful_functor_image,
+                 linear_and_thunkable_mor_is_linear_and_thunkable).
+    - abstract (exact (inv_of_ff_inv_is_inv _ _ _ Hff _ _ (lt_iso_to_z_iso (make_lt_iso _ Hlt_iso)))).
+  Defined.
 
 End functor_facts.
