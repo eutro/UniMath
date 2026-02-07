@@ -26,16 +26,17 @@ DisplayedCats/FullyFaithfulDispFunctor.v
 Nonassociative/Duploids/Core.v
 Nonassociative/Duploids/Envelope.v
 Nonassociative/Duploids/Functors.v
+Nonassociative/Duploids/Isos.v
 Nonassociative/Duploids/Oblique.v
 Nonassociative/Duploids/ShiftFunctors.v
 Nonassociative/Duploids/TwoSorted.v
-Nonassociative/Duploids/Isos.v
+Nonassociative/Duploids/Univalence.v
 Nonassociative/UnitalMagmoids/Core.v
-Nonassociative/UnitalMagmoids/Opposite.v
 Nonassociative/UnitalMagmoids/FromCategory.v
 Nonassociative/UnitalMagmoids/Functors.v
 Nonassociative/UnitalMagmoids/HomFunctors.v
 Nonassociative/UnitalMagmoids/Isos.v
+Nonassociative/UnitalMagmoids/Opposite.v
 Nonassociative/UnitalMagmoids/Subcategories.v
 Nonassociative/UnitalMagmoids/Yoneda.v
 

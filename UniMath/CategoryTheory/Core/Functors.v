@@ -276,7 +276,7 @@ Qed.
 
 Section functors_on_iso_with_inv.
 
-  Lemma functor_on_is_inverse_in_precat {C C' : precategory} (F : functor C C')
+  Lemma functor_on_is_inverse_in_precat {C C' : precategory_data} (F : functor C C')
         {a b : ob C} {f : a --> b} {g : b --> a} (H : is_inverse_in_precat f g) :
     is_inverse_in_precat (# F f) (# F g).
   Proof.
@@ -285,7 +285,7 @@ Section functors_on_iso_with_inv.
     - rewrite <- functor_comp. rewrite (is_inverse_in_precat2 H). apply functor_id.
   Qed.
 
-  Definition functor_on_is_z_isomorphism {C C' : precategory} (F : functor C C')
+  Definition functor_on_is_z_isomorphism {C C' : precategory_data} (F : functor C C')
              {a b : ob C} {f : a --> b} (I : is_z_isomorphism f) :
     is_z_isomorphism (# F f).
   Proof.
@@ -693,7 +693,7 @@ Qed.
 
 (** *** Fully faithful functors reflect isos *)
 
-Lemma inv_of_ff_inv_is_inv (C D : precategory) (F : functor C D)
+Lemma inv_of_ff_inv_is_inv (C D : precategory_data) (F : functor C D)
    (FF : fully_faithful F) (a b : C) (f : z_iso (F a) (F b)) :
   is_inverse_in_precat ((FF ^-1) f) ((FF ^-1) (inv_from_z_iso f)).
 Proof.
@@ -720,7 +720,7 @@ Proof.
   apply z_iso_after_z_iso_inv.
 Qed.
 
-Lemma fully_faithful_reflects_iso_proof (C D : precategory)(F : functor C D)
+Lemma fully_faithful_reflects_iso_proof (C D : precategory_data)(F : functor C D)
         (FF : fully_faithful F)
     (a b : ob C) (f : z_iso (F a) (F b)) :
      is_z_isomorphism (FF^-1 f).

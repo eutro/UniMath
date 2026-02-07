@@ -17,8 +17,10 @@ Require Import UniMath.MoreFoundations.All.
 
 Require Import UniMath.CategoryTheory.Core.Categories.
 Require Import UniMath.CategoryTheory.Core.Functors.
+Require Import UniMath.CategoryTheory.Core.Isos.
 
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
+Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Functors.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Subcategories.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Isos.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Core.
@@ -184,13 +186,13 @@ Proof.
   apply H.
 Defined.
 
-Section duploid_functor.
-  Context {M M' : unital_premagmoid}.
+Definition make_duploid_functor {M M' : unital_premagmoid}
+  (F : M ⟶ M')
+  (H : preserves_linearity_and_thunkability F)
+  : M ⟶d M' := F,,H.
 
-  Definition make_duploid_functor
-    (F : M ⟶ M')
-    (H : preserves_linearity_and_thunkability F)
-    : M ⟶d M' := F,,H.
+Section duploid_functor.
+  Context {M M' : unital_magmoid}.
 
   (** *** 2. Lemmas about duploid functors *)
 
@@ -205,6 +207,18 @@ Section duploid_functor.
   Lemma functor_linear_and_thunkable (F : M ⟶d M') {a b : M} (f : a --> b)
     : is_linear_and_thunkable f -> is_linear_and_thunkable (#F f).
   Proof. apply functor_linear_and_thunkable', F. Defined.
+
+  Lemma functor_is_lt_iso (F : M ⟶d M') {a b : M} (f : a --> b)
+    : is_lt_iso f -> is_lt_iso (#F f).
+  Proof.
+    intro H.
+    use make_is_lt_iso'.
+    - abstract (apply functor_linear_and_thunkable, H).
+    - apply (#F H).
+    - abstract (apply functor_linear_and_thunkable, linear_and_thunkable_mor_is_linear_and_thunkable).
+    - abstract (apply functor_on_is_inverse_in_precat, has_linear_and_thunkable_inverse_is_inverse).
+  Defined.
+
 End duploid_functor.
 
 Definition duploid_functor_identity (M : unital_premagmoid) : duploid_functor M M
@@ -322,8 +336,7 @@ Section equivalences.
     (F : M ⟶ M') (H : is_duploid_equivalence F) : functor_data M' M.
   Proof.
     use make_functor_data.
-    - intro a.
-      exact (lt_surjective_inverse_ob F H a).
+    - exact (lt_surjective_inverse_ob F H).
     - intros a b f; cbn.
       apply (fully_faithful_inv_hom H).
       exact (lt_surjective_inverse_ob_iso F H a · f ·
@@ -358,6 +371,54 @@ Section equivalences.
   Definition is_duploid_equivalence_to_inverse_functor {M M' : preduploid}
     (F : M ⟶ M') (H : is_duploid_equivalence F)
     : M' ⟶ M := make_functor _ (is_duploid_equivalence_to_inverse_is_functor F H).
+
+  Lemma split_lt_essentially_surjective_is_duploid_equivalence_to_inverse_functor {M M' : preduploid}
+    (F : M ⟶ M') (H : is_duploid_equivalence F)
+    : split_lt_essentially_surjective (is_duploid_equivalence_to_inverse_functor F H).
+  Proof.
+    intro a; exists (F a).
+    abstract (eapply make_lt_iso,
+               (is_lt_iso_from_fully_faithful_functor_image F H),
+               (lt_iso_is_lt_iso (lt_surjective_inverse_ob_iso F H (F a)))).
+  Defined.
+
+  Lemma fully_faithful_is_duploid_equivalence_to_inverse_functor {M M' : preduploid}
+    (F : M ⟶ M') (H : is_duploid_equivalence F)
+    : fully_faithful (is_duploid_equivalence_to_inverse_functor F H).
+  Proof.
+    intros a b.
+    use isweq_iso.
+    - intro f.
+      exact (lt_iso_inverse (lt_surjective_inverse_ob_iso F H a) · #F f ·
+               lt_surjective_inverse_ob_iso F H b).
+    - abstract (
+          intro f; cbn;
+          etrans; [apply cancel_postcomposition, cancel_precomposition,
+            (homotweqinvweq (weq_from_fully_faithful H _ _))|];
+          etrans; [apply assoc'_linear, lt_iso_is_linear_and_thunkable|];
+          etrans; [apply cancel_precomposition, lt_iso_inverse_right|];
+          apply lt_iso_left).
+    - abstract (
+          intro f; cbn;
+          apply (Injectivity (#F)); [ apply isweqonpathsincl, isinclweq, H |];
+          etrans; [apply (homotweqinvweq (weq_from_fully_faithful H _ _))|];
+          etrans; [apply assoc'_linear, linear_and_thunkable_mor_is_linear_and_thunkable|];
+          etrans; [apply cancel_precomposition, lt_iso_right|];
+          apply lt_iso_inverse_left).
+  Defined.
+
+  Lemma is_duploid_equivalence_to_inverse {M M' : preduploid}
+    (F : M ⟶ M') (H : is_duploid_equivalence F)
+    : is_duploid_equivalence (is_duploid_equivalence_to_inverse_functor F H).
+  Proof.
+    use make_is_duploid_equivalence.
+    - apply fully_faithful_is_duploid_equivalence_to_inverse_functor.
+    - apply split_lt_essentially_surjective_is_duploid_equivalence_to_inverse_functor.
+  Defined.
+
+  Definition duploid_equivalence_inverse {M M' : preduploid} {F : M ⟶ M'} (H : is_duploid_equivalence F)
+    : duploid_equivalence M' M
+    := (make_duploid_equivalence _ (is_duploid_equivalence_to_inverse F H)).
 
 End equivalences.
 
