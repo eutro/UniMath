@@ -32,6 +32,7 @@ Nonassociative/Duploids/ShiftFunctors.v
 Nonassociative/Duploids/TwoSorted.v
 Nonassociative/Duploids/Univalence.v
 Nonassociative/UnitalMagmoids/Core.v
+Nonassociative/UnitalMagmoids/EpisAndMonics.v
 Nonassociative/UnitalMagmoids/FromCategory.v
 Nonassociative/UnitalMagmoids/Functors.v
 Nonassociative/UnitalMagmoids/HomFunctors.v
