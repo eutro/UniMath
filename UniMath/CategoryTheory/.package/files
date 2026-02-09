@@ -40,6 +40,7 @@ Nonassociative/UnitalMagmoids/HomFunctors.v
 Nonassociative/UnitalMagmoids/Isos.v
 Nonassociative/UnitalMagmoids/Opposite.v
 Nonassociative/UnitalMagmoids/Subcategories.v
+Nonassociative/UnitalMagmoids/Univalence.v
 Nonassociative/UnitalMagmoids/Yoneda.v
 
 opp_precat.v
