@@ -40,11 +40,34 @@ Section rxgraph_defs.
     (refl : ∏ a : A, edge a a)
     : rxgraph := make_rxgraph (make_pregraph A edge) refl.
 
-  Definition id_to_edge {G : rxgraph} {a b : G} (p : a = b) : a ≈ b.
+  Definition id_to_edge (G : rxgraph) (a b : G) (p : a = b) : a ≈ b.
   Proof. induction p. apply grefl. Defined.
 
   Definition is_rxgraph_univalent (G : rxgraph) : UU
-    := ∏ a b, isweq (@id_to_edge G a b).
+    := ∏ a b, isweq (id_to_edge G a b).
+
+  Definition weq_id_to_edge {G : rxgraph}
+    (H : is_rxgraph_univalent G)
+    (a b : G) : a = b ≃ a ≈ b
+    := make_weq _ (H a b).
+
+  Definition weq_edge_to_id {G : rxgraph}
+    (H : is_rxgraph_univalent G)
+    (a b : G) : a ≈ b ≃ a = b
+    := invweq (weq_id_to_edge H a b).
+
+  Definition edge_to_id {G : rxgraph}
+    (H : is_rxgraph_univalent G)
+    (a b : G) : a ≈ b -> a = b
+    := invmap (weq_id_to_edge H a b).
+
+  Lemma edge_to_id_grefl {G : rxgraph}
+    (H : is_rxgraph_univalent G) (a : G)
+    : idpath a = edge_to_id H a a (grefl a).
+  Proof.
+    apply pathsweq1.
+    reflexivity.
+  Defined.
 
   Lemma isaprop_is_rxgraph_univalent (G : rxgraph)
     : isaprop (is_rxgraph_univalent G).
@@ -67,7 +90,7 @@ Section rxgraph_defs.
     - apply H.
   Defined.
 
-  Lemma rxgraph_edges_from_inhabited {G : rxgraph} (a : G) : edges_from a.
+  Lemma edges_from_grefl {G : rxgraph} (a : G) : edges_from a.
   Proof. exists a; apply grefl. Defined.
 
   Lemma is_rxgraph_univalent_from_isaprop_edges_from (G : rxgraph)
@@ -76,20 +99,37 @@ Section rxgraph_defs.
   Proof.
     apply is_rxgraph_univalent_from_iscontr_edges_from.
     intro a.
-    apply iscontraprop1; [|apply rxgraph_edges_from_inhabited].
+    apply iscontraprop1; [|apply edges_from_grefl].
     apply H.
   Defined.
+
+  Lemma is_rxgraph_univalent_to_isaprop_edges_from (G : rxgraph)
+    (H : is_rxgraph_univalent G)
+    : ∏ (a : G), isaprop (edges_from a).
+  Proof.
+    intro a.
+    apply (isofhlevelweqb 1 (Y:=paths_from a)).
+    - refine (make_weq _ (isweqfibtototal _ _ _)).
+      intro b.
+      apply weq_edge_to_id, H.
+    - apply isapropifcontr, iscontr_paths_from.
+  Qed. (* [isaprop] should not be used transparently *)
 
   Lemma is_rxgraph_univalent_to_iscontr_edges_from (G : rxgraph)
     (H : is_rxgraph_univalent G)
     : ∏ (a : G), iscontr (edges_from a).
   Proof.
     intro a.
-    use (iscontrweqf (X:=paths_from a)); [|apply iscontr_paths_from].
-    refine (make_weq _ (isweqfibtototal _ _ _)).
-    intro b.
-    apply (make_weq _ (H a b)).
+    apply iscontraprop1; [|apply edges_from_grefl].
+    apply is_rxgraph_univalent_to_isaprop_edges_from, H.
   Defined.
+
+  Definition univalent_rxgraph := total2 is_rxgraph_univalent.
+  Definition make_univalent_rxgraph
+    (G : rxgraph) (H : is_rxgraph_univalent G)
+    : univalent_rxgraph := G,,H.
+  Coercion univalent_rxgraph_to_rxgraph (G : univalent_rxgraph) : rxgraph := pr1 G.
+  Coercion rxgraph_univalence (G : univalent_rxgraph) : is_rxgraph_univalent G := pr2 G.
 
 End rxgraph_defs.
 
@@ -182,12 +222,122 @@ Section disprxgraph_defs.
     apply isaprop_is_rxgraph_univalent.
   Qed.
 
+  Definition univalent_disp_rxgraph := total2 is_disp_rxgraph_univalent.
+  Coercion univalent_disp_rxgraph_to_disp_rxgraph (E : univalent_disp_rxgraph) : disp_rxgraph := pr1 E.
+  Coercion disp_rxgraph_univalence (E : univalent_disp_rxgraph) : is_disp_rxgraph_univalent E := pr2 E.
+  Definition make_univalent_disp_rxgraph
+    (E : disp_rxgraph) (H : is_disp_rxgraph_univalent E)
+    : univalent_disp_rxgraph := E,,H.
+
+  Definition disp_rxgraph_fib' (E : univalent_disp_rxgraph)
+    (x : B) : univalent_rxgraph.
+  Proof.
+    exact (make_univalent_rxgraph _ (disp_rxgraph_univalence E x)).
+  Defined.
+
 End disprxgraph_defs.
 Arguments disp_rxgraph : clear implicits.
+Arguments univalent_disp_rxgraph : clear implicits.
 
 Notation "aa '≈[' e ']' bb" := (disp_edge _ e aa bb) (at level 50, bb at next level) : rxgraph.
 
 Section univalence_lemmas.
+
+  Definition edges_from_eq_grefl {G : rxgraph}
+    (H : is_rxgraph_univalent G)
+    (a : G) (φ : edges_from a)
+    : edges_from_grefl a = φ.
+  Proof.
+    apply proofirrelevance.
+    apply is_rxgraph_univalent_to_isaprop_edges_from, H.
+  Qed.
+
+  Definition edges_from_eq_grefl_eq_refl {G : rxgraph}
+    (H : is_rxgraph_univalent G)
+    (a : G)
+    : edges_from_eq_grefl H a (edges_from_grefl a) = idpath _.
+  Proof.
+    apply proofirrelevancecontr.
+    apply is_rxgraph_univalent_to_isaprop_edges_from, H.
+  Qed.
+
+  Definition rxgraph_edges_from_rect {G : rxgraph}
+    (H : is_rxgraph_univalent G)
+    (a : G) (P : edges_from a -> UU)
+    (refl : P (edges_from_grefl a))
+    : ∏ (φ : edges_from a), P φ.
+  Proof.
+    intro φ.
+    exact (transportf (λ φ, P φ)
+             (edges_from_eq_grefl H a φ)
+             refl).
+  Defined.
+
+  Definition rxgraph_edges_from_rect_grefl {G : rxgraph}
+    (H : is_rxgraph_univalent G)
+    (a : G) (P : edges_from a -> UU)
+    (refl : P (edges_from_grefl a))
+    : rxgraph_edges_from_rect H a P refl (edges_from_grefl a) = refl.
+  Proof.
+    exact (transportb (λ p, transportf P p refl = refl)
+             (edges_from_eq_grefl_eq_refl H a)
+             (idpath _)).
+  Defined.
+
+  Definition rxgraph_edges_from_rect' {G : univalent_rxgraph}
+    : ∏ (a : G) (P : edges_from a -> UU)
+        (refl : P (edges_from_grefl a))
+        (φ : edges_from a), P φ
+    := rxgraph_edges_from_rect G.
+
+  Definition rxgraph_edge_rect {G : rxgraph}
+    (H : is_rxgraph_univalent G)
+    (a : G) (P : ∏ (b : G), a ≈ b -> UU)
+    (refl : P a (grefl a))
+    : ∏ (b : G) (p : a ≈ b), P b p.
+  Proof.
+    intros b p.
+    exact (rxgraph_edges_from_rect H a
+             (λ φ, P (pr1 φ) (pr2 φ))
+             refl (b,,p)).
+  Defined.
+
+  Lemma rxgraph_edge_rect_grefl {G : rxgraph}
+    (H : is_rxgraph_univalent G)
+    (a : G) (P : ∏ (b : G), a ≈ b -> UU)
+    (refl : P a (grefl a))
+    : rxgraph_edge_rect H a P refl a (grefl a) = refl.
+  Proof. use rxgraph_edges_from_rect_grefl. Defined.
+
+  Definition rxgraph_edge_rect' {G : univalent_rxgraph}
+    : ∏ (a : G) (P : ∏ (b : G), a ≈ b -> UU)
+        (refl : P a (grefl a))
+        (b : G) (p : a ≈ b), P b p
+    := rxgraph_edge_rect G.
+
+  Definition rxgraph_edge_inv {G : rxgraph} (H : is_rxgraph_univalent G) {a b : G}
+    (e : a ≈ b) : b ≈ a.
+  Proof.
+    induction b, e using (rxgraph_edge_rect H a).
+    apply grefl.
+  Defined.
+
+  Definition rxgraph_edge_inv_refl {G : rxgraph} (H : is_rxgraph_univalent G)
+    (a : G) : rxgraph_edge_inv H (grefl a) = grefl a.
+  Proof. use rxgraph_edge_rect_grefl. Defined.
+
+  Definition rxgraph_edge_inv_inv {G : rxgraph} (H : is_rxgraph_univalent G)
+    {a b : G} (e : a ≈ b)
+    : rxgraph_edge_inv H (rxgraph_edge_inv H e) = e.
+  Proof.
+    induction b, e using (rxgraph_edge_rect H a).
+    etrans; [apply maponpaths, rxgraph_edge_inv_refl|].
+    apply rxgraph_edge_inv_refl.
+  Defined.
+
+End univalence_lemmas.
+
+Section constructions.
   Lemma weq_total2_over_contr {B : UU} (E : B -> UU) (ic : iscontr B)
     : total2 E ≃ E (iscontrpr1 ic).
   Proof.
@@ -205,9 +355,9 @@ Section univalence_lemmas.
     (HE : is_disp_rxgraph_univalent E)
     : is_rxgraph_univalent (total_rxgraph E).
   Proof.
-    apply is_rxgraph_univalent_from_iscontr_edges_from.
+    apply is_rxgraph_univalent_from_isaprop_edges_from.
     intros [x aa].
-    use (isofhlevelweqb 0 (Y:=(edges_from (G:=disp_rxgraph_fib E x) aa))).
+    use (isofhlevelweqb 1 (Y:=(edges_from (G:=disp_rxgraph_fib E x) aa))).
     - unfold edges_from.
       intermediate_weq (∑ (φ : edges_from x) (u : E (pr1 φ)), aa ≈[pr2 φ] u). {
         use weq_iso.
@@ -217,10 +367,16 @@ Section univalence_lemmas.
       }
       apply (weq_total2_over_contr (λ φ : edges_from x, ∑ u : E (pr1 φ), aa ≈[ pr2 φ] u)
                (is_rxgraph_univalent_to_iscontr_edges_from _ HB x)).
-    - apply is_rxgraph_univalent_to_iscontr_edges_from, HE.
+    - apply is_rxgraph_univalent_to_isaprop_edges_from, HE.
   Defined.
 
-  Definition discrete_rxgraph (A : UU) : rxgraph.
+  Definition univalent_total_rxgraph
+    {B : univalent_rxgraph}
+    (E : univalent_disp_rxgraph B)
+    : univalent_rxgraph
+    := make_univalent_rxgraph _ (is_univalent_total_rxgraph E B E).
+
+  Definition discrete_rxgraph0 (A : UU) : rxgraph.
   Proof.
     use make_rxgraph'.
     - exact A.
@@ -231,7 +387,7 @@ Section univalence_lemmas.
   Defined.
 
   Lemma is_univalent_discrete_rxgraph (A : UU)
-    : is_rxgraph_univalent (discrete_rxgraph A).
+    : is_rxgraph_univalent (discrete_rxgraph0 A).
   Proof.
     intros a b.
     use isweqhomot.
@@ -239,6 +395,9 @@ Section univalence_lemmas.
     - intro p; now induction p.
     - apply idisweq.
   Defined.
+
+  Definition discrete_rxgraph (A : UU) : univalent_rxgraph
+    := make_univalent_rxgraph _ (is_univalent_discrete_rxgraph A).
 
   Definition product_rxgraph {B : UU} (E : B -> rxgraph) : rxgraph.
   Proof.
@@ -281,6 +440,9 @@ Section univalence_lemmas.
       apply is_rxgraph_univalent_to_iscontr_edges_from, H.
   Defined.
 
+  Definition product_rxgraph' {B : UU} (E : B -> univalent_rxgraph) : univalent_rxgraph
+    := make_univalent_rxgraph _ (is_univalent_product_rxgraph E (λ x, E x)).
+
   Definition codiscrete_rxgraph (A : UU) : rxgraph.
   Proof.
     use make_rxgraph'.
@@ -302,6 +464,12 @@ Section univalence_lemmas.
     - apply isweqcontrtounit, H.
   Qed.
 
+  Definition codiscrete_rxgraph' (A : UU) (H : isaprop A) : univalent_rxgraph
+    := make_univalent_rxgraph _ (is_univalent_codiscrete_rxgraph A H).
+
+  Definition prop_rxgraph (A : hProp) : univalent_rxgraph
+    := codiscrete_rxgraph' A (propproperty A).
+
   Definition forgetful_rxgraph (B : rxgraph) (P : B -> UU) : rxgraph.
   Proof.
     refine (@total_rxgraph B _).
@@ -317,14 +485,12 @@ Section univalence_lemmas.
     : is_rxgraph_univalent (forgetful_rxgraph B P).
   Proof.
     apply (is_univalent_total_rxgraph _ HB).
-    intros a b e.
-    use isweqhomot.
-    - apply (@id_to_edge (codiscrete_rxgraph (P a))).
-    - intros p; now induction p.
-    - apply is_univalent_codiscrete_rxgraph, HP.
+    intro a.
+    exact (rxgraph_univalence
+             (codiscrete_rxgraph' (P a) (HP a))).
   Defined.
 
-  Definition UU_rxgraph : rxgraph.
+  Definition UU_rxgraph0 : rxgraph.
   Proof.
     use make_rxgraph'.
     - exact UU.
@@ -332,13 +498,90 @@ Section univalence_lemmas.
     - intros a; exact (idweq a).
   Defined.
 
-  Lemma is_univalent_UU_rxgraph : is_rxgraph_univalent UU_rxgraph.
+  Definition UU_rxgraph : univalent_rxgraph
+    := make_univalent_rxgraph UU_rxgraph0 univalenceAxiom.
+
+  Definition pregraph_rxgraph : univalent_rxgraph.
   Proof.
-    intros a b.
-    use isweqhomot.
-    - exact (@eqweqmap a b).
-    - intro p; now induction p.
-    - exact (univalenceAxiom a b).
+    use (@univalent_total_rxgraph UU_rxgraph).
+    use make_univalent_disp_rxgraph.
+    1: use make_disp_rxgraph'.
+    - intro N.
+      exact (product_rxgraph (λ _ : N,
+                   product_rxgraph (λ _ : N,
+                         UU_rxgraph))).
+    - intros N M p aa bb.
+      cbn in p.
+      exact (∏ (a b : N), aa a b ≃ bb (p a) (p b)).
+    - intros N aa.
+      exact (λ (a b : N), idweq (aa a b)).
+    - intro N.
+      exact (rxgraph_univalence
+               (product_rxgraph' (λ _ : N,
+                      product_rxgraph' (λ _ : N,
+                            UU_rxgraph)))).
+  Defined.
+
+  Definition pregraph_iso (G G' : pregraph) := edge pregraph_rxgraph G G'.
+  Coercion pregraph_iso_vertex_weq {G G' : pregraph} (f : pregraph_iso G G')
+    : vertex G ≃ vertex G' := pr1 f.
+  Definition edge_weq {G G' : pregraph} (f : pregraph_iso G G')
+    : ∏ {a b : vertex G}, edge G a b ≃ edge G' (f a) (f b)
+    := pr2 f.
+
+  Definition make_pregraph_iso {G G' : pregraph}
+    (f : vertex G ≃ vertex G')
+    (e : ∏ (a b : vertex G), edge G a b ≃ edge G' (f a) (f b))
+    : pregraph_iso G G' := f,,e.
+
+  Definition has_refl_rxgraph : univalent_disp_rxgraph pregraph_rxgraph.
+  Proof.
+    use make_univalent_disp_rxgraph.
+    1: use make_disp_rxgraph'.
+    - exact has_refl.
+    - intros G G' e Gid G'id.
+      change (pregraph_iso G G') in e.
+      exact (∏ (a : vertex G), edge_weq e (Gid a) = G'id (e a)).
+    - intros G Gid.
+      exact (homotrefl Gid).
+    - intro G.
+      exact (rxgraph_univalence
+               (product_rxgraph' (λ (a : vertex G),
+                    discrete_rxgraph (edge G a a)))).
+  Defined.
+
+  Definition rxgraph_rxgraph : univalent_rxgraph
+    := univalent_total_rxgraph has_refl_rxgraph.
+
+  Definition rxgraph_iso (G G' : rxgraph) := edge rxgraph_rxgraph G G'.
+  Coercion rxgraph_iso_to_pregraph_iso {G G' : rxgraph} (f : rxgraph_iso G G')
+    : pregraph_iso G G' := pr1 f.
+  Definition rxgraph_iso_grefl {G G' : rxgraph} (f : rxgraph_iso G G')
+    : ∏ (a : G), edge_weq f (grefl a) = grefl (f a) := pr2 f.
+
+  Definition make_rxgraph_iso {G G' : rxgraph}
+    (f : pregraph_iso G G')
+    (H : ∏ (a : G), edge_weq f (grefl a) = grefl (f a))
+    : rxgraph_iso G G' := f,,H.
+
+  Definition rxgraph_univalent_from_iso_b
+    {G : rxgraph} (G' : rxgraph)
+    (H : is_rxgraph_univalent G')
+    (e : rxgraph_iso G G')
+    : is_rxgraph_univalent G.
+  Proof.
+    induction G', e using (rxgraph_edge_rect rxgraph_rxgraph G).
+    exact H.
+  Defined.
+
+  Definition rxgraph_univalent_from_iso_f
+    (G : rxgraph) {G' : rxgraph}
+    (H : is_rxgraph_univalent G)
+    (e : rxgraph_iso G G')
+    : is_rxgraph_univalent G'.
+  Proof.
+    induction G', e using (rxgraph_edge_rect rxgraph_rxgraph G).
+    exact H.
   Defined.
 
   Definition dirprod_rxgraph (A B : rxgraph) : rxgraph.
@@ -365,4 +608,38 @@ Section univalence_lemmas.
     - intro p; now induction p.
   Defined.
 
-End univalence_lemmas.
+  Definition dirprod_rxgraph' (A B : univalent_rxgraph) : univalent_rxgraph
+    := make_univalent_rxgraph _ (is_univalent_dirprod_rxgraph _ _ A B).
+
+  Definition disp_rxgraph_from_family_f
+    (B : rxgraph) (E : B -> rxgraph)
+    (HB : is_rxgraph_univalent B)
+    : disp_rxgraph B.
+  Proof.
+    use make_disp_rxgraph'.
+    - exact E.
+    - intros a b e aa bb.
+      exact (transportf E (edge_to_id HB a b e) aa ≈ bb).
+    - intros a aa.
+      exact (transportf
+               (λ p, transportf E p aa ≈ aa)
+               (edge_to_id_grefl HB a) (grefl aa)).
+  Defined.
+
+  Definition is_univalent_disp_rxgraph_from_family_f
+    (B : rxgraph) (E : B -> rxgraph)
+    (HB : is_rxgraph_univalent B)
+    (HE : ∏ (x : B), is_rxgraph_univalent (E x))
+    : is_disp_rxgraph_univalent (disp_rxgraph_from_family_f B E HB).
+  Proof.
+    intro x.
+    apply is_rxgraph_univalent_from_isaprop_edges_from.
+    intro a; cbn in a.
+    apply (isofhlevelweqb 1 (Y:=edges_from a)).
+    2: apply is_rxgraph_univalent_to_isaprop_edges_from, HE.
+    use weqtotal2; [apply idweq|].
+    intro b; cbn in b |- *.
+    rewrite <- edge_to_id_grefl.
+    apply idweq.
+  Defined.
+End constructions.
