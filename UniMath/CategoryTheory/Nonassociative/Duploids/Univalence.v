@@ -19,6 +19,7 @@ Require Import UniMath.CategoryTheory.catiso.
 
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Isos.
+Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Univalence.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Functors.
 
@@ -165,6 +166,13 @@ Section equivalences.
     split.
     - exact F.
     - apply isweq_on_objects_from_equivalence.
+  Defined.
+
+  Lemma duploid_eq_from_duploid_equivalence (F : duploid_equivalence D D') : D = D'.
+  Proof.
+    apply duploid_eq_from_univalent.
+    apply precategory_data_path_from_catiso.
+    apply catiso_from_duploid_equivalence, F.
   Defined.
 
 End equivalences.

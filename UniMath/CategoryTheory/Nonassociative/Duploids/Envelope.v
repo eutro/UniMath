@@ -723,4 +723,23 @@ Section envelope_defs.
   Definition oblique_to_envelope_duploid : oblique_duploid θ ⟶d envelope_duploid
     := make_duploid_functor _ preserves_linearity_and_thunkability_oblique_to_envelope.
 
+  Definition weak_equiv_oblique_to_envelope_duploid
+    : weak_duploid_equivalence (oblique_duploid θ) envelope_duploid.
+  Proof.
+    use (make_weak_duploid_equivalence oblique_to_envelope_duploid).
+    use make_is_weak_duploid_equivalence.
+    - exact fully_faithful_oblique_to_envelope.
+    - exact lt_essentially_surjective_oblique_to_envelope.
+  Defined.
+
+  Definition equiv_oblique_to_envelope_duploid_from_LEM
+    : LEM -> duploid_equivalence (oblique_duploid θ) envelope_duploid.
+  Proof.
+    intro lem.
+    use (make_duploid_equivalence oblique_to_envelope_duploid).
+    use make_is_duploid_equivalence.
+    - exact fully_faithful_oblique_to_envelope.
+    - exact (split_lt_essentially_surjective_oblique_to_envelope_from_LEM lem).
+  Defined.
+
 End envelope_defs.
