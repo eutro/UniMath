@@ -338,36 +338,21 @@ Section univalence_lemmas.
 End univalence_lemmas.
 
 Section constructions.
-  Lemma weq_total2_over_contr {B : UU} (E : B -> UU) (ic : iscontr B)
-    : total2 E ≃ E (iscontrpr1 ic).
-  Proof.
-    intermediate_weq (∑ (_ : unit), E (iscontrpr1 ic)).
-    2: apply weqtotal2overunit.
-    apply weqtotal2.
-    1: apply weqcontrtounit, ic.
-    intro x.
-    apply (weqsecovercontr (λ x, E x ≃ E (iscontrpr1 ic)) ic).
-    apply idweq.
-  Defined.
-
   Theorem is_univalent_total_rxgraph {B : rxgraph} (E : disp_rxgraph B)
     (HB : is_rxgraph_univalent B)
     (HE : is_disp_rxgraph_univalent E)
     : is_rxgraph_univalent (total_rxgraph E).
   Proof.
-    apply is_rxgraph_univalent_from_isaprop_edges_from.
-    intros [x aa].
-    use (isofhlevelweqb 1 (Y:=(edges_from (G:=disp_rxgraph_fib E x) aa))).
-    - unfold edges_from.
-      intermediate_weq (∑ (φ : edges_from x) (u : E (pr1 φ)), aa ≈[pr2 φ] u). {
-        use weq_iso.
-        1: intros [y [p pp]]; exists (_,,p); exact (_,,pp).
-        1: intros [[y p] [u pp]]; exists (y,,u); exact (p,,pp).
-        all: easy.
-      }
-      apply (weq_total2_over_contr (λ φ : edges_from x, ∑ u : E (pr1 φ), aa ≈[ pr2 φ] u)
-               (is_rxgraph_univalent_to_iscontr_edges_from _ HB x)).
-    - apply is_rxgraph_univalent_to_isaprop_edges_from, HE.
+    intros aa bb.
+    use weqhomot.
+    - eapply weqcomp; [apply total2_paths_equiv|].
+      use weqbandf; cbn.
+      + apply (weq_id_to_edge HB).
+      + intro e.
+        induction aa as [x aa], bb as [y bb]; cbn in e.
+        induction e.
+        exact (make_weq _ (HE x aa bb)).
+    - intro p; now induction p.
   Defined.
 
   Definition univalent_total_rxgraph
@@ -470,7 +455,7 @@ Section constructions.
   Definition prop_rxgraph (A : hProp) : univalent_rxgraph
     := codiscrete_rxgraph' A (propproperty A).
 
-  Definition forgetful_rxgraph (B : rxgraph) (P : B -> UU) : rxgraph.
+  Definition forgetful_rxgraph0 (B : rxgraph) (P : B -> UU) : rxgraph.
   Proof.
     refine (@total_rxgraph B _).
     use make_disp_rxgraph; [use make_disp_pregraph|].
@@ -479,15 +464,47 @@ Section constructions.
     - intros a aa; exact tt.
   Defined.
 
-  Lemma is_univalent_forgetful_rxgraph (B : rxgraph) (P : B -> UU)
+  Lemma is_univalent_forgetful_rxgraph0 (B : rxgraph) (P : B -> UU)
     (HB : is_rxgraph_univalent B)
     (HP : isPredicate P)
-    : is_rxgraph_univalent (forgetful_rxgraph B P).
+    : is_rxgraph_univalent (forgetful_rxgraph0 B P).
   Proof.
     apply (is_univalent_total_rxgraph _ HB).
     intro a.
     exact (rxgraph_univalence
              (codiscrete_rxgraph' (P a) (HP a))).
+  Defined.
+
+  Definition forgetful_rxgraph (B : rxgraph) (P : B -> UU) : rxgraph.
+  Proof.
+    use make_rxgraph'.
+    - exact (total2 P).
+    - intros a b; exact (pr1 a ≈ pr1 b).
+    - intros a; exact (grefl (pr1 a)).
+  Defined.
+
+  Definition is_univalent_forgetful_rxgraph (B : rxgraph) (P : B -> UU)
+    (HB : is_rxgraph_univalent B)
+    (HP : isPredicate P)
+    : is_rxgraph_univalent (forgetful_rxgraph B P).
+  Proof.
+    intros a b.
+    use weqhomot.
+    - eapply weqcomp; [apply total2_paths_equiv|].
+      eapply weqcomp.
+      2: apply (total2_contr (λ _, unit)); intro; apply iscontrunit.
+      apply weqbandf.
+      + apply (weq_id_to_edge HB).
+      + intro e.
+        apply weqcontrtounit, HP.
+    - intro p; now induction p.
+  Defined.
+
+  Definition forgetful_rxgraph' (B : univalent_rxgraph) (P : B -> hProp) : univalent_rxgraph.
+  Proof.
+    refine (make_univalent_rxgraph _ (is_univalent_forgetful_rxgraph B (λ x, P x) _ _)).
+    - apply rxgraph_univalence.
+    - intro x; apply propproperty.
   Defined.
 
   Definition UU_rxgraph0 : rxgraph.
@@ -643,3 +660,39 @@ Section constructions.
     apply idweq.
   Defined.
 End constructions.
+
+Declare Scope rxgraph_spec.
+Delimit Scope rxgraph_spec with rxgraph_spec.
+
+Notation "'∏' x .. y , G" :=
+  (product_rxgraph' (λ x, .. (product_rxgraph' (λ y, G)) ..)) : rxgraph_spec.
+(* type in Emacs using agda-input with \prod *)
+Notation "'∏0' x .. y , G" :=
+  (product_rxgraph (λ x, .. (product_rxgraph (λ y, G)) ..))
+    (at level 200, x binder, y binder, right associativity) : rxgraph_spec.
+(* type in Emacs using agda-input with \prod 0 *)
+Notation "'Δ' T" := (discrete_rxgraph T) (at level 200) : rxgraph_spec.
+(* type in Emacs using agda-input with \Delta *)
+Notation "'∇' T" := (prop_rxgraph T) (at level 200) : rxgraph_spec.
+(* type in Emacs using agda-input with \nabla *)
+Notation "'∇0' T" := (codiscrete_rxgraph T) (at level 200) : rxgraph_spec.
+(* type in Emacs using agda-input with \nabla 0 *)
+Notation "A × B" := (dirprod_rxgraph' A B) : rxgraph_spec.
+(* type in Emacs using agda-input with \times *)
+Notation "A '×0' B" := (dirprod_rxgraph A B)
+    (at level 75) : rxgraph_spec.
+(* type in Emacs using agda-input with \times *)
+Notation "G ⟦ x ⟧" := (disp_rxgraph_fib' G x) : rxgraph_spec.
+(* type in Emacs using agda-input with \[ and \] *)
+Notation "G '0⟦' x ⟧" := (disp_rxgraph_fib G x)
+    (at level 49) : rxgraph_spec.
+(* type in Emacs using agda-input with \[ and \] *)
+
+Notation "{ x ∇ G }" :=
+  (forgetful_rxgraph' _ (λ x, G))
+    (x binder) : rxgraph_spec.
+(* type in Emacs using agda-input with { .. \nabla .. } *)
+Notation "{ x ∇0 G }" :=
+  (forgetful_rxgraph _ (λ x, G))
+    (x binder) : rxgraph_spec.
+(* type in Emacs using agda-input with { .. \nabla 0 .. } *)

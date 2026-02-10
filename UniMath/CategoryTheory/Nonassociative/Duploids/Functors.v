@@ -420,6 +420,22 @@ Section equivalences.
     : duploid_equivalence M' M
     := (make_duploid_equivalence _ (is_duploid_equivalence_to_inverse F H)).
 
+  Lemma split_lt_essentially_surjective_functor_identity (M : unital_magmoid)
+    : split_lt_essentially_surjective (functor_identity M).
+  Proof.
+    intro a.
+    exists a.
+    apply lt_iso_identity.
+  Defined.
+
+  Definition duploid_equivalence_identity (M : preduploid) : duploid_equivalence M M.
+  Proof.
+    exists (functor_identity M).
+    use make_is_duploid_equivalence.
+    - apply identity_functor_is_fully_faithful.
+    - apply split_lt_essentially_surjective_functor_identity.
+  Defined.
+
 End equivalences.
 
 Section full.

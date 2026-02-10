@@ -13,13 +13,20 @@
 Require Import UniMath.Foundations.All.
 Require Import UniMath.MoreFoundations.All.
 
+Require Import UniMath.Combinatorics.RXGraph.
+
 Require Import UniMath.CategoryTheory.Core.Categories.
 Require Import UniMath.CategoryTheory.Core.Functors.
+Require Import UniMath.CategoryTheory.Core.Univalence.
+Require Import UniMath.CategoryTheory.Core.Isos.
+Require Import UniMath.CategoryTheory.Subcategory.Core.
+Require Import UniMath.CategoryTheory.Subcategory.Full.
 Require Import UniMath.CategoryTheory.catiso.
 
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Isos.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Univalence.
+Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Subcategories.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Functors.
 
@@ -135,20 +142,59 @@ Section univalence_consequences.
 End univalence_consequences.
 
 Section equivalences.
-  Context (D D' : duploid).
-  Hypothesis (ua : is_duploid_univalent D) (ua' : is_duploid_univalent D').
-
-  (** Two univalent duploids are identical if their objects are *)
-  Lemma duploid_eq_from_univalent (H1 : (D : precategory_data) = D') : D = D'.
+  Lemma preduploid_rxgraph : univalent_rxgraph.
   Proof.
-    apply subtypePath'; [|apply isaprop_has_polarity_shifts, ua'].
-    apply subtypePath'; [|apply isaprop_has_polarities].
-    apply subtypePath'; [|apply isaprop_has_homsets].
-    apply subtypePath'; [|apply isaprop_is_unital_premagmoid, unital_magmoid_has_homsets].
-    apply H1.
+    simple refine ({ M : unital_magmoid_rxgraph ∇ make_hProp _ _ })%rxgraph_spec.
+    change unital_magmoid in M.
+    - exact (has_polarities M).
+    - apply isaprop_has_polarities.
   Defined.
 
-  Lemma isweq_on_objects_from_equivalence (F : duploid_equivalence D D')
+  Lemma univalent_preduploid_rxgraph : univalent_rxgraph.
+  Proof.
+    simple refine ({ M : preduploid_rxgraph ∇ make_hProp _ _ })%rxgraph_spec.
+    change preduploid in M.
+    - exact (is_duploid_univalent M).
+    - apply isaprop_is_duploid_univalent.
+  Defined.
+
+  Lemma univalent_duploid_rxgraph0 : univalent_rxgraph.
+  Proof.
+    simple refine ({ D : univalent_preduploid_rxgraph ∇ _ })%rxgraph_spec.
+    induction D as [D ua].
+    change preduploid in D.
+    use make_hProp.
+    - exact (has_polarity_shifts D).
+    - apply isaprop_has_polarity_shifts, ua.
+  Defined.
+
+  Definition univalent_duploid :=
+    ∑ (D : duploid), is_duploid_univalent D.
+  Coercion univalent_duploid_to_duploid (D : univalent_duploid) : duploid := pr1 D.
+  Definition duploid_univalence (D : univalent_duploid) : is_duploid_univalent D := pr2 D.
+
+  Lemma univalent_duploid_rxgraph1 : univalent_rxgraph.
+  Proof.
+    use make_univalent_rxgraph.
+    1: use make_rxgraph'.
+    - exact univalent_duploid.
+    - intros a b; exact (catiso a b).
+    - intros a; exact (identity_catiso a).
+    - use (rxgraph_univalent_from_iso_b univalent_duploid_rxgraph0).
+      1: apply rxgraph_univalence.
+      use make_rxgraph_iso; [use make_pregraph_iso|]; cbn.
+      + use weq_iso.
+        * intros [[M H1] H2]; exists (M,,H2); exact H1.
+        * intros [[M H2] H1]; exists (M,,H1); exact H2.
+        * easy.
+        * easy.
+      + intros a b; exact (idweq _).
+      + now intros a.
+  Defined.
+
+  Lemma isweq_on_objects_from_equivalence (D D' : preduploid)
+    (ua : is_duploid_univalent D) (ua' : is_duploid_univalent D')
+    (F : duploid_equivalence D D')
     : isweq (functor_on_objects F).
   Proof.
     use isweq_iso.
@@ -159,20 +205,245 @@ Section equivalences.
       exact (lt_surjective_inverse_ob_iso _ F a).
   Defined.
 
-  Lemma catiso_from_duploid_equivalence (F : duploid_equivalence D D')
-    : catiso D D'.
+  Lemma is_catiso_from_is_duploid_equivalence (D D' : preduploid)
+    (ua : is_duploid_univalent D) (ua' : is_duploid_univalent D')
+    (F : D ⟶ D') (HF : is_duploid_equivalence F)
+    : is_catiso F.
   Proof.
-    exists F.
     split.
-    - exact F.
-    - apply isweq_on_objects_from_equivalence.
+    - exact HF.
+    - exact (isweq_on_objects_from_equivalence _ _ ua ua' (F,,HF)).
   Defined.
 
-  Lemma duploid_eq_from_duploid_equivalence (F : duploid_equivalence D D') : D = D'.
+  Lemma is_duploid_equivalence_from_is_catiso (D D' : preduploid)
+    (F : D ⟶ D') (HF : is_catiso F)
+    : is_duploid_equivalence F.
   Proof.
-    apply duploid_eq_from_univalent.
-    apply precategory_data_path_from_catiso.
-    apply catiso_from_duploid_equivalence, F.
+    split.
+    - exact (pr1 HF).
+    - intro a.
+      exists (invmap (catiso_ob_weq (F,,HF)) a).
+      set (p := homotweqinvweq (catiso_ob_weq (F,,HF)) a).
+      cbn in p.
+      rewrite p.
+      apply lt_iso_identity.
+  Defined.
+
+  Lemma isaprop_split_lt_essentially_surjective (D D' : preduploid)
+    (ua' : is_duploid_univalent D')
+    (F : D ⟶ D') (H : isweq (functor_on_objects F))
+    : isaprop (split_lt_essentially_surjective F).
+  Proof.
+    apply impred; intro x.
+    apply (isofhlevelweqb 1 (Y:=(paths_to x))).
+    2: apply isapropifcontr, iscontr_paths_to.
+    use weqbandf.
+    - use (make_weq _ H).
+    - intro y; cbn.
+      apply invweq, (make_weq _ (ua' (F y) x)).
+  Qed.
+
+  Lemma isaprop_is_duploid_equivalence (D D' : preduploid)
+    (ua : is_duploid_univalent D) (ua' : is_duploid_univalent D')
+    (F : D ⟶ D')
+    : isaprop (is_duploid_equivalence F).
+  Proof.
+    apply isaprop_assume_it_is; intro HF.
+    apply isapropdirprod.
+    - apply isaprop_fully_faithful.
+    - assert (H : isweq (functor_on_objects F)).
+      1: refine (isweq_on_objects_from_equivalence _ _ _ _ (F,,HF)); assumption.
+      apply isaprop_split_lt_essentially_surjective; assumption.
+  Qed.
+
+  Lemma weq_duploid_equivalence_catiso (D D' : preduploid)
+    (ua : is_duploid_univalent D) (ua' : is_duploid_univalent D')
+    : duploid_equivalence D D' ≃ catiso D D'.
+  Proof.
+    use weqbandf.
+    1: apply (idweq _).
+    intro F.
+    use weqimplimpl.
+    - apply is_catiso_from_is_duploid_equivalence; assumption.
+    - apply is_duploid_equivalence_from_is_catiso.
+    - apply isaprop_is_duploid_equivalence; assumption.
+    - apply isaprop_is_catiso.
+  Defined.
+
+  Lemma univalent_duploid_rxgraph : univalent_rxgraph.
+  Proof.
+    use make_univalent_rxgraph.
+    1: use make_rxgraph'.
+    - exact univalent_duploid.
+    - intros a b; exact (duploid_equivalence a b).
+    - intros a; exact (duploid_equivalence_identity a).
+    - use (rxgraph_univalent_from_iso_b univalent_duploid_rxgraph1).
+      1: apply rxgraph_univalence.
+      use make_rxgraph_iso; [use make_pregraph_iso|]; cbn.
+      + exact (idweq _).
+      + intros a b.
+        use (weq_duploid_equivalence_catiso a b); apply duploid_univalence.
+      + intro a.
+        apply subtypePath'.
+        2: apply isaprop_is_catiso.
+        reflexivity.
+  Defined.
+
+  Hypothesis (D D' : univalent_duploid).
+
+  (** Two univalent duploids are identical if their objects are *)
+  Lemma duploid_eq_from_univalent : (D : precategory_data) = D' -> D = D'.
+  Proof.
+    intro H1.
+    apply subtypePath'; [|apply isaprop_is_duploid_univalent].
+    apply subtypePath'; [|apply isaprop_has_polarity_shifts, duploid_univalence].
+    apply subtypePath'; [|apply isaprop_has_polarities].
+    apply subtypePath'; [|apply isaprop_has_homsets].
+    apply subtypePath'; [|apply isaprop_is_unital_premagmoid, unital_magmoid_has_homsets].
+    apply H1.
+  Defined.
+
+  Lemma duploid_eq_weq_duploid_equivalence : duploid_equivalence D D' ≃ D = D'.
+  Proof.
+    exact (weq_edge_to_id univalent_duploid_rxgraph _ _).
   Defined.
 
 End equivalences.
+
+Section characterizations.
+  Context (D : duploid).
+  (** The following are equivalent:
+      1. [D] is a univalent duploid
+      2. [linear_and_thunkable_category D] is a univalent category
+      3. [positive_thunkable_category D] and [negative_linear_category D] are both univalent categories *)
+
+  Lemma weq_z_iso_lt_iso (a b : D)
+    : lt_iso a b ≃ z_iso (C:=linear_and_thunkable_category D) a b.
+  Proof.
+    use weq_iso.
+    - intros [f [Hf [g Hfg]]].
+      exists (f,,Hf).
+      exists g.
+      abstract (split; apply carrier_eq; cbn; apply Hfg).
+    - intros [[f Hf] [[g Hg] [Hfg Hgf]]].
+      exists f.
+      refine (make_is_lt_iso' Hf g Hg _).
+      abstract (
+          apply base_paths in Hfg, Hgf;
+          cbn in Hfg, Hgf;
+          split; assumption).
+    - abstract (intro f; now apply subtypePath'; [|apply isaprop_is_lt_iso]).
+    - abstract (intro f; now apply subtypePath'; [|apply isaprop_is_z_isomorphism]).
+  Defined.
+
+  (** 1 -> 2 *)
+  Lemma is_duploid_univalent_to_is_univalent_linear_and_thunkable_category
+    (H : is_duploid_univalent D) : is_univalent (linear_and_thunkable_category D).
+  Proof.
+    intros a b.
+    use weqhomot.
+    - cbn in a, b.
+      eapply weqcomp; [exact (make_weq _ (H a b))|].
+      exact (weq_z_iso_lt_iso a b).
+    - intro p.
+      apply subtypePath'; [|apply isaprop_is_z_isomorphism].
+      now induction p.
+  Qed.
+
+  (** 2 -> 1 *)
+  Lemma is_duploid_univalent_from_is_univalent_linear_and_thunkable_category
+    (H : is_univalent (linear_and_thunkable_category D)) : is_duploid_univalent D.
+  Proof.
+    intros a b.
+    use weqhomot.
+    - cbn in a, b.
+      eapply weqcomp; [exact (make_weq _ (H a b))|].
+      exact (invweq (weq_z_iso_lt_iso a b)).
+    - intro p.
+      apply subtypePath'; [|apply isaprop_is_lt_iso].
+      now induction p.
+  Qed.
+
+  (** 2 -> 3.a *)
+  Lemma is_duploid_univalent_to_is_univalent_positive_thunkable_category
+    (H : is_univalent (linear_and_thunkable_category D)) : is_univalent (positive_thunkable_category D).
+  Proof.
+    intros a b.
+    use weqhomot.
+    - induction a as [a Ha], b as [b Hb].
+      intermediate_weq (a = b); [apply path_sigma_hprop, propproperty|].
+      intermediate_weq (z_iso (C:=linear_and_thunkable_category D) a b);
+        [exact (make_weq _ (H a b))|].
+      apply invweq.
+      apply (weq_ff_functor_on_z_iso
+               (fully_faithful_positive_thunkable_category_to_linear_and_thunkable_category D)).
+    - intro p.
+      apply subtypePath'; [|apply isaprop_is_z_isomorphism].
+      do 2 apply carrier_eq.
+      now induction p.
+  Qed.
+
+  (** 2 -> 3.b *)
+  Lemma is_duploid_univalent_to_is_univalent_negative_linear_category
+    (H : is_univalent (linear_and_thunkable_category D)) : is_univalent (negative_linear_category D).
+  Proof.
+    intros a b.
+    use weqhomot.
+    - induction a as [a Ha], b as [b Hb].
+      intermediate_weq (a = b); [apply path_sigma_hprop, propproperty|].
+      intermediate_weq (z_iso (C:=linear_and_thunkable_category D) a b);
+        [exact (make_weq _ (H a b))|].
+      apply invweq.
+      apply (weq_ff_functor_on_z_iso
+               (fully_faithful_negative_linear_category_to_linear_and_thunkable_category D)).
+    - intro p.
+      apply subtypePath'; [|apply isaprop_is_z_isomorphism].
+      do 2 apply carrier_eq.
+      now induction p.
+  Qed.
+
+  Coercion category_to_rxgraph (C : category) : rxgraph.
+  Proof.
+    use make_rxgraph'.
+    - exact (ob C).
+    - intros a b; (exact (z_iso a b)).
+    - intros a; exact (identity_z_iso a).
+  Defined.
+
+  Definition category_rxgraph_univalent_iff (C : category)
+    : is_univalent C <-> is_rxgraph_univalent C.
+  Proof. apply isrefl_logeq. Defined.
+
+  Lemma is_duploid_univalent_from_is_univalent_positive_thunkable_and_negative_linear_categories
+    (Hpositive : is_univalent (D⁺ₜ))
+    (Hnegative : is_univalent (D⁻ₗ))
+    : is_univalent (D ₗₜ).
+  Proof.
+    apply category_rxgraph_univalent_iff.
+    apply is_rxgraph_univalent_from_isaprop_edges_from.
+    intro a.
+    isaprop_goal Hprop; [apply isapropisaprop|].
+    refine (squash_to_prop (polarity_of D a) Hprop (λ Ha, _)).
+    induction Ha as [Ha | Ha].
+    1: set (C := D⁻ₗ).                           2: set (C := D⁺ₜ).
+    1: set (HC := Hnegative).                    2: set (HC := Hpositive).
+    1: set (is_p := @is_negative D).             2: set (is_p := @is_positive D).
+    all: set (a' := a,,Ha : C).
+    all: use (isofhlevelweqb 1 (Y:=@edges_from C a'));
+      [|exact (is_rxgraph_univalent_to_isaprop_edges_from C HC _)].
+    all: eapply weqcomp; [|apply weqtotal2asstol].
+    all: use weqbandf; [exact (idweq D)|]; intro b; cbn in b |- *.
+    all: intermediate_weq (∑ _ : z_iso a b, is_p b).
+    1,3:   apply invweq, weqpr1; intro e.
+    1,2:   apply iscontraprop1.
+    1:     apply isaprop_is_negative.            2: apply isaprop_is_positive.
+    1:     refine (is_negative_of_lt_iso _ Ha).  2: refine (is_positive_of_lt_iso _ Ha).
+    1,2:   apply weq_z_iso_lt_iso, e.
+    all: eapply weqcomp; [apply weqdirprodcomm|].
+    all: use weqbandf; [exact (idweq _)|]; intro Hb; cbn.
+    all: apply invweq.
+    1: apply (weq_ff_functor_on_z_iso (fully_faithful_negative_linear_category_to_linear_and_thunkable_category D)).
+    1: apply (weq_ff_functor_on_z_iso (fully_faithful_positive_thunkable_category_to_linear_and_thunkable_category D)).
+  Qed.
+
+End characterizations.
