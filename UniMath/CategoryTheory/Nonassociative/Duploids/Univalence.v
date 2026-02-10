@@ -352,7 +352,7 @@ Section characterizations.
 
   (** 2 -> 1 *)
   Lemma is_duploid_univalent_from_is_univalent_linear_and_thunkable_category
-    (H : is_univalent (linear_and_thunkable_category D)) : is_duploid_univalent D.
+    (H : is_univalent (D ₗₜ)) : is_duploid_univalent D.
   Proof.
     intros a b.
     use weqhomot.
@@ -365,8 +365,8 @@ Section characterizations.
   Qed.
 
   (** 2 -> 3.a *)
-  Lemma is_duploid_univalent_to_is_univalent_positive_thunkable_category
-    (H : is_univalent (linear_and_thunkable_category D)) : is_univalent (positive_thunkable_category D).
+  Lemma is_univalent_linear_and_thunkable_to_is_univalent_positive_thunkable_category
+    (H : is_univalent (D ₗₜ)) : is_univalent (D ⁺ₜ).
   Proof.
     intros a b.
     use weqhomot.
@@ -384,8 +384,8 @@ Section characterizations.
   Qed.
 
   (** 2 -> 3.b *)
-  Lemma is_duploid_univalent_to_is_univalent_negative_linear_category
-    (H : is_univalent (linear_and_thunkable_category D)) : is_univalent (negative_linear_category D).
+  Lemma is_univalent_linear_and_thunkable_to_is_univalent_negative_linear_category
+    (H : is_univalent (D ₗₜ)) : is_univalent (D ⁻ₗ).
   Proof.
     intros a b.
     use weqhomot.
@@ -410,11 +410,12 @@ Section characterizations.
     - intros a; exact (identity_z_iso a).
   Defined.
 
-  Definition category_rxgraph_univalent_iff (C : category)
+  Remark category_rxgraph_univalent_iff (C : category)
     : is_univalent C <-> is_rxgraph_univalent C.
   Proof. apply isrefl_logeq. Defined.
 
-  Lemma is_duploid_univalent_from_is_univalent_positive_thunkable_and_negative_linear_categories
+  (* 3 -> 2 *)
+  Lemma is_univalent_linear_and_thunkable_from_positive_thunkable_and_negative_linear_categories
     (Hpositive : is_univalent (D⁺ₜ))
     (Hnegative : is_univalent (D⁻ₗ))
     : is_univalent (D ₗₜ).
@@ -444,6 +445,17 @@ Section characterizations.
     all: apply invweq.
     1: apply (weq_ff_functor_on_z_iso (fully_faithful_negative_linear_category_to_linear_and_thunkable_category D)).
     1: apply (weq_ff_functor_on_z_iso (fully_faithful_positive_thunkable_category_to_linear_and_thunkable_category D)).
+  Qed.
+
+  (* 3 -> 1 *)
+  Lemma is_duploid_univalent_from_positive_thunkable_and_negative_linear_categories
+    (Hpositive : is_univalent (D⁺ₜ))
+    (Hnegative : is_univalent (D⁻ₗ))
+    : is_duploid_univalent D.
+  Proof.
+    apply is_duploid_univalent_from_is_univalent_linear_and_thunkable_category.
+    apply is_univalent_linear_and_thunkable_from_positive_thunkable_and_negative_linear_categories.
+    all: assumption.
   Qed.
 
 End characterizations.
