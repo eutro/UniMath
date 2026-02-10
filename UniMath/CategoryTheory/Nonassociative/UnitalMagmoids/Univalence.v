@@ -35,17 +35,14 @@ Proof.
   use (@univalent_total_rxgraph UU_rxgraph).
   use make_univalent_disp_rxgraph.
   1: use make_disp_rxgraph'.
-  - intro ob.
-    exact (ob -> ob -> UU).
+  - intro C.
+    exact (∏ (_ _ : C), UU_rxgraph)%rxgraph_spec.
   - intros C D F Cm Dm. cbn in *.
     exact (∏ (a b : C), weq (Cm a b) (Dm (F a) (F b))).
   - intros C Cm a b. cbn in *.
     exact (idweq (Cm a b)).
   - intro C.
-    exact (rxgraph_univalence
-             (product_rxgraph' (λ (_ : C),
-                  product_rxgraph' (λ (_ : C),
-                      UU_rxgraph)))).
+    exact (rxgraph_univalence _).
 Defined.
 
 Lemma vertex_precategory_ob_mor_rxgraph
@@ -84,7 +81,7 @@ Proof.
   1: use make_disp_rxgraph'.
   - intro C.
     change precategory_ob_mor in C.
-    exact (∏ (a : C), C⟦a, a⟧).
+    exact (∏ a, Δ C⟦a, a⟧)%rxgraph_spec.
   - intros C D F Cid Did.
     change precategory_ob_mor in C, D.
     cbn in F.
@@ -92,10 +89,7 @@ Proof.
   - intros C F a.
     apply idpath.
   - intro C.
-    change precategory_ob_mor in C.
-    exact (rxgraph_univalence
-             (product_rxgraph'
-                (λ a : C, discrete_rxgraph (C⟦a, a⟧)))).
+    exact (rxgraph_univalence _).
 Defined.
 
 Definition precategory_comp_rxgraph : univalent_disp_rxgraph precategory_ob_mor_rxgraph.
@@ -104,7 +98,7 @@ Proof.
   1: use make_disp_rxgraph'.
   - intro C.
     change precategory_ob_mor in C.
-    exact (∏ (a b c : C) (f : a --> b) (g : b --> c), a --> c).
+    exact (∏ a b c (f : C⟦a, b⟧) (g : C⟦b, c⟧), Δ C⟦a, c⟧)%rxgraph_spec.
   - intros C D F Ccomp Dcomp.
     change precategory_ob_mor in C, D.
     cbn in F, Ccomp, Dcomp.
@@ -113,14 +107,7 @@ Proof.
   - intros C F a b c f g.
     apply idpath.
   - intro C.
-    change precategory_ob_mor in C.
-    exact (rxgraph_univalence
-             (product_rxgraph' (λ (a : C),
-              product_rxgraph' (λ (b : C),
-              product_rxgraph' (λ (c : C),
-              product_rxgraph' (λ (f : C⟦a, b⟧),
-              product_rxgraph' (λ (g : C⟦b, c⟧),
-              discrete_rxgraph (C⟦a, c⟧)))))))).
+    exact (rxgraph_univalence _).
 Defined.
 
 Definition precategory_id_comp_rxgraph : univalent_disp_rxgraph precategory_ob_mor_rxgraph.
@@ -128,9 +115,7 @@ Proof.
   use make_univalent_disp_rxgraph.
   1: use make_disp_rxgraph'.
   - intro C.
-    exact (dirprod_rxgraph
-             (disp_rxgraph_fib precategory_id_rxgraph C)
-             (disp_rxgraph_fib precategory_comp_rxgraph C)).
+    exact (precategory_id_rxgraph⟦C⟧ × precategory_comp_rxgraph⟦C⟧)%rxgraph_spec.
   - intros C D p a b.
     cbn beta in *.
     exact (pr1 a ≈[p] pr1 b × pr2 a ≈[p] pr2 b).
@@ -139,10 +124,7 @@ Proof.
     + exact (disp_grefl C (pr1 Cidcomp)).
     + exact (disp_grefl C (pr2 Cidcomp)).
   - intro C.
-    exact (rxgraph_univalence
-             (dirprod_rxgraph'
-                (disp_rxgraph_fib' precategory_id_rxgraph C)
-                (disp_rxgraph_fib' precategory_comp_rxgraph C))).
+    exact (rxgraph_univalence _).
 Defined.
 
 Definition precategory_data_rxgraph : univalent_rxgraph
@@ -201,4 +183,38 @@ Corollary precategory_data_path_from_catiso {A B : precategory_data}
   : catiso A B -> A = B.
 Proof.
   exact (edge_to_id catiso_rxgraph A B).
+Defined.
+
+Definition catiso_with_homsets_rxgraph : univalent_rxgraph.
+Proof.
+  simple refine ({ M : catiso_rxgraph ∇ make_hProp _ _ })%rxgraph_spec.
+  change precategory_data in M.
+  - exact (has_homsets M).
+  - apply isaprop_has_homsets.
+Defined.
+
+Definition unital_magmoid_rxgraph0 : univalent_rxgraph.
+Proof.
+  simple refine ({ M : catiso_with_homsets_rxgraph ∇ make_hProp _ _ })%rxgraph_spec.
+  - exact (is_unital_premagmoid (pr1 M)).
+  - apply isaprop_is_unital_premagmoid, (pr2 M).
+Defined.
+
+Definition unital_magmoid_rxgraph : univalent_rxgraph.
+Proof.
+  use make_univalent_rxgraph.
+  1: use make_rxgraph'.
+  - exact unital_magmoid.
+  - intros a b; exact (catiso a b).
+  - intro a; exact (identity_catiso a).
+  - use (rxgraph_univalent_from_iso_b unital_magmoid_rxgraph0).
+    1: apply rxgraph_univalence.
+    use make_rxgraph_iso; [use make_pregraph_iso|]; cbn.
+    + use weq_iso.
+      * intros [[M H1] H2]; exists (M,,H2); exact H1.
+      * intros [[M H2] H1]; exists (M,,H1); exact H2.
+      * easy.
+      * easy.
+    + intros a b; exact (idweq _).
+    + now intros a.
 Defined.
