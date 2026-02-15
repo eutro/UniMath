@@ -16,16 +16,20 @@ Require Import UniMath.Foundations.All.
 Require Import UniMath.MoreFoundations.All.
 
 Require Import UniMath.CategoryTheory.Adjunctions.Core.
+Require Import UniMath.CategoryTheory.Adjunctions.HomIsos.
 Require Import UniMath.CategoryTheory.Core.Categories.
 Require Import UniMath.CategoryTheory.Core.Functors.
 Require Import UniMath.CategoryTheory.Core.Isos.
 Require Import UniMath.CategoryTheory.Core.NaturalTransformations.
 Require Import UniMath.CategoryTheory.Equivalences.Core.
 Require Import UniMath.CategoryTheory.Subcategory.Core.
+Require Import UniMath.CategoryTheory.Subcategory.Full.
 Require Import UniMath.CategoryTheory.whiskering.
 
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
+Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Functors.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Subcategories.
+Require Import UniMath.CategoryTheory.Nonassociative.Duploids.ShiftFacts.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Core.
 
 Local Open Scope cat.
@@ -59,6 +63,14 @@ Local Open Scope duploid.
 
 Definition upshiftf {D : duploid} {a b : D} (f : a --> b) : ⇑a --> ⇑b := (force a · f) · delay b.
 Definition downshiftf {D : duploid} {a b : D} (f : a --> b) : ⇓a --> ⇓b := unwrap a · (f · wrap b).
+
+Remark downshiftf_from_lift {D : duploid} {a b : D} (f : a --> b)
+  : downshiftf f = positive_lift (f · wrap b).
+Proof. reflexivity. Defined.
+
+Remark upshiftf_from_lift {D : duploid} {a b : D} (f : a --> b)
+  : upshiftf f = negative_lift (force a · f).
+Proof. reflexivity. Defined.
 
 Notation "'#⇑' f" := (upshiftf f) (at level 40) : duploid.
   (* type in Emacs using agda-input with # \Uparrow *)
@@ -96,11 +108,17 @@ Section shift_functors.
   Definition upshiftf' {a b : D} (f : D⟦a, b⟧) : thunkable_mor (⇑a) (⇑b)
     := make_thunkable_mor (#⇑f) (is_thunkable_of_negative _ (⇑_)).
 
-  Definition upshift_'_to_negative : functor_data D (D⁻).
+  Definition upshift_data_'_to_negative : functor_data D (D⁻).
   Proof.
     use make_functor_data.
     - apply upshift.
     - intros a b f; apply (upshiftf' f,,tt).
+  Defined.
+
+  Definition upshift_'_to_negative : D ⟶¹ (D⁻).
+  Proof.
+    apply (make_rxfunctor upshift_data_'_to_negative).
+    abstract (intro a; do 2 (apply carrier_eq); apply upshiftf_id).
   Defined.
 
   (** **** ⇑ is functorial once restricted to linear morphisms **)
@@ -144,13 +162,15 @@ Section shift_functors.
     := upshift_linear_to_negative_linear ∙ negative_linear_category_to_linear_and_thunkable_category D.
   Definition upshift_linear_and_thunkable_to_linear_and_thunkable : D ₗₜ ⟶ D ₗₜ
     := linear_and_thunkable_category_to_linear_category D ∙ upshift_linear_to_linear_and_thunkable.
+  Definition upshift_positive_thunkable_to_negative_linear : D⁺ₜ ⟶ D⁻ₗ
+    := positive_thunkable_category_to_linear_category D ∙ upshift_linear_to_negative_linear.
 
-  (** These non-functorial maps are useful for defining the adjunctions below. *)
-  Definition upshift_'_to_thunkable : functor_data D (D ₜ)
-    := functor_composite_data upshift_'_to_negative
+  (** These reflexive graph functors are useful for defining the adjunctions below. *)
+  Definition upshift_'_to_thunkable : D ⟶¹ (D ₜ)
+    := rxfunctor_compose upshift_'_to_negative
          (negative_category_to_thunkable_category D).
-  Definition upshift_'_to_' : functor_data D D
-    := functor_composite_data upshift_'_to_thunkable
+  Definition upshift_'_to_' : D ⟶¹ D
+    := rxfunctor_compose upshift_'_to_thunkable
          (thunkable_category_to_unital_magmoid D).
 
   (** Alternative characterisation of [upshift_linear_to_negative]
@@ -199,11 +219,17 @@ Section shift_functors.
   Definition downshiftf' {a b : D} (f : D⟦a, b⟧) : linear_mor (⇓a) (⇓b)
     := make_linear_mor (#⇓f) (is_linear_of_positive _ (⇓_)).
 
-  Definition downshift_'_to_positive : functor_data D (D⁺).
+  Definition downshift_data_'_to_positive : functor_data D (D⁺).
   Proof.
     use make_functor_data.
     - apply downshift.
     - intros a b f; apply (downshiftf' f,,tt).
+  Defined.
+
+  Definition downshift_'_to_positive : D ⟶¹ (D⁺).
+  Proof.
+    apply (make_rxfunctor downshift_data_'_to_positive).
+    abstract (intro a; do 2 (apply carrier_eq); apply downshiftf_id).
   Defined.
 
   (** **** ⇓ is functorial once restricted to thunkable morphisms **)
@@ -247,13 +273,15 @@ Section shift_functors.
     := downshift_thunkable_to_positive_thunkable ∙ positive_thunkable_category_to_linear_and_thunkable_category D.
   Definition downshift_linear_and_thunkable_to_linear_and_thunkable : D ₗₜ ⟶ D ₗₜ
     := linear_and_thunkable_category_to_thunkable_category D ∙ downshift_thunkable_to_linear_and_thunkable.
+  Definition downshift_negative_linear_to_positive_thunkable : D⁻ₗ ⟶ D⁺ₜ
+    := negative_linear_category_to_thunkable_category D ∙ downshift_thunkable_to_positive_thunkable.
 
-  (** These non-functorial maps are useful for defining the adjunctions below. *)
-  Definition downshift_'_to_linear : functor_data D (D ₗ)
-    := functor_composite_data downshift_'_to_positive
+  (** These reflexive graph functors are useful for defining the adjunctions below. *)
+  Definition downshift_'_to_linear : D ⟶¹ (D ₗ)
+    := rxfunctor_compose downshift_'_to_positive
          (positive_category_to_linear_category D).
-  Definition downshift_'_to_' : functor_data D D
-    := functor_composite_data downshift_'_to_linear
+  Definition downshift_'_to_' : D ⟶¹ D
+    := rxfunctor_compose downshift_'_to_linear
          (linear_category_to_unital_magmoid D).
 
   (** Alternative characterisation of [downshift_thunkable_to_positive]
@@ -328,11 +356,10 @@ Section shift_functor_adjunctions.
   Lemma unwrap_natural (a b : D) (f : D⟦a, b⟧)
     : #⇓ f · unwrap b = unwrap a · f.
   Proof.
-    unfold downshiftf.
-    rewrite (assoc'_thunkable _ (unwrap _)).
-    apply cancel_precomposition.
-    rewrite (assoc'_positive _ (⇓_)), wrap_unwrap_id.
-    apply magmoid_id_right.
+    apply positive_lift_unique.
+    etrans; [apply assoc_thunkable, (wrap _)|].
+    etrans; [apply cancel_postcomposition, positive_lift_factors|].
+    apply wrap_unwrap_right.
   Qed.
 
   (** Naturality of [force] *)
@@ -344,11 +371,10 @@ Section shift_functor_adjunctions.
   Lemma delay_natural (a b : D) (f : D⟦a, b⟧)
     : f · delay b = delay a · #⇑ f.
   Proof.
-    unfold upshiftf.
-    rewrite (assoc_linear _ (delay _)).
-    apply cancel_postcomposition.
-    rewrite (assoc_negative _ (⇑_)), delay_force_id.
-    apply pathsinv0, magmoid_id_left.
+    apply pathsinv0, negative_lift_unique.
+    etrans; [apply assoc'_linear, (force _)|].
+    etrans; [apply cancel_precomposition, negative_lift_factors|].
+    apply delay_force_left.
   Qed.
 
   (** **** [wrap] as natural transformations *)
@@ -484,8 +510,8 @@ Section shift_functor_adjunctions.
   Proof.
     apply make_form_adjunction.
     - intro a; apply carrier_eq, wrap_unwrap_id.
-    - intro a; do 2 apply carrier_eq.
-      refine (wrap_unwrap_left _ @ _).
+    - intro a; do 2 apply carrier_eq; cbn.
+      etrans; [apply positive_lift_factors|].
       apply unwrap_wrap_id.
   Qed.
 
@@ -523,7 +549,7 @@ Section shift_functor_adjunctions.
   Proof.
     apply make_form_adjunction.
     - intro a; do 2 apply carrier_eq.
-      refine (delay_force_right _ @ _).
+      etrans; [apply negative_lift_factors|].
       apply force_delay_id.
     - intro a; apply carrier_eq, delay_force_id.
   Qed.
@@ -552,10 +578,11 @@ Section shift_functor_adjunctions.
   Lemma triangle_1_wrap_unwrap_' (a : D)
     : #⇓(wrap a) · unwrap (⇓a) = identity (⇓a).
   Proof.
-    unfold downshiftf.
-    rewrite (assoc_thunkable _ (unwrap _)).
-    rewrite unwrap_wrap_id, magmoid_id_left.
-    apply wrap_unwrap_id.
+    apply (is_epi_wrap' D D).
+    etrans; [apply assoc_positive, (⇓_)|].
+    etrans; [apply cancel_postcomposition, positive_lift_factors|].
+    refine (_ @ !magmoid_id_right _).
+    apply wrap_unwrap_right.
   Qed.
   (* Note: triangle_2 is just wrap_unwrap_id *)
 
@@ -563,68 +590,246 @@ Section shift_functor_adjunctions.
   Lemma triangle_2_delay_force_' (a : D)
     : #⇑(force a) ∘ delay (⇑a) = identity (⇑a).
   Proof.
-    unfold upshiftf.
-    rewrite (assoc'_linear _ (delay _)).
-    rewrite force_delay_id, magmoid_id_right.
-    apply delay_force_id.
+    apply (is_monic_force' D D).
+    etrans; [apply assoc'_negative, (⇑_)|].
+    etrans; [apply cancel_precomposition, negative_lift_factors|].
+    refine (_ @ !magmoid_id_left _).
+    apply delay_force_left.
   Qed.
   (* Note: triangle_1 is just delay_force_id *)
 
-  (** Unit of ⇓ ⊣ ⇑ *)
-  Definition wrap_then_delay_thunkable
-    : functor_identity (D ₜ) ⟹ downshift_thunkable_to_linear D ∙ upshift_linear_to_thunkable D
-    := nat_trans_comp _ _ _
-         wrap_thunkable
-         (pre_whisker (downshift_thunkable_to_linear_and_thunkable D)
-               (post_whisker delay_linear_and_thunkable
-                  (linear_and_thunkable_category_to_thunkable_category D))).
-
-  (** Counit of ⇓ ⊣ ⇑ *)
-  Definition force_then_unwrap_linear
-    : functor_identity (D ₗ) ⟸ upshift_linear_to_thunkable D ∙ downshift_thunkable_to_linear D
-    := nat_trans_comp _ _ _
-         (pre_whisker (upshift_linear_to_linear_and_thunkable D)
-            (post_whisker unwrap_linear_and_thunkable
-               (linear_and_thunkable_category_to_linear_category D)))
-         force_linear.
-
-  Definition upshift_downshift_linear_to_thunkable_adjunction_data
-    : adjunction_data (D ₜ) (D ₗ).
+  (** D⟦⇓a, b⟧ ≃ D⟦a, b⟧ : D × D *)
+  Lemma downshift_hom_weq_'_'
+    : bi_hom_weq
+        (downshift_'_to_' D)
+        (functor_identity D)
+        (functor_identity D)
+        (functor_identity D).
   Proof.
-    use make_adjunction_data.
-    - apply downshift_thunkable_to_linear.
-    - apply upshift_linear_to_thunkable.
-    - apply wrap_then_delay_thunkable.
-    - apply force_then_unwrap_linear.
+    intros a b.
+    use weq_iso.
+    - intro f.
+      apply (wrap _ · f).
+    - intro f.
+      apply (positive_lift f).
+    - abstract (intro f; now apply pathsinv0, positive_lift_unique).
+    - abstract (intro f; apply positive_lift_factors).
   Defined.
 
-  Definition upshift_downshift_linear_to_thunkable_form_adjunction
-    : form_adjunction' upshift_downshift_linear_to_thunkable_adjunction_data.
+  Lemma downshift_homweq_'_'_precomp_law
+    : bi_hom_weq_precomp_law downshift_hom_weq_'_'.
   Proof.
-    use make_form_adjunction.
-    - intro a.
-      apply carrier_eq; cbn.
-      refine (_ @ triangle_1_wrap_unwrap_' a).
-      etrans. { apply cancel_postcomposition, downshiftf_comp, (wrap _). }
-      etrans. { apply assoc'_thunkable, is_thunkable_downshiftf, (wrap _). }
-      apply cancel_precomposition.
-      etrans. { apply assoc_linear, (force _). }
-      etrans. { apply cancel_postcomposition, unwrap_natural. }
-      etrans. { apply assoc'_thunkable, (unwrap _). }
-      refine (_ @ magmoid_id_right _).
-      apply cancel_precomposition, delay_force_id.
-    - intro a.
-      apply carrier_eq; cbn.
-      refine (_ @ triangle_2_delay_force_' a).
-      etrans. { apply cancel_precomposition, upshiftf_comp, (force _). }
-      etrans. { apply assoc_linear, is_linear_upshiftf, (force _). }
-      apply cancel_postcomposition.
-      etrans. { apply assoc'_thunkable, (wrap _). }
-      etrans. { apply cancel_precomposition, pathsinv0, delay_natural. }
-      etrans. { apply assoc_linear, (delay _). }
-      refine (_ @ magmoid_id_left _).
-      apply cancel_postcomposition, wrap_unwrap_id.
+    intros a b f c h.
+    etrans; [apply assoc_thunkable, (wrap _)|].
+    etrans; [apply cancel_postcomposition, positive_lift_factors|].
+    apply assoc'_positive, (⇓_).
   Qed.
+
+  Lemma downshift_homweq_'_'_postcomp_law
+    : bi_hom_weq_postcomp_law downshift_hom_weq_'_'.
+  Proof.
+    intros a b f c h.
+    apply assoc_thunkable, (wrap _).
+  Qed.
+
+  Lemma downshift_nathomweq_'_'
+    : natural_bi_hom_weq
+        (downshift_'_to_' D)
+        (functor_identity D)
+        (functor_identity D)
+        (functor_identity D).
+  Proof.
+    use make_natural_bi_hom_weq.
+    - apply downshift_hom_weq_'_'.
+    - apply downshift_homweq_'_'_precomp_law.
+    - apply downshift_homweq_'_'_postcomp_law.
+  Defined.
+
+  (** Dₗ⟦⇓a, b⟧ ≃ D⟦a, b⟧ : Dₜ × Dₗ *)
+  Lemma downshift_nathomweq_linear_'_left
+    : natural_bi_hom_weq
+        (downshift_thunkable_to_linear D)
+        (functor_identity (D ₗ))
+        (thunkable_category_to_unital_magmoid D)
+        (linear_category_to_unital_magmoid D).
+  Proof.
+    use make_natural_bi_hom_weq.
+    - intros a b; cbn.
+      intermediate_weq (D⟦⇓a, b⟧).
+      + apply weq_linear_mor_of_positive, (⇓_).
+      + apply downshift_hom_weq_'_'.
+    - abstract (intros a b f c h; apply downshift_homweq_'_'_precomp_law).
+    - abstract (intros a b f c h; apply downshift_homweq_'_'_postcomp_law).
+  Defined.
+
+  (** D⁺⟦⇓a, b⟧ ≃ D⟦a, b⟧ : D⁻ × D⁺ *)
+  Lemma downshift_nathomweq_positive_'_left
+    : natural_bi_hom_weq
+        (downshift_negative_to_positive D)
+        (functor_identity (D⁺))
+        (negative_category_to_thunkable_category D ∙ thunkable_category_to_unital_magmoid D)
+        (positive_category_to_linear_category D ∙ linear_category_to_unital_magmoid D).
+  Proof.
+    use make_natural_bi_hom_weq.
+    - intros a b; cbn.
+      eapply weqcomp; [apply weqtotalsubtype|].
+      apply (natural_bi_hom_weq_to_weq downshift_nathomweq_linear_'_left).
+    - abstract (intros a b f c h; apply downshift_homweq_'_'_precomp_law).
+    - abstract (intros a b f c h; apply downshift_homweq_'_'_postcomp_law).
+  Defined.
+
+  (** D⟦a, ⇑b⟧ ≃ D⟦a, b⟧ : D × Dᵒᵖ ⟶¹ Set *)
+  Lemma upshift_hom_weq_'_'
+    : bi_hom_weq
+        (functor_identity D)
+        (upshift_'_to_' D)
+        (functor_identity D)
+        (functor_identity D).
+  Proof.
+    intros a b.
+    use weq_iso.
+    - intro f.
+      apply (force _ ∘ f).
+    - intro f.
+      apply (negative_lift f).
+    - abstract (intro f; now apply pathsinv0, negative_lift_unique).
+    - abstract (intro f; apply negative_lift_factors).
+  Defined.
+
+  Lemma upshift_homweq_'_'_postcomp_law
+    : bi_hom_weq_postcomp_law upshift_hom_weq_'_'.
+  Proof.
+    intros a b f c h.
+    etrans; [apply assoc'_linear, (force _)|].
+    etrans; [apply cancel_precomposition, negative_lift_factors|].
+    apply assoc_negative, (⇑_).
+  Qed.
+
+  Lemma upshift_homweq_'_'_precomp_law
+    : bi_hom_weq_precomp_law upshift_hom_weq_'_'.
+  Proof.
+    intros a b f c h.
+    apply assoc'_linear, (force _).
+  Qed.
+
+  Lemma upshift_nathomweq_'_'
+    : natural_bi_hom_weq
+        (functor_identity D)
+        (upshift_'_to_' D)
+        (functor_identity D)
+        (functor_identity D).
+  Proof.
+    use make_natural_bi_hom_weq.
+    - apply upshift_hom_weq_'_'.
+    - apply upshift_homweq_'_'_precomp_law.
+    - apply upshift_homweq_'_'_postcomp_law.
+  Defined.
+
+  (** Dₜ⟦a, ⇑b⟧ ≃ D⟦a, b⟧ : Dₜ × Dₗ *)
+  Lemma upshift_nathomweq_thunkable_'_right
+    : natural_bi_hom_weq
+        (functor_identity (D ₜ))
+        (upshift_linear_to_thunkable D)
+        (thunkable_category_to_unital_magmoid D)
+        (linear_category_to_unital_magmoid D).
+  Proof.
+    use make_natural_bi_hom_weq.
+    - intros a b; cbn.
+      intermediate_weq (D⟦a, ⇑b⟧).
+      + apply weq_thunkable_mor_of_negative, (⇑_).
+      + apply upshift_hom_weq_'_'.
+    - abstract (intros a b f c h; apply upshift_homweq_'_'_precomp_law).
+    - abstract (intros a b f c h; apply upshift_homweq_'_'_postcomp_law).
+  Defined.
+
+  (** D⁻⟦a, ⇑b⟧ ≃ D⟦a, b⟧ : D⁺ × D⁻ *)
+  Lemma upshift_nathomweq_negative_'_right
+    : natural_bi_hom_weq
+        (functor_identity (D⁻))
+        (upshift_positive_to_negative D)
+        (negative_category_to_thunkable_category D ∙ thunkable_category_to_unital_magmoid D)
+        (positive_category_to_linear_category D ∙ linear_category_to_unital_magmoid D).
+  Proof.
+    use make_natural_bi_hom_weq.
+    - intros a b; cbn.
+      eapply weqcomp; [apply weqtotalsubtype|].
+      apply (natural_bi_hom_weq_to_weq upshift_nathomweq_thunkable_'_right).
+    - abstract (intros a b f c h; apply upshift_homweq_'_'_precomp_law).
+    - abstract (intros a b f c h; apply upshift_homweq_'_'_postcomp_law).
+  Defined.
+
+  (** Helper for changing the units of these adjunctions.
+      This undercuts computing all of the [invmap]s that [adj_from_nathomweq] produces, and also
+      lets me remove the ugly identity morphisms that it leaves. *)
+  Lemma are_adjoints_change_units {C₁ C₂ : precategory}
+    (L : functor C₂ C₁) (R : functor C₁ C₂)
+    (θ : are_adjoints L R)
+    (η : nat_trans_data (functor_identity C₂) (functor_composite L R))
+    (Hη : η = adjunit θ)
+    (ε : nat_trans_data (functor_composite R L) (functor_identity C₁))
+    (Hε : ε = adjcounit θ)
+    : are_adjoints L R.
+  Proof.
+    use make_are_adjoints.
+    - apply (make_nat_trans _ _ η).
+      abstract (rewrite Hη; exact (nat_trans_ax (adjunit θ))).
+    - apply (make_nat_trans _ _ ε).
+      abstract (rewrite Hε; exact (nat_trans_ax (adjcounit θ))).
+    - abstract (
+          change ((∏ a : C₂, # L (η a) · ε (L a) = identity (L a)) × (∏ b : C₁, η (R b) · # R (ε b) = identity (R b)));
+          rewrite Hε, Hη;
+          exact (pr2 θ)).
+  Defined.
+
+  (** D⟦⇓a, b⟧ ≃ D⟦a, ⇑b⟧ : D × Dᵒᵖ *)
+  Definition upshift_downshift_nathomweq_'_to_'
+    : natural_hom_weq (downshift_'_to_' D) (upshift_'_to_' D)
+    := natural_bi_hom_weq_compose
+         downshift_nathomweq_'_' (natural_bi_hom_weq_inv upshift_nathomweq_'_').
+
+  (** Dₗ⟦⇓a, b⟧ ≃ Dₜ⟦a, ⇑b⟧ : Dₜ × Dₗᵒᵖ *)
+  Definition upshift_downshift_nathomweq_linear_to_thunkable
+    : natural_hom_weq (downshift_thunkable_to_linear D) (upshift_linear_to_thunkable D)
+    := natural_bi_hom_weq_compose
+         downshift_nathomweq_linear_'_left (natural_bi_hom_weq_inv upshift_nathomweq_thunkable_'_right).
+
+  Definition adjunction_upshift_downshift_linear_to_thunkable
+    : are_adjoints (downshift_thunkable_to_linear D) (upshift_linear_to_thunkable D).
+  Proof.
+    use are_adjoints_change_units.
+    - apply (adj_from_nathomweq upshift_downshift_nathomweq_linear_to_thunkable).
+    - intro a; exact (negative_lift (wrap a)).
+    - abstract (apply funextsec; intro a; apply carrier_eq; simpl;
+                apply (maponpaths (λ f, negative_lift' D D f));
+                apply pathsinv0, magmoid_id_right).
+    - intro a; exact (positive_lift (force a)).
+    - abstract (apply funextsec; intro a; apply carrier_eq; simpl;
+                apply (maponpaths (λ f, positive_lift' D D f));
+                apply pathsinv0, magmoid_id_left).
+  Defined.
+
+  (** D⁺⟦⇓a, b⟧ ≃ D⁻⟦a, ⇑b⟧ : D⁻ × D⁺ᵒᵖ *)
+  Definition upshift_downshift_nathomweq_positive_to_negative
+    : natural_hom_weq (downshift_negative_to_positive D) (upshift_positive_to_negative D)
+    := natural_bi_hom_weq_compose
+         downshift_nathomweq_positive_'_left (natural_bi_hom_weq_inv upshift_nathomweq_negative_'_right).
+
+  Definition adjunction_upshift_downshift_positive_to_negative
+    : are_adjoints (downshift_negative_to_positive D) (upshift_positive_to_negative D).
+  Proof.
+    use are_adjoints_change_units.
+    - apply (adj_from_nathomweq upshift_downshift_nathomweq_positive_to_negative).
+    - intro a; cbn in a.
+      exact (negative_lift (wrap a),,tt).
+    - abstract (apply funextsec; intro a; do 2 apply carrier_eq; simpl;
+                apply (maponpaths (λ f, negative_lift' D D f));
+                apply pathsinv0, magmoid_id_right).
+    - intro a; cbn in a.
+      exact (positive_lift (force a),,tt).
+    - abstract (apply funextsec; intro a; do 2 apply carrier_eq; simpl;
+                apply (maponpaths (λ f, positive_lift' D D f));
+                apply pathsinv0, magmoid_id_left).
+  Defined.
 
 End shift_functor_adjunctions.
 
@@ -639,86 +844,127 @@ End shift_functor_adjunctions.
 Section restricted_shift_functors.
   Context (D : duploid).
 
-  Definition upshift_positive_thunkable_to_negative_linear : D⁺ₜ ⟶ D⁻ₗ
-    := positive_thunkable_category_to_linear_category D ∙ upshift_linear_to_negative_linear D.
-  Definition downshift_negative_linear_to_positive_thunkable : D⁻ₗ ⟶ D⁺ₜ
-    := negative_linear_category_to_thunkable_category D ∙ downshift_thunkable_to_positive_thunkable D.
-
-  Definition delay_then_wrap_positive_thunkable
-    : functor_identity (D⁺ₜ) ⟹
-         upshift_positive_thunkable_to_negative_linear ∙
-         downshift_negative_linear_to_positive_thunkable.
+  Definition downshift_hom_weq_linear_and_thunkable_positive_thunkable
+    : bi_hom_weq
+        (positive_thunkable_category_to_linear_and_thunkable_category D)
+        (functor_identity (D ₗₜ))
+        (functor_identity (D ⁺ₜ))
+        (linear_and_thunkable_category_to_thunkable_category D ∙ downshift_thunkable_to_positive_thunkable D).
   Proof.
-    use make_nat_trans.
-    - intro a.
-      refine (_,,tt).
-      apply (make_thunkable_mor (delay _ · wrap _)).
-      apply is_thunkable_compose;
-        first [ apply is_thunkable_of_negative, (⇑_)
-              | apply wrap ].
-    - abstract (
-          intros a b f;
-          do 2 apply carrier_eq;
-          cbn;
-          etrans; [apply assoc_thunkable, (pr21 f)|];
-          etrans; [apply cancel_postcomposition, delay_natural|];
-          etrans; [apply (assoc'_negative _ (⇑_))|];
-          etrans; [apply cancel_precomposition, wrap_natural|];
-          apply (assoc_negative _ (⇑_))).
+    set (ADJ := (downshift_thunkable_to_positive_thunkable_are_adjoints D)).
+    intros a b.
+    eapply weqcomp.
+    - apply weq_linear_and_thunkable_mor_to_thunkable_mor, a.
+    - exact (adjunction_hom_weq ADJ _ _).
   Defined.
 
-  Definition unwrap_then_force_negative_linear
-    : functor_identity (D⁻ₗ) ⟸
-         downshift_negative_linear_to_positive_thunkable ∙
-         upshift_positive_thunkable_to_negative_linear.
+  Lemma downshift_hom_weq_linear_and_thunkable_positive_thunkable_precomp_law
+    : bi_hom_weq_precomp_law downshift_hom_weq_linear_and_thunkable_positive_thunkable.
   Proof.
-    use make_nat_trans.
-    - intro a.
-      refine (_,,tt).
-      apply (make_linear_mor (unwrap _ ∘ force _)).
-      apply is_linear_compose;
-        first [ apply is_linear_of_positive, (⇓_)
-              | apply force ].
-    - abstract (
-          intros a b f;
-          do 2 apply carrier_eq;
-          cbn;
-          apply pathsinv0;
-          etrans; [apply assoc'_linear, (pr21 f)|];
-          etrans; [apply maponpaths, (!unwrap_natural _ _ _ _)|];
-          etrans; [apply (assoc_positive _ (⇓_))|];
-          etrans; [apply cancel_postcomposition, (!force_natural _ _ _ _)|];
-          apply (assoc'_positive _ (⇓_))).
-  Defined.
-
-  Lemma upshift_downshift_negative_linear_to_positive_thunkable_adjunction_data
-    : adjunction_data (D⁺ₜ) (D⁻ₗ).
-  Proof.
-    use make_adjunction_data.
-    - apply upshift_positive_thunkable_to_negative_linear.
-    - apply downshift_negative_linear_to_positive_thunkable.
-    - apply delay_then_wrap_positive_thunkable.
-    - apply unwrap_then_force_negative_linear.
-  Defined.
-
-  Lemma upshift_downshift_negative_linear_to_positive_thunkable_form_adjunction
-    : form_adjunction' upshift_downshift_negative_linear_to_positive_thunkable_adjunction_data.
-  Proof.
-    use make_form_adjunction.
-    - intro a.
-      do 2 apply carrier_eq; cbn.
-      unfold upshiftf.
-      etrans; [apply delay_force_interpose|].
-      rewrite assoc'_positive; [|apply downshift].
-      etrans; [apply cancel_precomposition, wrap_unwrap_right|].
-      apply force_delay_id.
-    - intro a.
-      do 2 apply carrier_eq; cbn.
-      unfold downshiftf.
-      etrans; [apply wrap_unwrap_interpose|].
-      rewrite assoc_negative; [|apply upshift].
-      etrans; [apply cancel_postcomposition, delay_force_left|].
-      apply unwrap_wrap_id.
+    set (ADJ := (downshift_thunkable_to_positive_thunkable_are_adjoints D)).
+    intros a b f c h.
+    do 2 apply carrier_eq.
+    cbn in a, b, c, f, h |- *.
+    set (H := φ_adj_natural_precomp ADJ a b (f : thunkable_mor _ _) c h).
+    do 2 apply base_paths in H.
+    exact H.
   Qed.
+
+  Lemma downshift_hom_weq_linear_and_thunkable_positive_thunkable_postcomp_law
+    : bi_hom_weq_postcomp_law downshift_hom_weq_linear_and_thunkable_positive_thunkable.
+  Proof.
+    set (ADJ := (downshift_thunkable_to_positive_thunkable_are_adjoints D)).
+    intros a b f c h.
+    do 2 apply carrier_eq.
+    cbn in a, b, c, f, h |- *.
+    set (H := φ_adj_natural_postcomp ADJ a b (f : thunkable_mor _ _) c (h : thunkable_mor _ _)).
+    do 2 apply base_paths in H.
+    exact H.
+  Qed.
+
+  Definition downshift_nat_hom_weq_linear_and_thunkable_positive_thunkable
+    := make_natural_bi_hom_weq _
+         downshift_hom_weq_linear_and_thunkable_positive_thunkable_precomp_law
+         downshift_hom_weq_linear_and_thunkable_positive_thunkable_postcomp_law.
+
+  Definition upshift_hom_weq_linear_and_thunkable_negative_linear
+    : bi_hom_weq
+        (linear_and_thunkable_category_to_linear_category D
+           ∙ upshift_linear_to_negative_linear D)
+        (functor_identity (D ⁻ₗ))
+        (functor_identity (D ₗₜ))
+        (negative_linear_category_to_linear_and_thunkable_category D).
+  Proof.
+    set (ADJ := (upshift_linear_to_negative_linear_are_adjoints D)).
+    intros a b.
+    eapply weqcomp.
+    - exact (adjunction_hom_weq ADJ _ _).
+    - apply invweq, weq_linear_and_thunkable_mor_to_linear_mor, b.
+  Defined.
+
+  Lemma upshift_hom_weq_linear_and_thunkable_negative_linear_precomp_law
+    : bi_hom_weq_precomp_law upshift_hom_weq_linear_and_thunkable_negative_linear.
+  Proof.
+    set (ADJ := (upshift_linear_to_negative_linear_are_adjoints D)).
+    intros a b f c h.
+    apply carrier_eq.
+    cbn in a, b, c, h |- *.
+    set (H := φ_adj_natural_precomp ADJ a b f c (h : linear_mor _ _)).
+    apply base_paths in H.
+    exact H.
+  Qed.
+
+  Lemma upshift_hom_weq_linear_and_thunkable_negative_linear_postcomp_law
+    : bi_hom_weq_postcomp_law upshift_hom_weq_linear_and_thunkable_negative_linear.
+  Proof.
+    set (ADJ := (upshift_linear_to_negative_linear_are_adjoints D)).
+    intros a b f c h.
+    apply carrier_eq.
+    cbn in a, b, c, h |- *.
+    set (H := φ_adj_natural_postcomp ADJ a b f c h).
+    apply base_paths in H.
+    exact H.
+  Qed.
+
+  Definition upshift_nat_hom_weq_linear_and_thunkable_negative_linear
+    := make_natural_bi_hom_weq _
+         upshift_hom_weq_linear_and_thunkable_negative_linear_precomp_law
+         upshift_hom_weq_linear_and_thunkable_negative_linear_postcomp_law.
+
+  Definition nat_hom_weq_upshift_downshift_negative_linear_to_positive_thunkable
+    : natural_hom_weq
+        (upshift_positive_thunkable_to_negative_linear D)
+        (downshift_negative_linear_to_positive_thunkable D)
+    := natural_bi_hom_weq_hcomp
+         downshift_nat_hom_weq_linear_and_thunkable_positive_thunkable
+         upshift_nat_hom_weq_linear_and_thunkable_negative_linear.
+
+  Lemma are_adjoints_nat_hom_weq_upshift_downshift_negative_linear_to_positive_thunkable
+    : are_adjoints
+        (upshift_positive_thunkable_to_negative_linear D)
+        (downshift_negative_linear_to_positive_thunkable D).
+  Proof.
+    use are_adjoints_change_units.
+    - use adj_from_nathomweq.
+      exact (natural_bi_hom_weq_hcomp
+               downshift_nat_hom_weq_linear_and_thunkable_positive_thunkable
+               upshift_nat_hom_weq_linear_and_thunkable_negative_linear).
+    - intro a; cbn in a.
+      refine (make_thunkable_mor (delay a · wrap (⇑a)) _,,tt).
+      abstract (apply is_thunkable_compose;
+                first [ apply is_thunkable_delay
+                      | apply (wrap _) ]).
+    - abstract (apply funextsec; intro a; do 2 apply carrier_eq; simpl;
+                apply pathsinv0; etrans; [apply positive_lift_factors|];
+                apply cancel_postcomposition, magmoid_id_right).
+    - intro a; cbn in a.
+      refine (make_linear_mor (force (⇓a) · unwrap a) _,,tt).
+      abstract (apply is_linear_compose;
+                first [ apply is_linear_unwrap
+                      | apply (force _) ]).
+    - abstract (apply funextsec; intro a; do 2 apply carrier_eq; simpl;
+                apply pathsinv0; etrans; [apply negative_lift_factors|];
+                apply cancel_precomposition, magmoid_id_left).
+  Defined.
 
 End restricted_shift_functors.

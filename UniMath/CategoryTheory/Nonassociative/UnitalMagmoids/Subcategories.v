@@ -20,6 +20,7 @@
  Contents:
  1. Definitions of unital magmoid subcategories
  2. Inclusion functors
+ 3. Extra weak equivalences of polarized subtypes
 
  ********************************************************************************)
 
@@ -99,19 +100,19 @@ Section polarized_categories.
     := full_sub_category linear_category (λ a, ish_negative a).
 End polarized_categories.
 
-Notation "M 'ₗ'" := (linear_category M) (at level 10) : unital_magmoid.
+Notation "M 'ₗ'" := (linear_category M) (at level 1) : unital_magmoid.
   (* type in Emacs using agda-input with \_l *)
-Notation "M 'ₜ'" := (thunkable_category M) (at level 10) : unital_magmoid.
+Notation "M 'ₜ'" := (thunkable_category M) (at level 1) : unital_magmoid.
   (* type in Emacs using agda-input with \_t *)
-Notation "M 'ₗₜ'" := (linear_and_thunkable_category M) (at level 10) : unital_magmoid.
+Notation "M 'ₗₜ'" := (linear_and_thunkable_category M) (at level 1) : unital_magmoid.
   (* type in Emacs using agda-input with \_l \_t *)
-Notation "M '⁺'" := (positive_category M) (at level 10) : unital_magmoid.
+Notation "M '⁺'" := (positive_category M) (at level 1) : unital_magmoid.
   (* type in Emacs using agda-input with \^+ *)
-Notation "M '⁻'" := (negative_category M) (at level 10) : unital_magmoid.
+Notation "M '⁻'" := (negative_category M) (at level 1) : unital_magmoid.
   (* type in Emacs using agda-input with \^- *)
-Notation "M '⁺ₜ'" := (positive_thunkable_category M) (at level 10) : unital_magmoid.
+Notation "M '⁺ₜ'" := (positive_thunkable_category M) (at level 1) : unital_magmoid.
   (* type in Emacs using agda-input with \^+ \_t *)
-Notation "M '⁻ₗ'" := (negative_linear_category M) (at level 10) : unital_magmoid.
+Notation "M '⁻ₗ'" := (negative_linear_category M) (at level 1) : unital_magmoid.
 (* type in Emacs using agda-input with \^- \_l *)
 
 (** ** 2. Inclusion functors
@@ -409,3 +410,74 @@ Section inclusion_functors.
   Defined.
 
 End inclusion_functors.
+
+(** ** Extra weak equivalences of polarized subtypes *)
+
+Section polarized_equivs.
+  Lemma iscontr_is_linear_of_positive {M : unital_magmoid}
+    {a b : M} (f : a --> b) (H : is_positive a)
+    : iscontr (is_linear f).
+  Proof.
+    apply iscontraprop1; [apply isaprop_is_linear|].
+    apply is_linear_of_positive, H.
+  Qed.
+
+  Lemma weq_linear_mor_of_positive {M : unital_magmoid}
+    (a b : M) (H : is_positive a)
+    : linear_mor a b ≃ M⟦a, b⟧.
+  Proof.
+    apply weqpr1; intro f.
+    apply iscontr_is_linear_of_positive, H.
+  Defined.
+
+  Lemma iscontr_is_thunkable_of_negative {M : unital_magmoid}
+    {a b : M} (f : a <-- b) (H : is_negative a)
+    : iscontr (is_thunkable f).
+  Proof.
+    apply iscontraprop1; [apply isaprop_is_thunkable|].
+    apply is_thunkable_of_negative, H.
+  Qed.
+
+  Lemma weq_thunkable_mor_of_negative {M : unital_magmoid}
+    (a b : M) (H : is_negative b)
+    : thunkable_mor a b ≃ M⟦a, b⟧.
+  Proof.
+    apply weqpr1; intro f.
+    apply iscontr_is_thunkable_of_negative, H.
+  Defined.
+
+  Lemma weq_linear_and_thunkable_mor_to_thunkable_mor {M : unital_magmoid}
+    (a b : M) (H : is_positive a)
+    : linear_and_thunkable_mor a b ≃ thunkable_mor a b.
+  Proof.
+    Succeed
+      (apply weqfibtototal; intro f;
+       apply invweq, dirprod_with_contr_l;
+       apply iscontr_is_linear_of_positive, H).
+    (* Proving it directly for performance. *)
+    apply (make_weq linear_and_thunkable_mor_to_thunkable_mor).
+    use isweq_iso.
+    - intro f; apply (make_linear_and_thunkable_mor_from_thunkable f).
+      abstract (apply is_linear_of_positive, H).
+    - abstract (intro f; now apply carrier_eq).
+    - abstract (intro f; now apply carrier_eq).
+  Defined.
+
+  Lemma weq_linear_and_thunkable_mor_to_linear_mor {M : unital_magmoid}
+    (a b : M) (H : is_negative b)
+    : linear_and_thunkable_mor a b ≃ linear_mor a b.
+  Proof.
+    Succeed
+      (apply weqfibtototal; intro f;
+       apply invweq, dirprod_with_contr_r;
+       apply iscontr_is_thunkable_of_negative, H).
+    (* Proving it directly for performance. *)
+    apply (make_weq linear_and_thunkable_mor_to_linear_mor).
+    use isweq_iso.
+    - intro f; apply (make_linear_and_thunkable_mor_from_linear f).
+      abstract (apply is_thunkable_of_negative, H).
+    - abstract (intro f; now apply carrier_eq).
+    - abstract (intro f; now apply carrier_eq).
+  Defined.
+
+End polarized_equivs.

@@ -265,6 +265,21 @@ Section polarities.
     - now apply H2.
   Defined.
 
+  (** Dependent induction scheme for polarities. *)
+  Lemma has_polarity_rec' {M : unital_premagmoid}
+    {a : M} (H : has_polarity a)
+    {P : has_polarity a -> UU}
+    (HP : isPredicate P)
+    (H1 : ∏ (negp : is_negative a), P (hinhpr (ii1 negp)))
+    (H2 : ∏ (posp : is_positive a), P (hinhpr (ii2 posp)))
+    : P H.
+  Proof.
+    apply (squash_rec (λ a, make_hProp (P a) (HP a))).
+    intro H'; induction H'.
+    - now apply H1.
+    - now apply H2.
+  Defined.
+
 End polarities.
 
 (** ** 3. Definition of a preduploid *)
@@ -418,7 +433,7 @@ Section shift_lemmas.
   Proof. apply make_is_linear_and_thunkable; first [apply is_linear_wrap_of_positive, H|apply (wrap a)]. Qed.
 
   (** 2 -> 3 *)
-  Lemma is_lt_iso_unwrap_of_linear (a : D) (H : is_linear (wrap a)) : is_lt_iso (wrap a).
+  Lemma is_lt_iso_wrap_of_linear (a : D) (H : is_linear (wrap a)) : is_lt_iso (wrap a).
   Proof.
     use make_is_lt_iso'.
     - abstract (apply make_is_linear_and_thunkable; first [exact H|apply (wrap a)]).
@@ -428,9 +443,9 @@ Section shift_lemmas.
   Defined.
 
   (** 1 -> 3 *)
-  Lemma is_lt_iso_unwrap_of_positive (a : D) (H : is_positive a) : is_lt_iso (wrap a).
+  Lemma is_lt_iso_wrap_of_positive (a : D) (H : is_positive a) : is_lt_iso (wrap a).
   Proof.
-    apply is_lt_iso_unwrap_of_linear.
+    apply is_lt_iso_wrap_of_linear.
     abstract (apply is_linear_of_positive, H).
   Defined.
 
@@ -438,7 +453,7 @@ Section shift_lemmas.
   Lemma is_positive_of_linear_wrap (a : D) (H : is_linear (wrap a)) : is_positive a.
   Proof.
     refine (is_positive_of_lt_iso _ (⇓a)).
-    eapply lt_iso_inv, make_lt_iso, is_lt_iso_unwrap_of_linear, H.
+    eapply lt_iso_inv, make_lt_iso, is_lt_iso_wrap_of_linear, H.
   Qed.
 
   Lemma is_positive_iff_linear_wrap (a : D) : is_linear (wrap a) <-> is_positive a.
@@ -447,6 +462,22 @@ Section shift_lemmas.
     - apply is_positive_of_linear_wrap.
     - apply is_linear_wrap_of_positive.
   Qed.
+
+  (** 3 *)
+  Lemma lt_iso_downshift_of_positive (a : D) (H : is_positive a) : lt_iso a (⇓a).
+  Proof.
+    exact (make_lt_iso _ (is_lt_iso_wrap_of_positive a H)).
+  Defined.
+
+  Lemma is_lt_iso_unwrap_of_positive (a : D) (H : is_positive a) : is_lt_iso (unwrap a).
+  Proof.
+    exact (lt_iso_is_lt_iso (lt_iso_inv (lt_iso_downshift_of_positive a H))).
+  Defined.
+
+  Lemma is_lt_iso_unwrap_of_linear (a : D) (H : is_linear (wrap a)) : is_lt_iso (unwrap a).
+  Proof.
+    apply is_lt_iso_unwrap_of_positive, is_positive_of_linear_wrap, H.
+  Defined.
 
   (** For an object [a], the following statements are equivalent:
   1. [a] is negative
@@ -464,7 +495,7 @@ Section shift_lemmas.
   Proof. apply make_is_linear_and_thunkable; first [apply is_thunkable_force_of_negative, H|apply (force a)]. Qed.
 
   (** 2 -> 3 *)
-  Lemma is_lt_iso_delay_of_thunkable (a : D) (H : is_thunkable (force a)) : is_lt_iso (force a).
+  Lemma is_lt_iso_force_of_thunkable (a : D) (H : is_thunkable (force a)) : is_lt_iso (force a).
   Proof.
     use make_is_lt_iso'.
     - abstract (apply make_is_linear_and_thunkable; first [exact H|apply (force a)]).
@@ -474,9 +505,9 @@ Section shift_lemmas.
   Defined.
 
   (** 1 -> 3 *)
-  Lemma is_lt_iso_delay_of_negative (a : D) (H : is_negative a) : is_lt_iso (force a).
+  Lemma is_lt_iso_force_of_negative (a : D) (H : is_negative a) : is_lt_iso (force a).
   Proof.
-    apply is_lt_iso_delay_of_thunkable.
+    apply is_lt_iso_force_of_thunkable.
     abstract (apply is_thunkable_of_negative, H).
   Defined.
 
@@ -484,7 +515,7 @@ Section shift_lemmas.
   Lemma is_negative_of_thunkable_force (a : D) (H : is_thunkable (force a)) : is_negative a.
   Proof.
     refine (is_negative_of_lt_iso _ (⇑a)).
-    eapply make_lt_iso, is_lt_iso_delay_of_thunkable, H.
+    eapply make_lt_iso, is_lt_iso_force_of_thunkable, H.
   Qed.
 
   Lemma is_negative_iff_thunkable_force (a : D) : is_thunkable (force a) <-> is_negative a.
@@ -493,5 +524,21 @@ Section shift_lemmas.
     - apply is_negative_of_thunkable_force.
     - apply is_thunkable_force_of_negative.
   Qed.
+
+  (** 3 *)
+  Lemma lt_iso_upshift_of_negative (a : D) (H : is_negative a) : lt_iso (⇑a) a.
+  Proof.
+    exact (make_lt_iso _ (is_lt_iso_force_of_negative a H)).
+  Defined.
+
+  Lemma is_lt_iso_delay_of_negative (a : D) (H : is_negative a) : is_lt_iso (delay a).
+  Proof.
+    exact (lt_iso_is_lt_iso (lt_iso_inv (lt_iso_upshift_of_negative a H))).
+  Defined.
+
+  Lemma is_lt_iso_delay_of_thunkable (a : D) (H : is_thunkable (force a)) : is_lt_iso (delay a).
+  Proof.
+    apply is_lt_iso_delay_of_negative, is_negative_of_thunkable_force, H.
+  Defined.
 
 End shift_lemmas.

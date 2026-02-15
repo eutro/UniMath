@@ -19,13 +19,15 @@ Require Import UniMath.CategoryTheory.Core.Categories.
 Require Import UniMath.CategoryTheory.Core.Functors.
 Require Import UniMath.CategoryTheory.Core.Isos.
 Require Import UniMath.CategoryTheory.Core.NaturalTransformations.
+Require Import UniMath.CategoryTheory.Subcategory.Core.
 Require Import UniMath.CategoryTheory.whiskering.
-Require Import UniMath.CategoryTheory.opp_precat.
 
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.TwoSorted.
+Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Functors.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Isos.
+Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Subcategories.
 
 Local Open Scope cat.
 Local Open Scope unital_magmoid.
@@ -359,7 +361,7 @@ Section oblique_defs.
 
   (** An object [n] is positive in the oblique duploid if [n] is a fixed point. *)
   Lemma is_positive_oblique_negative_iff_pre_fixed_point (n : N)
-    : (# (R ∙ L) (ε n) = ε ((R ∙ L) n))
+    : # (R ∙ L) (ε n) = ε ((R ∙ L) n)
       <-> is_positive (oblique_negative n).
   Proof.
     eapply logeq_trans;
@@ -420,7 +422,7 @@ Section oblique_defs.
 
   (** An object [p] is negative in the oblique duploid if [p] is a fixed point. *)
   Lemma is_negative_oblique_positive_iff_pre_fixed_point (p : P)
-    : (# (L ∙ R) (η p) = η ((L ∙ R) p))
+    : # (L ∙ R) (η p) = η ((L ∙ R) p)
       <-> is_negative (oblique_positive p).
   Proof.
     eapply logeq_trans;

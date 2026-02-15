@@ -12,7 +12,8 @@
  Contents:
  1. Definition of a split duploid
  2. Definition of a polarity-preserving functor
- 3. Characterisations of polarity-preserving duploid functors
+ 3. Characterizations of polarity-preserving duploid functors
+ 4. The chosen-polarity subcategories of a split duploid
 
  ********************************************************************************)
 
@@ -21,22 +22,33 @@ Require Import UniMath.MoreFoundations.All.
 
 Require Import UniMath.CategoryTheory.Core.Categories.
 Require Import UniMath.CategoryTheory.Core.Functors.
+Require Import UniMath.CategoryTheory.Core.Isos.
+Require Import UniMath.CategoryTheory.Equivalences.Core.
+Require Import UniMath.CategoryTheory.Subcategory.Core.
+Require Import UniMath.CategoryTheory.Subcategory.Full.
 
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Functors.
+Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Isos.
+Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Subcategories.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Functors.
+Require Import UniMath.CategoryTheory.Nonassociative.Duploids.ShiftFunctors.
+Require Import UniMath.CategoryTheory.Nonassociative.Duploids.ShiftFacts.
 
 Local Open Scope cat.
+Local Open Scope unital_magmoid.
 Local Open Scope duploid.
 
 (** ** 1. Definition of a split duploid *)
+
+Definition hpolarity : hSet := make_hSet bool isasetbool.
 
 Notation "'⊕'" := true : duploid.
 Notation "'⊖'" := false : duploid.
 Section split_defs.
   (** *** Polarity mappings *)
-  Definition polarity_mapping_data (D : unital_premagmoid) : UU := D -> bool.
+  Definition polarity_mapping_data (D : unital_premagmoid) : UU := D -> hpolarity.
   Identity Coercion Id_polarity_mapping_data : polarity_mapping_data >-> Funclass.
 
   Definition is_polarity_mapping
@@ -127,7 +139,7 @@ Section split_defs.
   Coercion split_preduploid_to_preduploid (D : split_preduploid) : preduploid := pr1 D.
   Definition split_preduploid_polarity_mapping (D : split_preduploid) : polarity_mapping D := pr2 D.
 
-  Definition chosen_polarity_of {D : split_preduploid} (a : D) : bool
+  Definition chosen_polarity_of {D : split_preduploid} (a : D) : hpolarity
     := split_preduploid_polarity_mapping D a.
 
   Lemma polarity_mapping_positive {D : split_preduploid} (a : D)
@@ -142,7 +154,7 @@ Section split_defs.
   Proof. use decide_polarity'; apply split_preduploid_polarity_mapping. Defined.
 
   Definition polarity_mapping_respects_shifts {D : duploid} (mapping : polarity_mapping D)
-    : UU := (∏ (a : D), mapping (⇓a) = ⊕) × (∏ (a : D), mapping (⇑a) = ⊖).
+    : UU := (∏ (a : D), (mapping (⇓a) = ⊕)%logic) × (∏ (a : D), (mapping (⇑a) = ⊖)%logic).
   Definition downshift_polarity_mapping {D : duploid} {mapping : polarity_mapping D}
     (H : polarity_mapping_respects_shifts mapping) : ∏ (a : D), mapping (⇓a) = ⊕ := pr1 H.
   Definition upshift_polarity_mapping {D : duploid} {mapping : polarity_mapping D}
@@ -150,7 +162,7 @@ Section split_defs.
 
   Lemma isaprop_polarity_mapping_respects_shifts {D : duploid} (mapping : polarity_mapping D)
     : isaprop (polarity_mapping_respects_shifts mapping).
-  Proof. apply isapropdirprod; apply impred; intro; apply isasetbool. Qed.
+  Proof. apply isapropdirprod; apply impred; intro; apply propproperty. Qed.
 
   (** *** Split duploid *)
   Definition split_duploid : UU
@@ -194,18 +206,18 @@ Section functor_defs.
   Context {D D' : split_preduploid}.
 
   Definition preserves_polarity_mapping (F : functor_data D D') : UU
-    := ∏ (a : D), chosen_polarity_of (F a) = chosen_polarity_of a.
+    := ∏ (a : D), (chosen_polarity_of (F a) = chosen_polarity_of a)%logic.
 
   Lemma isaprop_preserves_polarity_mapping (F : functor_data D D')
     : isaprop (preserves_polarity_mapping F).
   Proof.
     apply impred; intro.
-    apply isasetbool.
+    apply propproperty.
   Qed.
 
   Lemma functor_chosen_polarity' {F : functor_data D D'}
     (H : preserves_polarity_mapping F) (a : D)
-    : chosen_polarity_of (F a) = chosen_polarity_of a.
+    : (chosen_polarity_of (F a) = chosen_polarity_of a)%logic.
   Proof. apply H. Qed.
 
   Definition polarity_preserving_functor : UU
@@ -222,7 +234,7 @@ Section functor_defs.
     : preserves_polarity_mapping F := pr2 F.
 
   Lemma functor_chosen_polarity (F : polarity_preserving_functor) (a : D)
-    : chosen_polarity_of (F a) = chosen_polarity_of a.
+    : (chosen_polarity_of (F a) = chosen_polarity_of a)%logic.
   Proof. apply functor_chosen_polarity', F. Qed.
 
 End functor_defs.
@@ -242,9 +254,9 @@ Section functor_defs.
 
 End functor_defs.
 
-(** ** 3. Characterisations of polarity-preserving duploid functors
+(** ** 3. Characterizations of polarity-preserving duploid functors
 
- There are three characterisations of a duploid functor presented in
+ There are three characterizations of a duploid functor presented in
  Munch-Maccagnoni's PhD thesis:
 
  1. A [polarity_preserving_functor] F such that [F (force a)] is linear and [F
@@ -334,3 +346,160 @@ Section functor_char3.
     - assumption.
   Defined.
 End functor_char3.
+
+(** ** 4. The chosen-polarity subcategories of a split duploid *)
+
+Section split_chosen_subcategories.
+  Context (D : split_preduploid).
+
+  Definition chosen_positive_category : category
+    := full_sub_category (positive_category D) (λ (a : positive_ob D),
+           (chosen_polarity_of a = ⊕)%logic).
+  Definition chosen_positive_thunkable_category : category
+    := full_sub_category (positive_thunkable_category D) (λ (a : positive_ob D),
+           (chosen_polarity_of a = ⊕)%logic).
+  Definition chosen_negative_category : category
+    := full_sub_category (negative_category D) (λ (a : negative_ob D),
+           (chosen_polarity_of a = ⊖)%logic).
+  Definition chosen_negative_linear_category : category
+    := full_sub_category (negative_linear_category D) (λ (a : negative_ob D),
+           (chosen_polarity_of a = ⊖)%logic).
+End split_chosen_subcategories.
+
+Notation "M '⁺ᶜ'" := (chosen_positive_category M) (at level 1) : duploid.
+  (* type in Emacs using agda-input with \^c \^+ *)
+Notation "M '⁻ᶜ'" := (chosen_negative_category M) (at level 1) : duploid.
+  (* type in Emacs using agda-input with \^c \^- *)
+Notation "M '⁺ᶜₜ'" := (chosen_positive_thunkable_category M) (at level 1) : duploid.
+  (* type in Emacs using agda-input with \^c \^+ \_t *)
+Notation "M '⁻ᶜₗ'" := (chosen_negative_linear_category M) (at level 1) : duploid.
+  (* type in Emacs using agda-input with \^c \^- \_l *)
+
+Section inclusion_functors.
+  Context (D : split_preduploid).
+
+  Definition chosen_positive_category_to_positive_category : D⁺ᶜ ⟶ D⁺
+    := sub_precategory_inclusion _ _.
+  Definition chosen_positive_thunkable_category_to_positive_thunkable_category : D⁺ᶜₜ ⟶ D⁺ₜ
+    := sub_precategory_inclusion _ _.
+  Definition chosen_negative_category_to_negative_category : D⁻ᶜ ⟶ D⁻
+    := sub_precategory_inclusion _ _.
+  Definition chosen_negative_linear_category_to_negative_linear_category : D⁻ᶜₗ ⟶ D⁻ₗ
+    := sub_precategory_inclusion _ _.
+End inclusion_functors.
+
+Section inclusion_equivalences.
+  (** In a split duploid, the above are equivalences *)
+  Context (D : split_duploid).
+
+  (** Equivalence between chosen positive and positive categories *)
+  Lemma split_essentially_surjective_chosen_positive_category_to_positive_category
+    : split_essentially_surjective (chosen_positive_category_to_positive_category D).
+  Proof.
+    intro a; cbn in a.
+    use tpair; [exists (⇓a); apply chosen_polarity_of_downshift|].
+    use make_z_iso.
+    - refine (_,,tt).
+      exists (unwrap a).
+      apply is_linear_unwrap.
+    - refine (_,,tt).
+      exists (wrap a).
+      apply is_linear_wrap_of_positive, a.
+    - abstract (apply make_is_inverse_in_precat;
+                do 2 apply carrier_eq;
+                apply are_inverses_unwrap_wrap).
+  Defined.
+
+  Lemma split_essentially_surjective_chosen_positive_thunkable_category_to_positive_thunkable_category
+    : split_essentially_surjective (chosen_positive_thunkable_category_to_positive_thunkable_category D).
+  Proof.
+    intro a; cbn in a.
+    use tpair; [exists (⇓a); apply chosen_polarity_of_downshift|].
+    use make_z_iso.
+    - exact (unwrap a,,tt).
+    - exact (wrap a,,tt).
+    - abstract (apply make_is_inverse_in_precat;
+                do 2 apply carrier_eq;
+                apply are_inverses_unwrap_wrap).
+  Defined.
+
+  Lemma fully_faithful_chosen_positive_category_to_positive_category
+    : fully_faithful (chosen_positive_category_to_positive_category D).
+  Proof. apply fully_faithful_sub_precategory_inclusion. Defined.
+
+  Lemma fully_faithful_chosen_positive_thunkable_category_to_positive_thunkable_category
+    : fully_faithful (chosen_positive_thunkable_category_to_positive_thunkable_category D).
+  Proof. apply fully_faithful_sub_precategory_inclusion. Defined.
+
+  Lemma adj_equivalence_chosen_positive_to_positive
+    : adj_equivalence_of_cats (chosen_positive_category_to_positive_category D).
+  Proof.
+    apply rad_equivalence_of_cats'.
+    - apply fully_faithful_chosen_positive_category_to_positive_category.
+    - apply split_essentially_surjective_chosen_positive_category_to_positive_category.
+  Defined.
+
+  Lemma adj_equivalence_chosen_positive_thunkable_to_positive_thunkable
+    : adj_equivalence_of_cats (chosen_positive_thunkable_category_to_positive_thunkable_category D).
+  Proof.
+    apply rad_equivalence_of_cats'.
+    - apply fully_faithful_chosen_positive_thunkable_category_to_positive_thunkable_category.
+    - apply split_essentially_surjective_chosen_positive_thunkable_category_to_positive_thunkable_category.
+  Defined.
+
+  (** Equivalence between chosen negative and negative categories *)
+  Lemma split_essentially_surjective_chosen_negative_category_to_negative_category
+    : split_essentially_surjective (chosen_negative_category_to_negative_category D).
+  Proof.
+    intro a; cbn in a.
+    use tpair; [exists (⇑a); apply chosen_polarity_of_upshift|].
+    use make_z_iso.
+    - refine (_,,tt).
+      exists (force a).
+      apply is_thunkable_force_of_negative, a.
+    - refine (_,,tt).
+      exists (delay a).
+      apply is_thunkable_delay.
+    - abstract (apply make_is_inverse_in_precat;
+                do 2 apply carrier_eq;
+                apply are_inverses_force_delay).
+  Defined.
+
+  Lemma split_essentially_surjective_chosen_negative_linear_category_to_negative_linear_category
+    : split_essentially_surjective (chosen_negative_linear_category_to_negative_linear_category D).
+  Proof.
+    intro a; cbn in a.
+    use tpair; [exists (⇑a); apply chosen_polarity_of_upshift|].
+    use make_z_iso.
+    - exact (force a,,tt).
+    - exact (delay a,,tt).
+    - abstract (apply make_is_inverse_in_precat;
+                do 2 apply carrier_eq;
+                apply are_inverses_force_delay).
+  Defined.
+
+  Lemma fully_faithful_chosen_negative_category_to_negative_category
+    : fully_faithful (chosen_negative_category_to_negative_category D).
+  Proof. apply fully_faithful_sub_precategory_inclusion. Defined.
+
+  Lemma fully_faithful_chosen_negative_linear_category_to_negative_linear_category
+    : fully_faithful (chosen_negative_linear_category_to_negative_linear_category D).
+  Proof. apply fully_faithful_sub_precategory_inclusion. Defined.
+
+  Lemma adj_equivalence_chosen_negative_to_negative
+    : adj_equivalence_of_cats (chosen_negative_category_to_negative_category D).
+  Proof.
+    apply rad_equivalence_of_cats'.
+    - apply fully_faithful_chosen_negative_category_to_negative_category.
+    - apply split_essentially_surjective_chosen_negative_category_to_negative_category.
+  Defined.
+
+  Lemma adj_equivalence_chosen_negative_linear_to_negative_linear
+    : adj_equivalence_of_cats (chosen_negative_linear_category_to_negative_linear_category D).
+  Proof.
+    apply rad_equivalence_of_cats'.
+    - apply fully_faithful_chosen_negative_linear_category_to_negative_linear_category.
+    - apply split_essentially_surjective_chosen_negative_linear_category_to_negative_linear_category.
+  Defined.
+
+End inclusion_equivalences.
