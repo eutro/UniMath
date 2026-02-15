@@ -65,6 +65,7 @@ Adjunctions/Core.v
 Adjunctions/AdjunctionMonics.v
 Adjunctions/Reflections.v
 Adjunctions/Coreflections.v
+Adjunctions/HomIsos.v
 Monads/RelativeMonads.v
 Monads/RelMonads_Coreflection.v
 Monads/RelativeModules.v
