@@ -441,6 +441,33 @@ Section derived_props.
         apply pathsinv0, negative_lift_factors).
   Defined.
 
+  Lemma is_monic_delay (a : D) : is_monic (delay a).
+  Proof.
+    intros b f g H.
+    refine (!negative_lift_factors f @ _ @ negative_lift_factors g).
+    apply cancel_postcomposition.
+    exact H.
+  Qed.
+
+  Definition is_linear_of_negative_lift {a b : D} (f : a --> b)
+    : is_linear (negative_lift f) -> is_linear f.
+  Proof.
+    intros H c d g h.
+    apply is_monic_delay.
+    rewrite !(assoc'_linear _ (delay _)).
+    apply (assoc'_linear _ H).
+  Qed.
+
+  Definition is_linear_iff_negative_lift {a b : D} (f : a --> b)
+    : is_linear f <-> is_linear (negative_lift f).
+  Proof.
+    split.
+    - intro H.
+      change (is_linear (f · delay b)).
+      apply is_linear_compose; first [exact H | apply (delay _)].
+    - apply is_linear_of_negative_lift.
+  Defined.
+
   (** Accessors for positive lift UP in a duploid *)
   Definition positive_lift {a b : D} (f : a <-- b) : linear_mor (⇓b) a.
   Proof.
@@ -473,6 +500,33 @@ Section derived_props.
         apply base_paths in H;
         etrans; [|apply cancel_precomposition, H];
         apply pathsinv0, positive_lift_factors).
+  Defined.
+
+  Lemma is_epi_unwrap (a : D) : is_epi (unwrap a).
+  Proof.
+    intros b f g H.
+    refine (!positive_lift_factors f @ _ @ positive_lift_factors g).
+    apply cancel_precomposition.
+    exact H.
+  Qed.
+
+  Definition is_thunkable_of_positive_lift {a b : D} (f : a <-- b)
+    : is_thunkable (positive_lift f) -> is_thunkable f.
+  Proof.
+    intros H c d g h.
+    apply is_epi_unwrap.
+    rewrite !(assoc_thunkable _ (unwrap _)).
+    apply (assoc_thunkable _ H).
+  Qed.
+
+  Definition is_thunkable_iff_positive_lift {a b : D} (f : a <-- b)
+    : is_thunkable f <-> is_thunkable (positive_lift f).
+  Proof.
+    split.
+    - intro H.
+      change (is_thunkable (f ∘ unwrap b)).
+      apply is_thunkable_compose; first [exact H | apply (unwrap _)].
+    - apply is_thunkable_of_positive_lift.
   Defined.
 
 End derived_props.

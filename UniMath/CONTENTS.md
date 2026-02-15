@@ -247,6 +247,7 @@ The packages and files are listed here in logical order: each file depends only 
    - [DisplayedCats/Fiber.v](CategoryTheory/DisplayedCats/Fiber.v)
    - [DisplayedCats/FullyFaithfulDispFunctor.v](CategoryTheory/DisplayedCats/FullyFaithfulDispFunctor.v)
    - [Nonassociative/Duploids/Core.v](CategoryTheory/Nonassociative/Duploids/Core.v)
+   - [Nonassociative/Duploids/ShiftFacts.v](CategoryTheory/Nonassociative/Duploids/ShiftFacts.v)
    - [Nonassociative/Duploids/Envelope.v](CategoryTheory/Nonassociative/Duploids/Envelope.v)
    - [Nonassociative/Duploids/Functors.v](CategoryTheory/Nonassociative/Duploids/Functors.v)
    - [Nonassociative/Duploids/Isos.v](CategoryTheory/Nonassociative/Duploids/Isos.v)
