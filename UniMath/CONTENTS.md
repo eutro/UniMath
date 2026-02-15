@@ -287,6 +287,7 @@ The packages and files are listed here in logical order: each file depends only 
    - [Adjunctions/AdjunctionMonics.v](CategoryTheory/Adjunctions/AdjunctionMonics.v)
    - [Adjunctions/Reflections.v](CategoryTheory/Adjunctions/Reflections.v)
    - [Adjunctions/Coreflections.v](CategoryTheory/Adjunctions/Coreflections.v)
+   - [Adjunctions/HomIsos.v](CategoryTheory/Adjunctions/HomIsos.v)
    - [Monads/RelativeMonads.v](CategoryTheory/Monads/RelativeMonads.v)
    - [Monads/RelMonads_Coreflection.v](CategoryTheory/Monads/RelMonads_Coreflection.v)
    - [Monads/RelativeModules.v](CategoryTheory/Monads/RelativeModules.v)
