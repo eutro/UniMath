@@ -130,6 +130,20 @@ Section split_defs.
     use decide_polarity'; apply mapping.
   Defined.
 
+  Lemma polarity_mapping_from_LEM (D : preduploid)
+    : LEM -> polarity_mapping D.
+  Proof.
+    intros lem.
+    use make_polarity_mapping'.
+    intro a.
+    induction (lem (ish_positive a)) as [Hp | Hnotp].
+    - exact (ii1 Hp).
+    - apply ii2.
+      apply (has_polarity_rec (polarity_of D a)).
+      1: apply isaprop_is_negative.
+      all: easy.
+  Qed.
+
   (** *** Split preduploid *)
   Definition split_preduploid : UU
     := ∑ (D : preduploid), polarity_mapping D.
