@@ -23,10 +23,12 @@ Require Import UniMath.CategoryTheory.Core.Functors.
 Require Import UniMath.CategoryTheory.Core.Isos.
 Require Import UniMath.CategoryTheory.Core.NaturalTransformations.
 Require Import UniMath.CategoryTheory.Subcategory.Core.
+Require Import UniMath.CategoryTheory.Subcategory.Full.
 Require Import UniMath.CategoryTheory.whiskering.
 Require Import UniMath.CategoryTheory.opp_precat.
 Require Import UniMath.CategoryTheory.Equivalences.Core.
 Require Import UniMath.CategoryTheory.Equivalences.FullyFaithful.
+Require Import UniMath.CategoryTheory.Core.Univalence.
 
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Oblique.
@@ -34,6 +36,7 @@ Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Functors.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.TwoSorted.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.ShiftFunctors.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.ShiftFacts.
+Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Univalence.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Isos.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Subcategories.
@@ -42,16 +45,16 @@ Local Open Scope cat.
 Local Open Scope unital_magmoid.
 Local Open Scope duploid.
 
-Section envelope_defs.
+Declare Scope cross_mor.
+Delimit Scope cross_mor with cross_mor.
+Local Open Scope cross_mor.
 
-  (** ** 1. Definition of the envelope duploid *)
-
+Section cross_mor_defs.
   Context {N P : category} (θ : adjunction P N).
   Let L : P ⟶ N := left_functor θ.
   Let R : N ⟶ P := right_functor θ.
-  Let HFG : are_adjoints L R := θ.
-  Let η : functor_identity P ⟹ L ∙ R := unit_from_are_adjoints HFG.
-  Let ε : R ∙ L ⟹ functor_identity N := counit_from_are_adjoints HFG.
+  Let η : functor_identity P ⟹ L ∙ R := adjunit θ.
+  Let ε : R ∙ L ⟹ functor_identity N := adjcounit θ.
 
   Definition cross_mor (p : P) (n : N) : UU
     := ∑ (f : N⟦L p, n⟧) (g : P⟦p, R n⟧), φ_adj θ f = g.
@@ -59,8 +62,8 @@ Section envelope_defs.
     := pr1 f.
   Definition cross_mor_positive {p : P} {n : N} (f : cross_mor p n) : P⟦p, R n⟧
     := pr12 f.
-  Local Notation "f '♭'" := (cross_mor_negative f) : duploid.
-  Local Notation "f '♯'" := (cross_mor_positive f) : duploid.
+  Local Notation "f '♭'" := (cross_mor_negative f) : cross_mor.
+  Local Notation "f '♯'" := (cross_mor_positive f) : cross_mor.
 
   Definition cross_mor_eq_negative {p : P} {n : N} (f : cross_mor p n)
     : φ_adj θ f♭ = f♯ := pr22 f.
@@ -163,21 +166,34 @@ Section envelope_defs.
     - intro f; now apply cross_mor_positive_path.
     - easy.
   Defined.
+End cross_mor_defs.
+
+Notation "f '♭'" := (cross_mor_negative _ f) : cross_mor.
+Notation "f '♯'" := (cross_mor_positive _ f) : cross_mor.
+
+Section envelope_defs.
+  (** ** 1. Definition of the envelope duploid *)
+
+  Context {N P : category} (θ : adjunction P N).
+  Let L : P ⟶ N := left_functor θ.
+  Let R : N ⟶ P := right_functor θ.
+  Let η : functor_identity P ⟹ L ∙ R := adjunit θ.
+  Let ε : R ∙ L ⟹ functor_identity N := adjcounit θ.
 
   (** A pre-object of the envelope. *)
-  Definition envelope_preob := ∑ (p : P) (n : N), cross_mor p n.
+  Definition envelope_preob := ∑ (pn : P × N), cross_mor θ (pr1 pn) (pr2 pn).
   Definition make_envelope_preob
-    (p : P) (n : N) (cross : cross_mor p n)
-    : envelope_preob := p,,n,,cross.
+    (p : P) (n : N) (cross : cross_mor θ p n)
+    : envelope_preob := (p,,n),,cross.
 
-  Definition envelope_negative_ob (a : envelope_preob) : N := pr12 a.
-  Definition envelope_positive_ob (a : envelope_preob) : P := pr1 a.
+  Definition envelope_negative_ob (a : envelope_preob) : N := pr21 a.
+  Definition envelope_positive_ob (a : envelope_preob) : P := pr11 a.
 
   Local Notation "a '⁻'" := (envelope_negative_ob a) (at level 1) : duploid.
   Local Notation "a '⁺'" := (envelope_positive_ob a) (at level 1) : duploid.
 
-  Definition envelope_mor (a b : envelope_preob) : UU := cross_mor a⁺ b⁻.
-  Definition envelope_cross_mor (a : envelope_preob) : envelope_mor a a := pr22 a.
+  Definition envelope_mor (a b : envelope_preob) : UU := cross_mor θ a⁺ b⁻.
+  Definition envelope_cross_mor (a : envelope_preob) : envelope_mor a a := pr2 a.
   Local Notation "a '►'" := (envelope_cross_mor a) : duploid.
   (* type in Emacs with agda-input using \t *)
 
@@ -236,13 +252,13 @@ Section envelope_defs.
       exact (f♭ · g#⊕Hp).
   Defined.
 
-  Local Lemma isInjective_φ_adj {a b} : isInjective (φ_adj (A:=a) (B:=b) HFG).
+  Local Lemma isInjective_φ_adj {a b} : isInjective (φ_adj (A:=a) (B:=b) θ).
   Proof. apply isweqonpathsincl, isinclweq, adjunction_hom_weq. Qed.
-  Local Lemma isInjective_φ_adj_inv {a b} : isInjective (φ_adj_inv (A:=a) (B:=b) HFG).
+  Local Lemma isInjective_φ_adj_inv {a b} : isInjective (φ_adj_inv (A:=a) (B:=b) θ).
   Proof. apply isweqonpathsincl, isinclweq, (invweq (adjunction_hom_weq _ _ _)). Qed.
 
-  Ltac cancel_φ_adj := apply (Injectivity (φ_adj HFG) isInjective_φ_adj).
-  Ltac cancel_φ_adj_inv := apply (Injectivity (φ_adj_inv HFG) isInjective_φ_adj_inv).
+  Ltac cancel_φ_adj := apply (Injectivity (φ_adj θ) isInjective_φ_adj).
+  Ltac cancel_φ_adj_inv := apply (Injectivity (φ_adj_inv θ) isInjective_φ_adj_inv).
 
   Definition envelope_compose_id_left {a b : envelope_preob}
     (f : envelope_mor a b)
@@ -274,7 +290,7 @@ Section envelope_defs.
   Lemma envelope_chosen_negative_and_positive_eq (a : envelope_preob)
     (negative : envelope_chosen_negative a)
     (positive : envelope_chosen_positive a)
-    : # R (is_z_isomorphism_mor positive) = φ_adj HFG (# L (is_z_isomorphism_mor negative)).
+    : # R (is_z_isomorphism_mor positive) = φ_adj θ (# L (is_z_isomorphism_mor negative)).
   Proof.
     apply (pre_comp_with_z_iso_is_inj' negative).
     cancel_φ_adj_inv.
@@ -784,7 +800,7 @@ Section envelope_defs.
   Lemma fully_faithful_oblique_to_envelope : fully_faithful oblique_to_envelope.
   Proof.
     intros a b; induction a, b;
-      apply (invweq (make_weq _ (isweq_cross_mor_negative _ _))).
+      apply (invweq (make_weq _ (isweq_cross_mor_negative _ _ _))).
   Defined.
 
   (* This is a nice sanity check; it is not load-bearing. *)
@@ -980,17 +996,17 @@ Section envelope_defs.
     }
     exists f'.
     apply make_is_linear_and_thunkable.
-    - apply is_linear_of_force_unwrap.
-      apply cross_mor_positive_path; cbn.
-      rewrite !id_left, !id_right.
-      rewrite <- !φ_adj_natural_postcomp, assoc'.
-      cbn.
-      apply maponpaths, cancel_precomposition.
-      change (f'♭ = φ_adj_inv θ f'♯).
-      apply pathsinv0, cross_mor_eq_positive.
-    - apply is_thunkable_of_delay_wrap.
-      apply cross_mor_positive_path; cbn.
-      now rewrite !id_left, !id_right.
+    - abstract (apply is_linear_of_force_unwrap;
+                apply cross_mor_positive_path; cbn;
+                rewrite !id_left, !id_right;
+                rewrite <- !φ_adj_natural_postcomp, assoc';
+                cbn;
+                apply maponpaths, cancel_precomposition;
+                change (f'♭ = φ_adj_inv θ f'♯);
+                apply pathsinv0, cross_mor_eq_positive).
+    - abstract (apply is_thunkable_of_delay_wrap;
+                apply cross_mor_positive_path; cbn;
+                now rewrite !id_left, !id_right).
   Defined.
 
   Lemma envelope_mor_from_positive_mor {a b : P}
@@ -1012,18 +1028,72 @@ Section envelope_defs.
     }
     exists f'.
     apply make_is_linear_and_thunkable.
-    - apply is_linear_of_force_unwrap.
-      apply cross_mor_negative_path; cbn.
-      now rewrite !id_right, !id_left.
-    - apply is_thunkable_of_delay_wrap.
-      apply cross_mor_negative_path; cbn.
-      rewrite !id_right, !id_left.
-      rewrite <- !φ_adj_inv_natural_precomp, assoc.
-      cbn.
-      apply maponpaths, cancel_postcomposition.
-      change (f'♯ = φ_adj θ f'♭).
-      apply pathsinv0, cross_mor_eq_negative.
+    - abstract (apply is_linear_of_force_unwrap;
+                apply cross_mor_negative_path; cbn;
+                now rewrite !id_right, !id_left).
+    - abstract (apply is_thunkable_of_delay_wrap;
+                apply cross_mor_negative_path; cbn;
+                rewrite !id_right, !id_left;
+                rewrite <- !φ_adj_inv_natural_precomp, assoc;
+                cbn;
+                apply maponpaths, cancel_postcomposition;
+                change (f'♯ = φ_adj θ f'♭);
+                apply pathsinv0, cross_mor_eq_negative).
   Defined.
+
+  Definition negative_category_to_envelope_duploid_data
+    : functor_data N envelope_duploid⁻ₗ.
+  Proof.
+    use make_functor_data.
+    - intro n.
+      exists (envelope_ob_of_negative n).
+      apply is_negative_envelope_ob_of_negative.
+    - intros a b f.
+      refine (_,,tt).
+      exists (envelope_mor_from_negative_mor f).
+      apply linear_and_thunkable_mor_is_linear_and_thunkable.
+  Defined.
+
+  Lemma negative_category_to_envelope_duploid_is_functor
+    : is_functor negative_category_to_envelope_duploid_data.
+  Proof.
+    use make_is_functor; red; intros;
+      do 2 apply carrier_eq;
+      apply cross_mor_positive_path; cbn.
+    - apply functor_id.
+    - etrans; [apply functor_comp|].
+      apply cancel_postcomposition, pathsinv0, id_right.
+  Qed.
+
+  Definition negative_category_to_envelope_duploid : N ⟶ envelope_duploid⁻ₗ
+    := make_functor _ negative_category_to_envelope_duploid_is_functor.
+
+  Definition positive_category_to_envelope_duploid_data
+    : functor_data P envelope_duploid⁺ₜ.
+  Proof.
+    use make_functor_data.
+    - intro p.
+      exists (envelope_ob_of_positive p).
+      apply is_positive_envelope_ob_of_positive.
+    - intros a b f.
+      refine (_,,tt).
+      exists (envelope_mor_from_positive_mor f).
+      apply linear_and_thunkable_mor_is_linear_and_thunkable.
+  Defined.
+
+  Lemma positive_category_to_envelope_duploid_is_functor
+    : is_functor positive_category_to_envelope_duploid_data.
+  Proof.
+    use make_is_functor; red; intros;
+      do 2 apply carrier_eq;
+      apply cross_mor_negative_path; cbn.
+    - apply functor_id.
+    - etrans; [apply functor_comp|].
+      apply cancel_precomposition, pathsinv0, id_left.
+  Qed.
+
+  Definition positive_category_to_envelope_duploid : P ⟶ envelope_duploid⁺ₜ
+    := make_functor _ positive_category_to_envelope_duploid_is_functor.
 
   Lemma envelope_lt_iso_from_negative_iso {a b : N}
     (f : z_iso a b)
@@ -1334,3 +1404,243 @@ Section structure_theorem.
   Defined.
 
 End structure_theorem.
+
+Section equalized.
+  Context {N P : category} (θ : adjunction P N).
+  Let L : P ⟶ N := left_functor θ.
+  Let R : N ⟶ P := right_functor θ.
+  Let HFG : are_adjoints L R := θ.
+  Let η : functor_identity P ⟹ L ∙ R := unit_from_are_adjoints HFG.
+  Let ε : R ∙ L ⟹ functor_identity N := counit_from_are_adjoints HFG.
+
+  Definition is_negative_equalizing : UU
+    := ∏ (n m : N) (f : (R ∙ L) n --> m) (H : #(R ∙ L) (ε n) · f = ε ((R ∙ L) n) · f),
+      ∃! (f' : n --> m), ε n · f' = f.
+
+  Lemma isaprop_is_negative_equalizing : isaprop is_negative_equalizing.
+  Proof.
+    do 4 (apply impred; intro).
+    apply isapropiscontr.
+  Qed.
+
+  Definition is_positive_equalizing : UU
+    := ∏ (p q : P) (f : p --> (L ∙ R) q) (H : f · #(L ∙ R) (η q) = f · η ((L ∙ R) q)),
+       ∃! (f' : p --> q), f' · η q = f.
+
+  Lemma isaprop_is_positive_equalizing : isaprop is_positive_equalizing.
+  Proof.
+    do 4 (apply impred; intro).
+    apply isapropiscontr.
+  Qed.
+
+  Definition fully_faithful_negative_category_to_envelope_duploid_iff
+    : is_negative_equalizing <-> fully_faithful (negative_category_to_envelope_duploid θ).
+  Proof.
+    assert (Hweq : ∏ n m (f : negative_category_to_envelope_duploid θ n --> negative_category_to_envelope_duploid θ m),
+             hfiber # (negative_category_to_envelope_duploid θ) f ≃ (∑ f' : N ⟦ n, m ⟧, ε n · f' = (pr11 f) ♭)). {
+      intros n m f.
+      apply (weqtotal2 (idweq _)); intro f'.
+      eapply weqcomp (* paths over ∑ _, tt *).
+      1: apply (weqonpathsincl pr1), isinclpr1; intro; apply isapropifcontr, iscontrunit.
+      eapply weqcomp (* paths over ∑ f, ish_linear f *).
+      1: apply (weqonpathsincl pr1), isinclpr1; intro; apply propproperty.
+      (* paths over cross_mor θ n m *)
+      apply (weqonpathsincl (λ f, f♭)), isinclweq; intro; apply isweq_cross_mor_negative.
+    }
+    split.
+    - intros Hnegative_eq n m f.
+      apply (iscontrweqb (Hweq n m f)).
+      apply Hnegative_eq.
+      induction f as [f Hf0], f as [f Hf]; cbn; clear Hf0.
+      apply (is_linear_from_upshift_iff_envelope_counit_precompose θ
+               (a:=(envelope_upshift θ (envelope_ob_of_negative _ n)))
+               f).
+      exact Hf.
+    - intros Hff n m f Hf.
+      apply (is_linear_from_upshift_iff_envelope_counit_precompose θ
+               (a:=(envelope_upshift θ (envelope_ob_of_negative _ n)))
+               (b:=envelope_ob_of_negative _ m)
+               (make_cross_mor_negative' θ f))
+        in Hf.
+      apply (iscontrweqf (Hweq n m (((make_cross_mor_negative' θ f),,Hf),,tt))).
+      apply Hff.
+  Defined.
+
+  Lemma split_essentially_surjective_negative_category_to_envelope_duploid
+    : split_essentially_surjective (negative_category_to_envelope_duploid θ).
+  Proof.
+    intro a; cbn in a.
+    exists (envelope_negative_ob θ (pr1 a : envelope_ob θ)).
+    set (α := lt_iso_upshift_of_negative (D:=envelope_duploid θ) (pr1 a) (pr2 a)).
+    use make_z_iso.
+    - exact (make_linear_mor (lt_iso_mor α) (lt_iso_is_linear_and_thunkable α),,tt).
+    - exact (make_linear_mor (lt_iso_inverse α) (lt_iso_inverse α),,tt).
+    - split; do 2 apply carrier_eq; apply lt_iso_is_inverse.
+  Defined.
+
+  Lemma adj_equivalence_negative_category_to_envelope_duploid_iff
+    : is_negative_equalizing
+      <-> adj_equivalence_of_cats (negative_category_to_envelope_duploid θ).
+  Proof.
+    split.
+    - intro H.
+      apply rad_equivalence_of_cats'.
+      + apply fully_faithful_negative_category_to_envelope_duploid_iff, H.
+      + exact split_essentially_surjective_negative_category_to_envelope_duploid.
+    - intro H.
+      apply fully_faithful_negative_category_to_envelope_duploid_iff.
+      apply fully_faithful_from_equivalence, H.
+  Defined.
+
+  Definition fully_faithful_positive_category_to_envelope_duploid_iff
+    : is_positive_equalizing <-> fully_faithful (positive_category_to_envelope_duploid θ).
+  Proof.
+    assert (Hweq : ∏ p q (f : positive_category_to_envelope_duploid θ p --> positive_category_to_envelope_duploid θ q),
+             hfiber # (positive_category_to_envelope_duploid θ) f ≃ (∑ f' : P ⟦ p, q ⟧, f' · η q = (pr11 f) ♯)). {
+      intros p q f.
+      apply (weqtotal2 (idweq _)); intro f'.
+      eapply weqcomp (* paths over ∑ _, tt *).
+      1: apply (weqonpathsincl pr1), isinclpr1; intro; apply isapropifcontr, iscontrunit.
+      eapply weqcomp (* paths over ∑ f, ish_thunkable f *).
+      1: apply (weqonpathsincl pr1), isinclpr1; intro; apply propproperty.
+      (* paths over cross_mor θ p q *)
+      apply (weqonpathsincl (λ f, f♯)), isinclweq; intro; apply isweq_cross_mor_positive.
+    }
+    split.
+    - intros Hpositive_eq p q f.
+      apply (iscontrweqb (Hweq p q f)).
+      apply Hpositive_eq.
+      induction f as [f Hf0], f as [f Hf]; cbn; clear Hf0.
+      apply (is_thunkable_from_downshift_iff_envelope_unit_postcompose θ
+               (b:=(envelope_downshift θ (envelope_ob_of_positive _ q)))
+               f).
+      exact Hf.
+    - intros Hff p q f Hf.
+      apply (is_thunkable_from_downshift_iff_envelope_unit_postcompose θ
+               (b:=(envelope_downshift θ (envelope_ob_of_positive _ q)))
+               (a:=envelope_ob_of_positive _ p)
+               (make_cross_mor_positive' θ f))
+        in Hf.
+      apply (iscontrweqf (Hweq p q (((make_cross_mor_positive' θ f),,Hf),,tt))).
+      apply Hff.
+  Defined.
+
+  Lemma split_essentially_surjective_positive_category_to_envelope_duploid
+    : split_essentially_surjective (positive_category_to_envelope_duploid θ).
+  Proof.
+    intro a; cbn in a.
+    exists (envelope_positive_ob θ (pr1 a : envelope_ob θ)).
+    set (α := lt_iso_downshift_of_positive (D:=envelope_duploid θ) (pr1 a) (pr2 a)).
+    use make_z_iso.
+    - exact (make_thunkable_mor (lt_iso_inverse α) (lt_iso_inverse α),,tt).
+    - exact (make_thunkable_mor (lt_iso_mor α) (lt_iso_is_linear_and_thunkable α),,tt).
+    - split; do 2 apply carrier_eq; apply lt_iso_is_inverse.
+  Defined.
+
+  Lemma adj_equivalence_positive_category_to_envelope_duploid_iff
+    : is_positive_equalizing
+      <-> adj_equivalence_of_cats (positive_category_to_envelope_duploid θ).
+  Proof.
+    split.
+    - intro H.
+      apply rad_equivalence_of_cats'.
+      + apply fully_faithful_positive_category_to_envelope_duploid_iff, H.
+      + exact split_essentially_surjective_positive_category_to_envelope_duploid.
+    - intro H.
+      apply fully_faithful_positive_category_to_envelope_duploid_iff.
+      apply fully_faithful_from_equivalence, H.
+  Defined.
+
+  (** Univalence *)
+
+  Hypothesis (Hnegative_eq : is_negative_equalizing).
+  Hypothesis (Hnegative_univalent : is_univalent N).
+  Hypothesis (Hpositive_eq : is_positive_equalizing).
+  Hypothesis (Hpositive_univalent : is_univalent P).
+
+  Definition lt_iso_of_positive_to_positive_iso (a b : envelope_duploid θ)
+    (H : lt_iso a b)
+    (Ha : is_positive a)
+    : z_iso
+        (envelope_positive_ob _ (a : envelope_ob _))
+        (envelope_positive_ob _ (b : envelope_ob _)).
+  Proof.
+    eapply make_z_iso.
+    unshelve apply (fully_faithful_reflects_iso_proof _ _ _
+                      (pr1 fully_faithful_positive_category_to_envelope_duploid_iff Hpositive_eq)).
+    enough (α : lt_iso (⇓a) (⇓b)). {
+      use make_z_iso.
+      - exact (make_thunkable_mor (lt_iso_mor α) (lt_iso_is_linear_and_thunkable α),,tt).
+      - exact (make_thunkable_mor (lt_iso_inverse α) (lt_iso_inverse α),,tt).
+      - split; do 2 apply carrier_eq; apply lt_iso_is_inverse.
+    }
+    refine (lt_iso_compose _ (lt_iso_compose H _)).
+    - apply lt_iso_inv, lt_iso_downshift_of_positive, Ha.
+    - apply lt_iso_downshift_of_positive, (is_positive_of_lt_iso H), Ha.
+  Defined.
+
+  Definition lt_iso_of_negative_to_negative_iso (a b : envelope_duploid θ)
+    (H : lt_iso a b)
+    (Ha : is_negative a)
+    : z_iso
+        (envelope_negative_ob _ (a : envelope_ob _))
+        (envelope_negative_ob _ (b : envelope_ob _)).
+  Proof.
+    eapply make_z_iso.
+    unshelve apply (fully_faithful_reflects_iso_proof _ _ _
+                      (pr1 fully_faithful_negative_category_to_envelope_duploid_iff Hnegative_eq)).
+    enough (α : lt_iso (⇑a) (⇑b)). {
+      use make_z_iso.
+      - exact (make_linear_mor (lt_iso_mor α) (lt_iso_is_linear_and_thunkable α),,tt).
+      - exact (make_linear_mor (lt_iso_inverse α) (lt_iso_inverse α),,tt).
+      - split; do 2 apply carrier_eq; apply lt_iso_is_inverse.
+    }
+    refine (lt_iso_compose _ (lt_iso_compose H _)).
+    - apply lt_iso_upshift_of_negative, Ha.
+    - apply lt_iso_inv, lt_iso_upshift_of_negative, (is_negative_of_lt_iso H), Ha.
+  Defined.
+
+  Lemma envelope_chosen_positive_of_is_positive (a : envelope_duploid θ)
+    (Hp : is_positive a) : envelope_chosen_positive θ (a : envelope_ob θ).
+  Proof.
+    set (a' := a : envelope_ob _).
+    generalize (a' : envelope_polarization θ a').
+    apply (envelope_polarization_rec' θ (a:=a')).
+    1: intro; apply isaprop_is_z_isomorphism.
+    2: easy.
+    intro Hn.
+    assert (Hε : #(R ∙ L) (ε (envelope_negative_ob _ a'))
+                 = (ε ((R ∙ L) (envelope_negative_ob _ a')))). {
+      apply (is_positive_envelope_upshift_iff_pre_fixed_point θ a').
+      refine (is_positive_of_lt_iso _ Hp).
+      apply lt_iso_inv, (lt_iso_upshift_of_negative a).
+      apply is_negative_of_envelope_chosen_negative, Hn.
+    }
+    set (Hε' := Hnegative_eq (envelope_negative_ob _ a') _ (identity _)
+                  (maponpaths (λ f, f · identity _) Hε)).
+    exists (pr1 (iscontrpr1 Hε') · #L (is_z_isomorphism_mor Hn)).
+    split; cbn.
+    - use (cancel_z_iso _ _ (make_z_iso' (#L (envelope_cross_mor _ a')♯) _) _).
+      1: apply functor_on_is_z_isomorphism, Hn.
+      cbn; rewrite id_left, !assoc'.
+      rewrite <- functor_comp, (is_inverse_in_precat2 Hn).
+      rewrite functor_id, id_right.
+      rewrite <- (id_right (#L _)).
+      apply (Injectivity _ (isInjective_φ_adj θ)).
+      rewrite φ_adj_natural_precomp, φ_adj_natural_postcomp.
+      rewrite cross_mor_eq_negative, φ_adj_identity.
+      apply cancel_precomposition.
+      admit.
+    - rewrite <- cross_mor_eq_positive.
+      etrans; [apply cancel_precomposition, maponpaths, pathsinv0, id_right|].
+      cbn; rewrite φ_adj_inv_natural_precomp.
+      etrans; [
+          rewrite assoc; apply cancel_postcomposition;
+          rewrite assoc'; apply cancel_precomposition;
+          rewrite <- functor_comp, (is_inverse_in_precat2 Hn);
+          apply functor_id|].
+      rewrite id_right.
+      admit.
+  Abort.
+
+End equalized.
