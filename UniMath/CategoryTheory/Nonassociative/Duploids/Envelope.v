@@ -40,6 +40,7 @@ Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Univalence.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Isos.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Subcategories.
+Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.EpisAndMonics.
 
 Local Open Scope cat.
 Local Open Scope unital_magmoid.
@@ -1600,6 +1601,20 @@ Section equalized.
     - apply lt_iso_inv, lt_iso_upshift_of_negative, (is_negative_of_lt_iso H), Ha.
   Defined.
 
+  Lemma counit_is_epi_from_negative_equalizing (n : N)
+    : is_epi (ε n).
+  Proof.
+    intros b f g H.
+    apply (base_paths (B:=λ f', ε n · f' = ε n · g) (f,,H) (g,,idpath _)).
+    eassert (H' : ∃! f' : N ⟦ n, b ⟧, ε n · f' = ε n · g). {
+      refine (Hnegative_eq _ _ (ε n · g) _).
+      now rewrite !assoc, nat_trans_ax.
+    }
+    intermediate_path (iscontrpr1 H').
+    - apply iscontr_uniqueness.
+    - apply pathsinv0, iscontr_uniqueness.
+  Qed.
+
   Lemma envelope_chosen_positive_of_is_positive (a : envelope_duploid θ)
     (Hp : is_positive a) : envelope_chosen_positive θ (a : envelope_ob θ).
   Proof.
@@ -1630,7 +1645,11 @@ Section equalized.
       rewrite φ_adj_natural_precomp, φ_adj_natural_postcomp.
       rewrite cross_mor_eq_negative, φ_adj_identity.
       apply cancel_precomposition.
-      admit.
+      apply (Injectivity _ (isInjective_φ_adj_inv θ)).
+      unfold φ_adj_inv; cbn.
+      etrans; [apply (nat_trans_ax ε)|].
+      etrans; [apply (pr2 (iscontrpr1 Hε'))|].
+      apply pathsinv0, (triangle_id_left_ad θ).
     - rewrite <- cross_mor_eq_positive.
       etrans; [apply cancel_precomposition, maponpaths, pathsinv0, id_right|].
       cbn; rewrite φ_adj_inv_natural_precomp.
@@ -1639,8 +1658,11 @@ Section equalized.
           rewrite assoc'; apply cancel_precomposition;
           rewrite <- functor_comp, (is_inverse_in_precat2 Hn);
           apply functor_id|].
-      rewrite id_right.
-      admit.
-  Abort.
+      rewrite id_right, φ_adj_inv_identity.
+      apply counit_is_epi_from_negative_equalizing.
+      rewrite assoc, id_right.
+      etrans; [apply cancel_postcomposition, (pr2 (iscontrpr1 Hε'))|].
+      apply id_left.
+  Qed.
 
 End equalized.
