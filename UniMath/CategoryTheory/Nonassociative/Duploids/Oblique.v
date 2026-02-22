@@ -6,8 +6,9 @@
  January 2026
 
  Contents:
- 1. Definition of the oblique duploid
- 2. Lemmas about the oblique duploid
+ 1. Definition and proofs of oblique morphisms
+ 2. Definition of the oblique duploid
+ 3. Lemmas about the oblique duploid
 
  ********************************************************************************)
 
@@ -25,6 +26,7 @@ Require Import UniMath.CategoryTheory.whiskering.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.TwoSorted.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Functors.
+Require Import UniMath.CategoryTheory.Nonassociative.Duploids.EqualizingRequirement.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Isos.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Subcategories.
@@ -32,17 +34,17 @@ Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Subcategorie
 Local Open Scope cat.
 Local Open Scope unital_magmoid.
 Local Open Scope duploid.
+Local Open Scope oblique_mor.
 
 Section oblique_defs.
 
-  (** ** 1. Definition of the oblique duploid *)
+  (** ** 2. Definition of the oblique duploid *)
 
   Context {N P : category} (θ : adjunction P N).
   Let L : P ⟶ N := left_functor θ.
   Let R : N ⟶ P := right_functor θ.
-  Let HFG : are_adjoints L R := θ.
-  Let η : functor_identity P ⟹ L ∙ R := unit_from_are_adjoints HFG.
-  Let ε : R ∙ L ⟹ functor_identity N := counit_from_are_adjoints HFG.
+  Let η : functor_identity P ⟹ L ∙ R := adjunit θ.
+  Let ε : R ∙ L ⟹ functor_identity N := adjcounit θ.
 
   Definition oblique_ob := N ⨿ P.
 
@@ -54,61 +56,60 @@ Section oblique_defs.
   Local Notation "a '⁻'" := (oblique_negativise a) : duploid.
   Local Notation "a '⁺'" := (oblique_positivise a) : duploid.
 
-  Definition oblique_mor (a b : oblique_ob) := N⟦L (a⁺), b⁻⟧.
+  Definition oblique_mor' (a b : oblique_ob) := oblique_mor θ a⁺ b⁻.
+  Arguments oblique_mor' / _ _.
 
-  Lemma isaset_oblique_mor (a b : oblique_ob) : isaset (oblique_mor a b).
-  Proof. apply N. Qed.
+  Lemma isaset_oblique_mor' (a b : oblique_ob) : isaset (oblique_mor' a b).
+  Proof. apply isaset_oblique_mor. Qed.
 
-  Definition oblique_identity (a : oblique_ob) : oblique_mor a a.
+  Definition oblique_identity (a : oblique_ob) : oblique_mor' a a.
   Proof.
     induction a.
-    + apply (φ_adj_inv HFG), identity.
-    + apply identity.
+    + apply oblique_negative_identity.
+    + apply oblique_positive_identity.
   Defined.
 
   Definition oblique_compose {a b c : oblique_ob}
-    (f : oblique_mor a b) (g : oblique_mor b c)
-    : oblique_mor a c.
+    (f : oblique_mor' a b) (g : oblique_mor' b c)
+    : oblique_mor' a c.
   Proof.
     induction b.
-    + exact (φ_adj_inv HFG (φ_adj HFG f · φ_adj HFG g)).
-    + exact (f · g).
+    + exact (oblique_compose_positive θ f♯ g).
+    + exact (oblique_compose_negative θ f g♭).
   Defined.
 
-  Lemma oblique_left_id {a b : oblique_ob} (f : oblique_mor a b) :
+  Lemma oblique_left_id {a b : oblique_ob} (f : oblique_mor' a b) :
     oblique_compose (oblique_identity a) f = f.
   Proof.
-    induction a; simpl.
-    + rewrite φ_adj_after_φ_adj_inv, id_left.
-      apply φ_adj_inv_after_φ_adj.
-    + apply id_left.
+    induction a;
+      [apply oblique_mor_positive_path | apply oblique_mor_negative_path];
+      apply id_left.
   Qed.
 
-  Lemma oblique_right_id {a b : oblique_ob} (f : oblique_mor a b) :
+  Lemma oblique_right_id {a b : oblique_ob} (f : oblique_mor' a b) :
     oblique_compose f (oblique_identity b) = f.
   Proof.
-    induction b; simpl.
-    + rewrite φ_adj_after_φ_adj_inv, id_right.
-      apply φ_adj_inv_after_φ_adj.
-    + apply id_right.
+    induction b;
+      [apply oblique_mor_positive_path | apply oblique_mor_negative_path];
+      apply id_right.
   Qed.
 
   Definition oblique_unital_premagmoid : unital_premagmoid.
   Proof.
     use make_unital_premagmoid.
     - use make_precategory_data.
-      + exact (make_precategory_ob_mor oblique_ob oblique_mor).
+      + exact (make_precategory_ob_mor oblique_ob oblique_mor').
       + exact oblique_identity.
       + intros a b c f g. exact (oblique_compose f g).
     - abstract (use make_is_unital_premagmoid;
-                [apply @oblique_left_id
-                |apply @oblique_right_id]).
+                [ apply @oblique_left_id
+                | apply @oblique_right_id ]).
   Defined.
 
   Definition oblique_unital_magmoid : unital_magmoid.
   Proof.
     apply (make_unital_magmoid oblique_unital_premagmoid).
-    intros a b; apply homset_property.
+    intros a b; apply isaset_oblique_mor'.
   Defined.
 
   Definition oblique_negative (a : N) : oblique_unital_magmoid := ii1 a.
@@ -117,20 +118,13 @@ Section oblique_defs.
   Lemma oblique_negative_is_negative (a : N) : is_negative (oblique_negative a).
   Proof.
     intros b f c d g h.
-    induction c as [m | q]; unfold compose; simpl.
-    + do 2 rewrite φ_adj_after_φ_adj_inv.
-      now rewrite assoc.
-    + rewrite φ_adj_natural_postcomp, assoc.
-      now rewrite φ_adj_inv_natural_postcomp.
+    induction c; apply oblique_mor_positive_path, assoc.
   Qed.
 
   Lemma oblique_positive_is_positive (a : P) : is_positive (oblique_positive a).
   Proof.
     intros b f c d g h.
-    induction c as [m | q]; unfold compose; simpl.
-    + rewrite φ_adj_natural_postcomp, assoc.
-      now rewrite φ_adj_inv_natural_postcomp.
-    + apply assoc'.
+    induction c; apply oblique_mor_negative_path, assoc'.
   Qed.
 
   Lemma oblique_polarity_mapping : polarity_mapping oblique_unital_premagmoid.
@@ -155,14 +149,14 @@ Section oblique_defs.
   Proof.
     induction a as [n | p].
     + apply identity.
-    + apply (φ_adj_inv HFG), identity.
+    + apply oblique_negative_identity.
   Defined.
 
   Definition oblique_delay (a : oblique_preduploid) : a --> oblique_upshift a.
   Proof.
     induction a as [n | p].
     + apply identity.
-    + apply (identity (L p)).
+    + apply oblique_positive_identity.
   Defined.
 
   Definition oblique_downshift (a : oblique_preduploid) : oblique_preduploid.
@@ -175,14 +169,14 @@ Section oblique_defs.
   Definition oblique_wrap (a : oblique_preduploid) : a --> oblique_downshift a.
   Proof.
     induction a as [n | p].
-    + apply (identity (L (R n))).
+    + apply oblique_positive_identity.
     + apply identity.
   Defined.
 
   Definition oblique_unwrap (a : oblique_preduploid) : oblique_downshift a --> a.
   Proof.
     induction a as [n | p].
-    + apply (φ_adj_inv HFG), identity.
+    + apply oblique_negative_identity.
     + apply identity.
   Defined.
 
@@ -202,9 +196,9 @@ Section oblique_defs.
     intros b c f g.
     induction b as [m | q].
     1: now rewrite (assoc'_negative _ (oblique_negative_is_negative _)).
-    unfold compose; simpl.
-    rewrite φ_adj_after_φ_adj_inv.
-    now do 2 rewrite id_right, φ_adj_inv_after_φ_adj.
+    apply oblique_mor_positive_path; cbn.
+    rewrite <- (φ_adj_inv_identity θ), <- φ_adj_inv_natural_precomp.
+    now rewrite !id_right, oblique_mor_positive_transpose.
   Qed.
 
   Definition is_thunkable_oblique_wrap (a : oblique_preduploid)
@@ -215,8 +209,9 @@ Section oblique_defs.
     intros b c f g.
     induction b as [m | q].
     2: now rewrite (assoc'_positive _ (oblique_positive_is_positive _)).
-    unfold compose; simpl.
-    now do 2 rewrite id_left.
+    apply oblique_mor_negative_path; cbn.
+    rewrite <- (φ_adj_identity θ), <- φ_adj_natural_postcomp.
+    now rewrite !id_left, oblique_mor_negative_transpose.
   Qed.
 
   Lemma is_linear_oblique_delay (a : oblique_preduploid)
@@ -227,12 +222,9 @@ Section oblique_defs.
     intros b c f g.
     induction b as [m | q].
     1: apply assoc'_negative, oblique_negative_is_negative.
-    cbn.
-    rewrite φ_adj_natural_postcomp.
-    rewrite φ_adj_after_φ_adj_inv.
-    do 2 rewrite id_right.
-    rewrite φ_adj_inv_natural_postcomp.
-    now do 2 rewrite φ_adj_inv_after_φ_adj.
+    apply oblique_mor_positive_path; cbn.
+    rewrite <- (φ_adj_inv_identity θ), <- φ_adj_inv_natural_precomp.
+    now rewrite !id_right, oblique_mor_positive_transpose.
   Qed.
 
   Lemma is_thunkable_oblique_unwrap (a : oblique_preduploid)
@@ -243,29 +235,29 @@ Section oblique_defs.
     intros b c f g.
     induction b as [m | q].
     2: apply assoc_positive, oblique_positive_is_positive.
-    cbn.
-    now do 2 rewrite id_left.
+    apply oblique_mor_negative_path; cbn.
+    rewrite <- (φ_adj_identity θ), <- φ_adj_natural_postcomp.
+    now rewrite !id_left, oblique_mor_negative_transpose.
   Qed.
 
   Definition is_inverse_in_precat_oblique_force_delay (a : oblique_preduploid)
     : is_inverse_in_precat (oblique_force a) (oblique_delay a).
   Proof.
-    induction a as [n | p]; simpl; split; unfold identity, compose; simpl;
-      fold (identity (C:=P)); fold (identity (C:=N)).
-    - now rewrite φ_adj_after_φ_adj_inv, id_left.
-    - now rewrite φ_adj_after_φ_adj_inv, id_left.
-    - now rewrite id_right.
-    - now rewrite φ_adj_after_φ_adj_inv, id_right, φ_adj_inv_after_φ_adj.
+    induction a as [n | p]; split; cbn.
+    - apply oblique_mor_positive_path, id_left.
+    - apply oblique_mor_positive_path, id_left.
+    - apply oblique_mor_negative_path, id_right.
+    - apply oblique_mor_positive_path, id_right.
   Qed.
 
   Definition is_inverse_in_precat_oblique_unwrap_wrap (a : oblique_preduploid)
     : is_inverse_in_precat (oblique_unwrap a) (oblique_wrap a).
   Proof.
     induction a as [n | p]; split; cbn.
-    - now rewrite φ_adj_after_φ_adj_inv, id_left, φ_adj_inv_after_φ_adj.
-    - now rewrite id_left.
-    - apply id_left.
-    - apply id_left.
+    - apply oblique_mor_positive_path, id_left.
+    - apply oblique_mor_negative_path, id_left.
+    - apply oblique_mor_negative_path, id_right.
+    - apply oblique_mor_negative_path, id_right.
   Qed.
 
   Definition has_linear_inverse_oblique_force (a : oblique_ob) : has_linear_inverse (oblique_force a).
@@ -335,27 +327,26 @@ Section oblique_defs.
          oblique_polarity_mapping
          oblique_polarity_mapping_respects_shifts.
 
-  (** ** 2. Lemmas about the oblique duploid *)
+  (** ** 3. Lemmas about the oblique duploid *)
 
   (** The characterisation [is_linear_of_force_unwrap] can be expressed in terms of the counit *)
   Lemma is_linear_iff_oblique_counit_precompose {n : N} {a : oblique_duploid}
     (f : oblique_negative n --> a)
-    : #(R ∙ L) (ε n) · f = ε ((R ∙ L) n) · f <->
+    : #(R ∙ L) (ε n) · f♭ = ε ((R ∙ L) n) · f♭  <->
         is_linear f.
   Proof.
     eapply logeq_trans;
       [|apply (is_linear_iff_force_unwrap (D:=oblique_duploid))].
+    eapply logeq_trans;
+      [|apply issymm_logeq, (weq_to_iff (oblique_mor_negative_path_weq θ _ _))].
     cbn.
-    rewrite φ_adj_natural_postcomp, φ_adj_inv_natural_precomp.
-    do 2 rewrite φ_adj_after_φ_adj_inv, id_left, φ_adj_inv_after_φ_adj.
-    unfold φ_adj_inv; fold ε.
-    do 2 rewrite functor_id, id_left.
+    rewrite functor_id, !id_left.
     apply isrefl_logeq.
   Qed.
 
   Lemma is_linear_of_oblique_counit_precompose {n : N} {a : oblique_duploid}
     (f : oblique_negative n --> a)
-    : #(R ∙ L) (ε n) · f = ε ((R ∙ L) n) · f ->
+    : #(R ∙ L) (ε n) · f♭ = ε ((R ∙ L) n) · f♭ ->
       is_linear f.
   Proof. apply is_linear_iff_oblique_counit_precompose. Qed.
 
@@ -369,7 +360,7 @@ Section oblique_defs.
     eapply logeq_trans;
       [|apply is_linear_iff_oblique_counit_precompose].
     cbn.
-    do 2 rewrite id_right.
+    rewrite !id_right.
     apply isrefl_logeq.
   Qed.
 
@@ -394,29 +385,15 @@ Section oblique_defs.
   (** The characterisation [is_thunkable_of_delay_wrap] can be expressed in terms of the counit *)
   Lemma is_thunkable_iff_oblique_unit_postcompose {a : oblique_duploid} {p : P}
     (f : a --> oblique_positive p)
-    : φ_adj HFG f · #(L ∙ R) (η p) = φ_adj HFG f · η ((L ∙ R) p)
+    : f♯ · #(L ∙ R) (η p) = f♯ · η ((L ∙ R) p)
       <-> is_thunkable f.
   Proof.
     eapply logeq_trans;
       [|apply (is_thunkable_iff_delay_wrap (D:=oblique_duploid))].
-    eapply logeq_trans.
-    2: {
-      apply issymm_logeq, weq_to_iff.
-      apply (Injectivity (φ_adj HFG)).
-      apply isweqonpathsincl, isinclweq.
-      apply adjunction_hom_weq.
-    }
-    eapply logeq_trans.
-    2: {
-      cbn.
-      do 2 rewrite φ_adj_natural_postcomp, φ_adj_inv_natural_precomp.
-      rewrite φ_adj_inv_after_φ_adj, functor_id.
-      do 2 rewrite id_right.
-      rewrite functor_comp, functor_id, φ_adj_natural_precomp.
-      do 2 rewrite φ_adj_identity.
-      fold η.
-      apply isrefl_logeq.
-    }
+    eapply logeq_trans;
+      [|apply issymm_logeq, (weq_to_iff (oblique_mor_positive_path_weq θ _ _))].
+    cbn.
+    rewrite functor_id, !id_right.
     apply isrefl_logeq.
   Qed.
 
@@ -430,8 +407,7 @@ Section oblique_defs.
     eapply logeq_trans;
       [|apply is_thunkable_iff_oblique_unit_postcompose].
     cbn.
-    rewrite φ_adj_after_φ_adj_inv.
-    do 2 rewrite id_left.
+    rewrite !id_left.
     apply isrefl_logeq.
   Qed.
 
