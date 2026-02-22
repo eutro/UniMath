@@ -936,6 +936,18 @@ Section AdjunctionLemmas.
       assumption.
   Qed.
 
+  Lemma right_adjoint_is_faithful_if_counit_is_epi
+    : (∏ x, isEpi (ε x)) -> faithful G.
+  Proof.
+    intros Hepi.
+    intros a b.
+    apply isinclbetweensets; try apply homset_property.
+    intros f g Hfg.
+    apply Hepi.
+    refine (!nat_trans_ax ε a _ _ @ _ @ nat_trans_ax ε a _ _).
+    exact (maponpaths (λ h, #F h · ε _) Hfg).
+  Qed.
+
   Local Lemma issurjective_postcomp_with_weq {A B E : UU}
         (f : A -> B) (w : B ≃ E) : issurjective (w ∘ f)%functions -> issurjective f.
   Proof.

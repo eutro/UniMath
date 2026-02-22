@@ -24,12 +24,13 @@ DisplayedCats/Fiber.v
 DisplayedCats/FullyFaithfulDispFunctor.v
 
 Nonassociative/Duploids/Core.v
-Nonassociative/Duploids/ShiftFacts.v
 Nonassociative/Duploids/Envelope.v
+Nonassociative/Duploids/EqualizingRequirement.v
 Nonassociative/Duploids/Functors.v
 Nonassociative/Duploids/Isos.v
 Nonassociative/Duploids/NatTrans.v
 Nonassociative/Duploids/Oblique.v
+Nonassociative/Duploids/ShiftFacts.v
 Nonassociative/Duploids/ShiftFunctors.v
 Nonassociative/Duploids/TwoSorted.v
 Nonassociative/Duploids/Univalence.v
