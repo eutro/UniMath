@@ -6,7 +6,9 @@
  January 2026
 
  Contents:
- 1. Definition of the equalizing requirement
+ 1. Definition and proofs of oblique morphisms
+ 2. Definition of the equalizing requirement
+ 3. The shift adjunction of a duploid is fully equalizing
 
  ********************************************************************************)
 
@@ -33,6 +35,10 @@ Require Import UniMath.CategoryTheory.IdempotentsAndSplitting.Retracts.
 
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.EpisAndMonics.
+Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Subcategories.
+Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Core.
+Require Import UniMath.CategoryTheory.Nonassociative.Duploids.ShiftFunctors.
+Require Import UniMath.CategoryTheory.Nonassociative.Duploids.ShiftFacts.
 
 Local Open Scope cat.
 Local Open Scope unital_magmoid.
@@ -305,6 +311,8 @@ End oblique_mor_defs.
 Notation "f '♭'" := (oblique_mor_negative _ f) : oblique_mor.
 Notation "f '♯'" := (oblique_mor_positive _ f) : oblique_mor.
 
+(** ** 2. Definition of the equalizing requirement *)
+
 Section equalized.
   Context {N P : category} (θ : adjunction P N).
   Let L : P ⟶ N := left_functor θ.
@@ -332,29 +340,70 @@ Section equalized.
     apply isapropiscontr.
   Qed.
 
+  Definition is_fully_equalizing : UU
+    := is_negative_equalizing × is_positive_equalizing.
+  Definition make_is_fully_equalizing
+    (Hnegative : is_negative_equalizing)
+    (Hpositive : is_positive_equalizing)
+    : is_fully_equalizing := Hnegative,,Hpositive.
+  Coercion is_fully_equalizing_to_is_negative_equalizing
+    (H : is_fully_equalizing) : is_negative_equalizing := pr1 H.
+  Coercion is_fully_equalizing_to_is_positive_equalizing
+    (H : is_fully_equalizing) : is_positive_equalizing := pr2 H.
+
   (** Characterizations of the equalizing requirements *)
-  Lemma is_negative_equalizing_from_is_epi_and_linear_image
+  Lemma is_negative_equalizing_from_is_epi_and_equation
     (Hepi : ∏ (n : N), is_epi (ε n))
     (Himage : ∏ (n m : N) (f : oblique_mor θ (R n) m) (H : is_negative_oblique_mor_linear θ f),
-        ishinh (hfiber (#R) f♯))
+        ishinh (hfiber (λ g, ε n · g) f♭))
     : is_negative_equalizing.
   Proof.
     intros a b f Hf.
     isaprop_goal Hprop; [apply isapropiscontr|].
     refine (squash_to_prop (Himage _ _ (oblique_mor_from_negative θ f) Hf) Hprop (λ Hfib, _)).
     induction Hfib as [g Hg].
-    assert (H'g : ε a · g = f). {
-      change ((oblique_lift_negative θ g)♭ = (oblique_mor_from_negative θ f)♭).
-      apply (maponpaths (oblique_mor_negative θ)), oblique_mor_positive_path.
-      exact Hg.
-    }
     use (unique_exists g).
-    - exact H'g.
+    - exact Hg.
     - intro; apply homset_property.
     - intros g' Hg'; cbn in Hg'.
       apply Hepi.
-      exact (Hg' @ !H'g).
+      exact (Hg' @ !Hg).
+  Qed.
+
+  Lemma is_negative_equalizing_from_is_epi_and_linear_image
+    (Hepi : ∏ (n : N), is_epi (ε n))
+    (Himage : ∏ (n m : N) (f : oblique_mor θ (R n) m) (H : is_negative_oblique_mor_linear θ f),
+        ishinh (hfiber (#R) f♯))
+    : is_negative_equalizing.
+  Proof.
+    apply (is_negative_equalizing_from_is_epi_and_equation Hepi).
+    intros a b f Hf.
+    isaprop_goal Hprop; [apply propproperty|].
+    refine (squash_to_prop (Himage _ _ f Hf) Hprop (λ Hfib, _)).
+    induction Hfib as [g Hg].
+    apply hinhpr; exists g.
+    change ((oblique_lift_negative θ g)♭ = f♭).
+    apply (maponpaths (oblique_mor_negative θ)), oblique_mor_positive_path.
+    exact Hg.
   Defined.
+
+  Lemma is_positive_equalizing_from_is_monic_and_equation
+    (Hmonic : ∏ (p : P), is_monic (η p))
+    (Himage : ∏ (p q : P) (f : oblique_mor θ p (L q)) (H : is_positive_oblique_mor_thunkable θ f),
+        ishinh (hfiber (λ g, g · η q) f♯))
+    : is_positive_equalizing.
+  Proof.
+    intros a b f Hf.
+    isaprop_goal Hprop; [apply isapropiscontr|].
+    refine (squash_to_prop (Himage _ _ (oblique_mor_from_positive θ f) Hf) Hprop (λ Hfib, _)).
+    induction Hfib as [g Hg].
+    use (unique_exists g).
+    - exact Hg.
+    - intro; apply homset_property.
+    - intros g' Hg'; cbn in Hg'.
+      apply Hmonic.
+      exact (Hg' @ !Hg).
+  Qed.
 
   Lemma is_positive_equalizing_from_is_monic_and_thunkable_image
     (Hmonic : ∏ (p : P), is_monic (η p))
@@ -362,22 +411,16 @@ Section equalized.
         ishinh (hfiber (#L) f♭))
     : is_positive_equalizing.
   Proof.
+    apply (is_positive_equalizing_from_is_monic_and_equation Hmonic).
     intros a b f Hf.
-    isaprop_goal Hprop; [apply isapropiscontr|].
-    refine (squash_to_prop (Himage _ _ (oblique_mor_from_positive θ f) Hf) Hprop (λ Hfib, _)).
+    isaprop_goal Hprop; [apply propproperty|].
+    refine (squash_to_prop (Himage _ _ f Hf) Hprop (λ Hfib, _)).
     induction Hfib as [g Hg].
-    assert (H'g : g · η b = f). {
-      change ((oblique_lift_positive θ g)♯ = (oblique_mor_from_positive θ f)♯).
-      apply (maponpaths (oblique_mor_positive θ)), oblique_mor_negative_path.
-      exact Hg.
-    }
-    use (unique_exists g).
-    - exact H'g.
-    - intro; apply homset_property.
-    - intros g' Hg'; cbn in Hg'.
-      apply Hmonic.
-      exact (Hg' @ !H'g).
-  Defined.
+    apply hinhpr; exists g.
+    change ((oblique_lift_positive θ g)♯ = f♯).
+    apply (maponpaths (oblique_mor_positive θ)), oblique_mor_negative_path.
+    exact Hg.
+  Qed.
 
   (** Lemmas about the negative fixed point of the adjunction *)
   Section negative_fixed_point.
@@ -553,3 +596,179 @@ Section equalized.
   End positive_fixed_point.
 
 End equalized.
+
+(** ** 3. The shift adjunction of a duploid is fully equalizing *)
+
+Section shift_is_equalizing.
+  Context (D : duploid).
+  Let θ := left_adjoint_to_adjunction (are_adjoints_upshift_downshift_negative_linear_to_positive_thunkable D).
+
+  Local Open Scope duploid.
+
+  Let ε' (a : D) : D⟦⇑(⇓a), a⟧ := force (⇓a) · unwrap a.
+  Let ε_sec (a : D) : D⟦a, ⇑(⇓a)⟧ := wrap a · delay (⇓a).
+
+  Local Lemma ε'_has_section (a : D)
+    : ε_sec a · ε' a = identity a.
+  Proof.
+    etrans; [apply (assoc'_thunkable _ (wrap _))|].
+    etrans; [apply cancel_precomposition, delay_force_left|].
+    apply wrap_unwrap_id.
+  Qed.
+
+  Local Lemma ε_sec_natural (a b : D) (f : a --> b)
+    : f · ε_sec b = ε_sec a · #⇑(#⇓f).
+  Proof.
+    subst ε_sec; cbn beta.
+    etrans; [|apply (assoc_thunkable _ (wrap a))].
+    etrans; [|apply cancel_precomposition, delay_natural].
+    etrans; [|apply (assoc'_thunkable _ (wrap a))].
+    etrans; [|apply cancel_postcomposition, wrap_natural].
+    apply (assoc_linear _ (delay _)).
+  Qed.
+
+  Local Lemma is_epi_ε' (a : negative_ob D)
+    : is_epi (adjcounit θ a).
+  Proof.
+    intros b f g Hfg.
+    do 2 apply base_paths in Hfg.
+    apply (maponpaths (precomp_with (ε_sec a))) in Hfg.
+    change (ε_sec a · (ε' a · pr11 f) = ε_sec a · (ε' a · pr11 g)) in Hfg.
+    do 2 apply carrier_eq.
+    refine (_ @ Hfg @ _).
+    - now rewrite (assoc_linear _ (pr21 f)), ε'_has_section, magmoid_id_left.
+    - now rewrite (assoc_linear _ (pr21 g)), ε'_has_section, magmoid_id_left.
+  Qed.
+
+  Let η' (a : D) : D⟦a, ⇓(⇑a)⟧ := wrap (⇑a) ∘ delay a.
+  Let η_ret (a : D) : D⟦⇓(⇑a), a⟧ := force a ∘ unwrap (⇑a).
+
+  Local Lemma η'_has_retract (a : D)
+    : η_ret a ∘ η' a = identity a.
+  Proof.
+    etrans; [apply (assoc_linear _ (force _))|].
+    etrans; [apply cancel_postcomposition, wrap_unwrap_right|].
+    apply delay_force_id.
+  Qed.
+
+  Local Lemma η_ret_natural (a b : D) (f : a <-- b)
+    : f ∘ η_ret b = η_ret a ∘ #⇓(#⇑f).
+  Proof.
+    subst η_ret; cbn beta.
+    etrans; [|apply (assoc'_linear _ (force a))].
+    etrans; [|apply cancel_postcomposition, pathsinv0, unwrap_natural].
+    etrans; [|apply (assoc_linear _ (force a))].
+    etrans; [|apply cancel_precomposition, pathsinv0, force_natural].
+    apply (assoc'_thunkable _ (unwrap _)).
+  Qed.
+
+  Local Lemma is_monic_η' (a : positive_ob D)
+    : is_monic (adjunit θ a).
+  Proof.
+    intros b f g Hfg.
+    do 2 apply base_paths in Hfg.
+    apply (maponpaths (postcomp_with (η_ret a))) in Hfg.
+    change (η_ret a ∘ (η' a ∘ pr11 f) = η_ret a ∘ (η' a ∘ pr11 g)) in Hfg.
+    do 2 apply carrier_eq.
+    refine (_ @ Hfg @ _).
+    - now rewrite (assoc'_thunkable _ (pr21 f)), η'_has_retract, magmoid_id_right.
+    - now rewrite (assoc'_thunkable _ (pr21 g)), η'_has_retract, magmoid_id_right.
+  Qed.
+
+  Lemma is_negative_equalizing_upshift_downshift_negative_linear_to_positive_thunkable
+    : is_negative_equalizing θ.
+  Proof.
+    apply is_negative_equalizing_from_is_epi_and_equation.
+    1: apply is_epi_ε'.
+    intros n m f Hf; cbn in n, m, f.
+    set (f' := ε_sec n · pr11 f♭).
+    assert (Hf' : ε' n · f' = pr11 f♭). {
+      etrans; [apply (assoc_linear _ (pr21 f♭))|].
+      etrans; [|apply magmoid_id_left].
+      etrans; [|apply cancel_postcomposition, (ε'_has_section _)].
+      etrans; [|apply (assoc_linear _ (pr21 f♭))].
+      do 2 apply base_paths in Hf.
+      intermediate_path (ε_sec (⇑(⇓n)) · (#⇑(#⇓ε' n) · pr11 f♭));
+        [|refine (maponpaths (λ f, ε_sec _ · f) _); exact Hf].
+      etrans; [|apply (assoc'_linear _ (pr21 f♭))].
+      apply cancel_postcomposition, ε_sec_natural.
+    }
+    assert (Hlinear : is_linear f'). {
+      apply is_linear_of_force_unwrap.
+      fold (ε' n).
+      refine (Hf' @ _).
+      apply pathsinv0.
+      subst f' ε_sec; cbn.
+      etrans. {
+        refine (maponpaths (λ f, force _ · f) _).
+        etrans; [refine (maponpaths (λ f, unwrap _ · f) _);
+                 apply (assoc'_thunkable _ (wrap n) (delay (⇓n)))|].
+        etrans; [apply assoc_linear, (is_linear_compose (delay (⇓n)) (pr11 f♭)
+                                        (is_linear_of_positive _ (⇓n))
+                                        (pr21 f♭))|].
+        etrans; [apply cancel_postcomposition, unwrap_wrap_id|].
+        apply magmoid_id_left.
+      }
+      etrans; [apply (assoc_linear _ (pr21 f♭))|].
+      etrans; [apply cancel_postcomposition, force_delay_id|].
+      apply magmoid_id_left.
+    }
+    apply hinhpr.
+    exists (make_linear_mor _ Hlinear,,tt).
+    do 2 apply carrier_eq.
+    exact Hf'.
+  Qed.
+
+  Lemma is_positive_equalizing_downshift_upshift_positive_thunkable_to_negative_linear
+    : is_positive_equalizing θ.
+  Proof.
+    apply is_positive_equalizing_from_is_monic_and_equation.
+    1: apply is_monic_η'.
+    intros p q f Hf; cbn in p, q, f.
+    set (f' := η_ret q ∘ pr11 f♯).
+    assert (Hf' : η' q ∘ f' = pr11 f♯). {
+      etrans; [apply (assoc'_thunkable _ (pr21 f♯))|].
+      etrans; [|apply magmoid_id_right].
+      etrans; [|apply cancel_precomposition, (η'_has_retract _)].
+      etrans; [|apply (assoc'_thunkable _ (pr21 f♯))].
+      do 2 apply base_paths in Hf.
+      intermediate_path (η_ret (⇓(⇑q)) ∘ (#⇓(#⇑η' q) ∘ pr11 f♯));
+        [|refine (maponpaths (λ f, η_ret _ ∘ f) _); exact Hf].
+      etrans; [|apply (assoc_thunkable _ (pr21 f♯))].
+      apply cancel_precomposition, η_ret_natural.
+    }
+    assert (Hthunkable : is_thunkable f'). {
+      apply is_thunkable_of_delay_wrap.
+      fold (η' q).
+      refine (Hf' @ _).
+      apply pathsinv0.
+      subst f' η_ret; cbn.
+      etrans. {
+        refine (maponpaths (λ f, wrap _ ∘ f) _).
+        etrans; [refine (maponpaths (λ f, delay _ ∘ f) _);
+                 apply (assoc_linear _ (force q) (unwrap (⇑q)))|].
+        etrans; [apply assoc'_thunkable, (is_thunkable_compose (pr11 f♯) (unwrap (⇑q))
+                                            (pr21 f♯)
+                                            (is_thunkable_of_negative _ (⇑q)))|].
+        etrans; [apply cancel_precomposition, force_delay_id|].
+        apply magmoid_id_right.
+      }
+      etrans; [apply (assoc'_thunkable _ (pr21 f♯))|].
+      etrans; [apply cancel_precomposition, unwrap_wrap_id|].
+      apply magmoid_id_right.
+    }
+    apply hinhpr.
+    exists (make_thunkable_mor _ Hthunkable,,tt).
+    do 2 apply carrier_eq.
+    exact Hf'.
+  Qed.
+
+  Lemma is_fully_equalizing_upshift_downshift_negative_linear_to_positive_thunkable
+    : is_fully_equalizing θ.
+  Proof.
+    apply make_is_fully_equalizing.
+    - apply is_negative_equalizing_upshift_downshift_negative_linear_to_positive_thunkable.
+    - apply is_positive_equalizing_downshift_upshift_positive_thunkable_to_negative_linear.
+  Qed.
+
+End shift_is_equalizing.

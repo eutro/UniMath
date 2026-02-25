@@ -31,8 +31,10 @@ Require Import UniMath.CategoryTheory.Core.Categories.
 Require Import UniMath.CategoryTheory.Core.Functors.
 Require Import UniMath.CategoryTheory.Subcategory.Core.
 Require Import UniMath.CategoryTheory.Subcategory.Full.
+Require Import UniMath.CategoryTheory.Core.Isos.
 
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
+Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Isos.
 
 Local Open Scope cat.
 Local Open Scope unital_magmoid.
@@ -478,6 +480,63 @@ Section polarized_equivs.
       abstract (apply is_thunkable_of_negative, H).
     - abstract (intro f; now apply carrier_eq).
     - abstract (intro f; now apply carrier_eq).
+  Defined.
+
+  Lemma weq_linear_and_thunkable_mor_to_linear_and_thunkable_category {M : unital_magmoid}
+    (a b : M) : M ₗₜ⟦a, b⟧ ≃ linear_and_thunkable_mor a b.
+  Proof. apply idweq. Defined.
+
+  Lemma weq_linear_and_thunkable_mor_to_positive_thunkable_category {M : unital_magmoid}
+    (a b : positive_ob M) : M⁺ₜ⟦a, b⟧ ≃ linear_and_thunkable_mor a b.
+  Proof.
+    eapply weqcomp; [|apply weq_linear_and_thunkable_mor_to_linear_and_thunkable_category].
+    apply (weq_from_fully_faithful
+             (fully_faithful_positive_thunkable_category_to_linear_and_thunkable_category M)).
+  Defined.
+
+  Lemma weq_linear_and_thunkable_mor_to_negative_linear_category {M : unital_magmoid}
+    (a b : negative_ob M) : M⁻ₗ⟦a, b⟧ ≃ linear_and_thunkable_mor a b.
+  Proof.
+    eapply weqcomp; [|apply weq_linear_and_thunkable_mor_to_linear_and_thunkable_category].
+    apply (weq_from_fully_faithful
+             (fully_faithful_negative_linear_category_to_linear_and_thunkable_category M)).
+  Defined.
+
+  Lemma weq_z_iso_lt_iso {M : unital_magmoid} (a b : M)
+    : lt_iso a b ≃ z_iso (C:=linear_and_thunkable_category M) a b.
+  Proof.
+    use weq_iso.
+    - intros [f [Hf [g Hfg]]].
+      exists (f,,Hf).
+      exists g.
+      abstract (split; apply carrier_eq; cbn; apply Hfg).
+    - intros [[f Hf] [[g Hg] [Hfg Hgf]]].
+      exists f.
+      refine (make_is_lt_iso' Hf g Hg _).
+      abstract (
+          apply base_paths in Hfg, Hgf;
+          cbn in Hfg, Hgf;
+          split; assumption).
+    - abstract (intro f; now apply subtypePath'; [|apply isaprop_is_lt_iso]).
+    - abstract (intro f; now apply subtypePath'; [|apply isaprop_is_z_isomorphism]).
+  Defined.
+
+  Lemma weq_z_iso_lt_iso_positive {M : unital_magmoid} (a b : positive_ob M)
+    : lt_iso a b ≃ z_iso (C:=positive_thunkable_category M) a b.
+  Proof.
+    eapply weqcomp; [apply weq_z_iso_lt_iso|].
+    apply invweq,
+      (weq_ff_functor_on_z_iso
+         (fully_faithful_positive_thunkable_category_to_linear_and_thunkable_category M)).
+  Defined.
+
+  Lemma weq_z_iso_lt_iso_negative {M : unital_magmoid} (a b : negative_ob M)
+    : lt_iso a b ≃ z_iso (C:=negative_linear_category M) a b.
+  Proof.
+    eapply weqcomp; [apply weq_z_iso_lt_iso|].
+    apply invweq,
+      (weq_ff_functor_on_z_iso
+         (fully_faithful_negative_linear_category_to_linear_and_thunkable_category M)).
   Defined.
 
 End polarized_equivs.
