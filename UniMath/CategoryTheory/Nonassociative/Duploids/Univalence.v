@@ -311,57 +311,63 @@ Section equivalences.
 End equivalences.
 
 Section characterizations.
+  Definition category_to_rxgraph (C : category) : rxgraph.
+  Proof.
+    use make_rxgraph'.
+    - exact (ob C).
+    - intros a b; exact (z_iso a b).
+    - intros a; exact (identity_z_iso a).
+  Defined.
+
+  Remark category_rxgraph_univalent_eq (C : category)
+    : is_univalent C = is_rxgraph_univalent (category_to_rxgraph C).
+  Proof. reflexivity. Defined.
+
+  Definition duploid_to_rxgraph (D : duploid) : rxgraph.
+  Proof.
+    use make_rxgraph'.
+    - exact (ob D).
+    - intros a b; exact (lt_iso a b).
+    - intros a; exact (lt_iso_identity a).
+  Defined.
+
+  Remark duploid_rxgraph_univalent_eq (D : duploid)
+    : is_duploid_univalent D = is_rxgraph_univalent (duploid_to_rxgraph D).
+  Proof. reflexivity. Defined.
+
   Context (D : duploid).
   (** The following are equivalent:
       1. [D] is a univalent duploid
       2. [linear_and_thunkable_category D] is a univalent category
       3. [positive_thunkable_category D] and [negative_linear_category D] are both univalent categories *)
 
-  Lemma weq_z_iso_lt_iso (a b : D)
-    : lt_iso a b ≃ z_iso (C:=linear_and_thunkable_category D) a b.
+  (** 1 -> 2 *)
+  Lemma duploid_to_linear_and_thunkable_category_rxgraph_iso
+    : rxgraph_iso (category_to_rxgraph (D ₗₜ)) (duploid_to_rxgraph D).
   Proof.
-    use weq_iso.
-    - intros [f [Hf [g Hfg]]].
-      exists (f,,Hf).
-      exists g.
-      abstract (split; apply carrier_eq; cbn; apply Hfg).
-    - intros [[f Hf] [[g Hg] [Hfg Hgf]]].
-      exists f.
-      refine (make_is_lt_iso' Hf g Hg _).
-      abstract (
-          apply base_paths in Hfg, Hgf;
-          cbn in Hfg, Hgf;
-          split; assumption).
-    - abstract (intro f; now apply subtypePath'; [|apply isaprop_is_lt_iso]).
-    - abstract (intro f; now apply subtypePath'; [|apply isaprop_is_z_isomorphism]).
+    use make_rxgraph_iso; [use make_pregraph_iso|].
+    - apply idweq.
+    - intros a b; apply invweq, weq_z_iso_lt_iso.
+    - intro a; cbn.
+      apply subtypePath'; [|apply isaprop_is_lt_iso].
+      reflexivity.
   Defined.
 
-  (** 1 -> 2 *)
   Lemma is_duploid_univalent_to_is_univalent_linear_and_thunkable_category
     (H : is_duploid_univalent D) : is_univalent (linear_and_thunkable_category D).
   Proof.
-    intros a b.
-    use weqhomot.
-    - cbn in a, b.
-      eapply weqcomp; [exact (make_weq _ (H a b))|].
-      exact (weq_z_iso_lt_iso a b).
-    - intro p.
-      apply subtypePath'; [|apply isaprop_is_z_isomorphism].
-      now induction p.
+    refine (rxgraph_univalent_from_iso_b _ _
+              duploid_to_linear_and_thunkable_category_rxgraph_iso).
+    exact H.
   Qed.
 
   (** 2 -> 1 *)
   Lemma is_duploid_univalent_from_is_univalent_linear_and_thunkable_category
     (H : is_univalent (D ₗₜ)) : is_duploid_univalent D.
   Proof.
-    intros a b.
-    use weqhomot.
-    - cbn in a, b.
-      eapply weqcomp; [exact (make_weq _ (H a b))|].
-      exact (invweq (weq_z_iso_lt_iso a b)).
-    - intro p.
-      apply subtypePath'; [|apply isaprop_is_lt_iso].
-      now induction p.
+    refine (rxgraph_univalent_from_iso_f _ _
+              duploid_to_linear_and_thunkable_category_rxgraph_iso).
+    exact H.
   Qed.
 
   (** 2 -> 3.a *)
@@ -402,26 +408,13 @@ Section characterizations.
       now induction p.
   Qed.
 
-  Coercion category_to_rxgraph (C : category) : rxgraph.
-  Proof.
-    use make_rxgraph'.
-    - exact (ob C).
-    - intros a b; (exact (z_iso a b)).
-    - intros a; exact (identity_z_iso a).
-  Defined.
-
-  Remark category_rxgraph_univalent_iff (C : category)
-    : is_univalent C <-> is_rxgraph_univalent C.
-  Proof. apply isrefl_logeq. Defined.
-
   (* 3 -> 2 *)
   Lemma is_univalent_linear_and_thunkable_from_positive_thunkable_and_negative_linear_categories
     (Hpositive : is_univalent (D⁺ₜ))
     (Hnegative : is_univalent (D⁻ₗ))
     : is_univalent (D ₗₜ).
   Proof.
-    apply category_rxgraph_univalent_iff.
-    apply is_rxgraph_univalent_from_isaprop_edges_from.
+    apply (is_rxgraph_univalent_from_isaprop_edges_from (category_to_rxgraph (D ₗₜ))).
     intro a.
     isaprop_goal Hprop; [apply isapropisaprop|].
     refine (squash_to_prop (polarity_of D a) Hprop (λ Ha, _)).
@@ -430,8 +423,8 @@ Section characterizations.
     1: set (HC := Hnegative).                    2: set (HC := Hpositive).
     1: set (is_p := @is_negative D).             2: set (is_p := @is_positive D).
     all: set (a' := a,,Ha : C).
-    all: use (isofhlevelweqb 1 (Y:=@edges_from C a'));
-      [|exact (is_rxgraph_univalent_to_isaprop_edges_from C HC _)].
+    all: use (isofhlevelweqb 1 (Y:=@edges_from (category_to_rxgraph C) a'));
+      [|exact (is_rxgraph_univalent_to_isaprop_edges_from (category_to_rxgraph C) HC _)].
     all: eapply weqcomp; [|apply weqtotal2asstol].
     all: use weqbandf; [exact (idweq D)|]; intro b; cbn in b |- *.
     all: intermediate_weq (∑ _ : z_iso a b, is_p b).

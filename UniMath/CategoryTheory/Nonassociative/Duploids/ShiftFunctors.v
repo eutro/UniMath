@@ -939,7 +939,7 @@ Section restricted_shift_functors.
          downshift_nat_hom_weq_linear_and_thunkable_positive_thunkable
          upshift_nat_hom_weq_linear_and_thunkable_negative_linear.
 
-  Lemma are_adjoints_nat_hom_weq_upshift_downshift_negative_linear_to_positive_thunkable
+  Lemma are_adjoints_upshift_downshift_negative_linear_to_positive_thunkable
     : are_adjoints
         (upshift_positive_thunkable_to_negative_linear D)
         (downshift_negative_linear_to_positive_thunkable D).
