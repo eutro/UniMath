@@ -250,6 +250,7 @@ The packages and files are listed here in logical order: each file depends only 
    - [Nonassociative/Duploids/Envelope.v](CategoryTheory/Nonassociative/Duploids/Envelope.v)
    - [Nonassociative/Duploids/EqualizingRequirement.v](CategoryTheory/Nonassociative/Duploids/EqualizingRequirement.v)
    - [Nonassociative/Duploids/Functors.v](CategoryTheory/Nonassociative/Duploids/Functors.v)
+   - [Nonassociative/Duploids/FromCategory.v](CategoryTheory/Nonassociative/Duploids/FromCategory.v)
    - [Nonassociative/Duploids/Isos.v](CategoryTheory/Nonassociative/Duploids/Isos.v)
    - [Nonassociative/Duploids/NatTrans.v](CategoryTheory/Nonassociative/Duploids/NatTrans.v)
    - [Nonassociative/Duploids/Oblique.v](CategoryTheory/Nonassociative/Duploids/Oblique.v)

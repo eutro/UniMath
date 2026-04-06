@@ -27,6 +27,7 @@ Nonassociative/Duploids/Core.v
 Nonassociative/Duploids/Envelope.v
 Nonassociative/Duploids/EqualizingRequirement.v
 Nonassociative/Duploids/Functors.v
+Nonassociative/Duploids/FromCategory.v
 Nonassociative/Duploids/Isos.v
 Nonassociative/Duploids/NatTrans.v
 Nonassociative/Duploids/Oblique.v
