@@ -6,7 +6,7 @@
  January 2026
 
  Contents:
- 1. Definition of a linearity and thunkability preserving functor
+ 1. Definition of a polarity preserving functor
  2. Definition of a (pre)duploid functor
  3. Properties of (pre)duploid functors
 
@@ -30,7 +30,7 @@ Local Open Scope cat.
 Local Open Scope unital_magmoid.
 Local Open Scope duploid.
 
-(** ** 1. Definition of a linearity and thunkability preserving functor *)
+(** ** 1. Definition of a polarity preserving functor *)
 
 Section functor_defs.
   Context {M M' : unital_premagmoid} (F : functor_data M M').
@@ -46,9 +46,9 @@ Section functor_defs.
     apply isaprop_is_linear', hs.
   Qed.
 
-  Lemma functor_linear' (H : preserves_linearity) {a b : M} (f : a --> b)
-    : is_linear f -> is_linear (#F f).
-  Proof. apply H. Defined.
+  Definition functor_linear' (H : preserves_linearity)
+    : ∏ {a b : M} (f : a --> b), is_linear f -> is_linear (#F f)
+    := H.
 
   (** Preserving thunkability *)
   Definition preserves_thunkability : UU
@@ -60,9 +60,9 @@ Section functor_defs.
     apply isaprop_is_thunkable', hs.
   Qed.
 
-  Lemma functor_thunkable' (H : preserves_thunkability) {a b : M} (f : a --> b)
-    : is_thunkable f -> is_thunkable (#F f).
-  Proof. apply H. Defined.
+  Definition functor_thunkable' (H : preserves_thunkability)
+    : ∏ {a b : M} (f : a --> b), is_thunkable f -> is_thunkable (#F f)
+    := H.
 
   (** Preserving linearity and also thunkability *)
   Definition preserves_linearity_and_thunkability : UU
@@ -80,7 +80,7 @@ Section functor_defs.
   Lemma isaprop_preserves_linearity_and_thunkability' :
     isaprop preserves_linearity_and_thunkability.
   Proof.
-    apply isofhleveldirprod.
+    apply isapropdirprod.
     - apply isaprop_preserves_linearity'.
     - apply isaprop_preserves_thunkability'.
   Qed.
@@ -94,6 +94,55 @@ Section functor_defs.
     - exact (functor_linear' H _ Hlinear).
     - exact (functor_thunkable' H _ Hthunkable).
   Defined.
+
+  (** Preserving negatives *)
+  Definition preserves_negatives : UU
+    := ∏ (a : M), is_negative a -> is_negative (F a).
+
+  Lemma isaprop_preserves_negatives' : isaprop preserves_negatives.
+  Proof.
+    do 2 (apply impred; intro).
+    apply isaprop_is_negative', hs.
+  Qed.
+
+  Definition functor_negative' (H : preserves_negatives)
+    : ∏ (a : M), is_negative a -> is_negative (F a)
+    := H.
+
+  (** Preserving positives *)
+  Definition preserves_positives : UU
+    := ∏ (a : M), is_positive a -> is_positive (F a).
+
+  Lemma isaprop_preserves_positives' : isaprop preserves_positives.
+  Proof.
+    do 2 (apply impred; intro).
+    apply isaprop_is_positive', hs.
+  Qed.
+
+  Definition functor_positive' (H : preserves_positives)
+    : ∏ (a : M), is_positive a -> is_positive (F a)
+    := H.
+
+  (** Preserving polarities *)
+  Definition preserves_polarities : UU
+    := preserves_negatives × preserves_positives.
+  Definition make_preserves_polarities
+    (H1 : preserves_negatives)
+    (H2 : preserves_positives)
+    : preserves_polarities
+    := H1,,H2.
+  Coercion preserves_polarities_to_preserves_negatives
+    (H : preserves_polarities) : preserves_negatives := pr1 H.
+  Coercion preserves_polarities_to_preserves_positives
+    (H : preserves_polarities) : preserves_positives := pr2 H.
+
+  Lemma isaprop_preserves_polarities'
+    : isaprop preserves_polarities.
+  Proof.
+    apply isapropdirprod.
+    - apply isaprop_preserves_negatives'.
+    - apply isaprop_preserves_positives'.
+  Qed.
 
 End functor_defs.
 
@@ -110,6 +159,15 @@ Section functor_defs.
 
   Lemma isaprop_preserves_linearity_and_thunkability : isaprop (preserves_linearity_and_thunkability F).
   Proof. apply isaprop_preserves_linearity_and_thunkability', unital_magmoid_has_homsets. Qed.
+
+  Lemma isaprop_preserves_negatives : isaprop (preserves_negatives F).
+  Proof. apply isaprop_preserves_negatives', unital_magmoid_has_homsets. Qed.
+
+  Lemma isaprop_preserves_positives : isaprop (preserves_positives F).
+  Proof. apply isaprop_preserves_positives', unital_magmoid_has_homsets. Qed.
+
+  Lemma isaprop_preserves_polarities : isaprop (preserves_polarities F).
+  Proof. apply isaprop_preserves_polarities', unital_magmoid_has_homsets. Qed.
 
 End functor_defs.
 
@@ -164,6 +222,56 @@ Section functor_defs.
       + apply HG.
   Qed.
 
+  Lemma preserves_negatives_identity (M : unital_premagmoid) : preserves_negatives (functor_identity M).
+  Proof. intros a H. exact H. Qed.
+
+  Lemma preserves_negatives_comp {M₁ M₂ M₃ : unital_premagmoid}
+    (F : functor_data M₁ M₂) (G : functor_data M₂ M₃)
+    (HF : preserves_negatives F) (HG : preserves_negatives G)
+    : preserves_negatives (functor_composite_data F G).
+  Proof.
+    intros a H.
+    apply (functor_negative' _ HG).
+    apply (functor_negative' _ HF).
+    assumption.
+  Qed.
+
+  Lemma preserves_positives_identity (M : unital_premagmoid) : preserves_positives (functor_identity M).
+  Proof. intros a H. exact H. Qed.
+
+  Lemma preserves_positives_comp {M₁ M₂ M₃ : unital_premagmoid}
+    (F : functor_data M₁ M₂) (G : functor_data M₂ M₃)
+    (HF : preserves_positives F) (HG : preserves_positives G)
+    : preserves_positives (functor_composite_data F G).
+  Proof.
+    intros a H.
+    apply (functor_positive' _ HG).
+    apply (functor_positive' _ HF).
+    assumption.
+  Qed.
+
+  Lemma preserves_polarities_identity (M : unital_premagmoid)
+    : preserves_polarities (functor_identity M).
+  Proof.
+    apply make_preserves_polarities.
+    - apply preserves_negatives_identity.
+    - apply preserves_positives_identity.
+  Qed.
+
+  Lemma preserves_polarities_comp {M₁ M₂ M₃ : unital_premagmoid}
+    (F : functor_data M₁ M₂) (G : functor_data M₂ M₃)
+    (HF : preserves_polarities F) (HG : preserves_polarities G)
+    : preserves_polarities (functor_composite_data F G).
+  Proof.
+    apply make_preserves_polarities.
+    - apply preserves_negatives_comp.
+      + apply HF.
+      + apply HG.
+    - apply preserves_positives_comp.
+      + apply HF.
+      + apply HG.
+  Qed.
+
 End functor_defs.
 
 (** ** 2. Definition of a (pre)duploid functor *)
@@ -177,6 +285,11 @@ Coercion duploid_functor_to_functor {M M' : unital_premagmoid}
 Coercion duploid_functor_preserves_linearity_and_thunkability {M M' : unital_premagmoid}
   (F : M ⟶d M') : preserves_linearity_and_thunkability F := pr2 F.
 
+Definition make_duploid_functor {M M' : unital_premagmoid}
+  (F : M ⟶ M')
+  (H : preserves_linearity_and_thunkability F)
+  : M ⟶d M' := F,,H.
+
 Lemma duploid_functor_eq {M : unital_premagmoid} {M' : unital_magmoid}
   (F F' : M ⟶d M')
   (H : (F : functor _ _) = F')
@@ -186,12 +299,20 @@ Proof.
   apply H.
 Defined.
 
-Definition make_duploid_functor {M M' : unital_premagmoid}
-  (F : M ⟶ M')
-  (H : preserves_linearity_and_thunkability F)
-  : M ⟶d M' := F,,H.
+Definition strong_duploid_functor (M M' : unital_premagmoid) : UU
+  := ∑ (f : M ⟶d M'), preserves_polarities f.
+Notation "M '⟶d+' M'" := (strong_duploid_functor M M') (at level 39) : duploid.
+Coercion strong_duploid_functor_to_duploid_functor {M M' : unital_premagmoid}
+  (F : M ⟶d+ M') : M ⟶d M' := pr1 F.
+Coercion strong_duploid_functor_preserves_polarities {M M' : unital_premagmoid}
+  (F : M ⟶d+ M') : preserves_polarities F := pr2 F.
 
-Section duploid_functor.
+Definition make_strong_duploid_functor {M M' : unital_premagmoid}
+  (F : M ⟶d M')
+  (H : preserves_polarities F)
+  : M ⟶d+ M' := F,,H.
+
+Section duploid_functor_lemmas.
   Context {M M' : unital_magmoid}.
 
   (** *** 2. Lemmas about duploid functors *)
@@ -219,7 +340,15 @@ Section duploid_functor.
     - abstract (apply functor_on_is_inverse_in_precat, has_linear_and_thunkable_inverse_is_inverse).
   Defined.
 
-End duploid_functor.
+  Lemma functor_negative (F : M ⟶d+ M') (a : M)
+    : is_negative a -> is_negative (F a).
+  Proof. apply functor_negative', F. Defined.
+
+  Lemma functor_positive (F : M ⟶d+ M') (a : M)
+    : is_positive a -> is_positive (F a).
+  Proof. apply functor_positive', F. Defined.
+
+End duploid_functor_lemmas.
 
 Definition duploid_functor_identity (M : unital_premagmoid) : duploid_functor M M
   := make_duploid_functor (functor_identity M) (preserves_linearity_and_thunkability_identity M).
@@ -229,6 +358,15 @@ Definition duploid_functor_comp {M₁ M₂ M₃ : unital_premagmoid}
   : duploid_functor M₁ M₃
   := make_duploid_functor (F ∙ G)
        (preserves_linearity_and_thunkability_comp F G F G).
+
+Definition strong_duploid_functor_identity (M : unital_premagmoid) : strong_duploid_functor M M
+  := make_strong_duploid_functor (duploid_functor_identity M) (preserves_polarities_identity M).
+
+Definition strong_duploid_functor_comp {M₁ M₂ M₃ : unital_premagmoid}
+  (F : strong_duploid_functor M₁ M₂) (G : strong_duploid_functor M₂ M₃)
+  : strong_duploid_functor M₁ M₃
+  := make_strong_duploid_functor (duploid_functor_comp F G)
+       (preserves_polarities_comp F G F G).
 
 Section duploid_functor.
   Context {M M' : unital_magmoid}.
@@ -259,6 +397,84 @@ Section duploid_functor.
     - abstract (use make_is_functor;
                 [ intro a; apply carrier_eq; apply functor_id
                 | intros a b c f g; apply carrier_eq; apply functor_comp ]).
+  Defined.
+
+  (** Restriction of a duploid functor to linear-and-thunkable morphisms. *)
+  Lemma duploid_functor_to_linear_and_thunkable (F : M ⟶d M') : M ₗₜ ⟶ M' ₗₜ.
+  Proof.
+    use make_functor.
+    - use make_functor_data.
+      + cbn; intro a; exact (F a).
+      + cbn; intros a b f.
+        use (make_linear_and_thunkable_mor (#F f)).
+        apply functor_linear_and_thunkable, f.
+    - abstract (use make_is_functor;
+                [ intro a; apply carrier_eq; apply functor_id
+                | intros a b c f g; apply carrier_eq; apply functor_comp ]).
+  Defined.
+
+  (** Restriction of a strong duploid functor to positive category. *)
+  Lemma strong_duploid_functor_to_positive (F : M ⟶d+ M') : M⁺ ⟶ M'⁺.
+  Proof.
+    use make_functor.
+    - use make_functor_data.
+      + cbn; intro a; exists (F (pr1 a)).
+        apply functor_positive, a.
+      + cbn; intros a b f.
+        refine (_,,tt).
+        use (make_linear_mor (#F (pr11 f))).
+        apply functor_linear, (pr21 f).
+    - abstract (use make_is_functor;
+                [ intro a; do 2 apply carrier_eq; apply functor_id
+                | intros a b c f g; do 2 apply carrier_eq; apply functor_comp ]).
+  Defined.
+
+  (** Restriction of a strong duploid functor to positive thunkable category. *)
+  Lemma strong_duploid_functor_to_positive_thunkable (F : M ⟶d+ M') : M⁺ₜ ⟶ M'⁺ₜ.
+  Proof.
+    use make_functor.
+    - use make_functor_data.
+      + cbn; intro a; exists (F (pr1 a)).
+        apply functor_positive, a.
+      + cbn; intros a b f.
+        refine (_,,tt).
+        use (make_thunkable_mor (#F (pr11 f))).
+        apply functor_thunkable, (pr21 f).
+    - abstract (use make_is_functor;
+                [ intro a; do 2 apply carrier_eq; apply functor_id
+                | intros a b c f g; do 2 apply carrier_eq; apply functor_comp ]).
+  Defined.
+
+  (** Restriction of a strong duploid functor to negative category. *)
+  Lemma strong_duploid_functor_to_negative (F : M ⟶d+ M') : M⁻ ⟶ M'⁻.
+  Proof.
+    use make_functor.
+    - use make_functor_data.
+      + cbn; intro a; exists (F (pr1 a)).
+        apply functor_negative, a.
+      + cbn; intros a b f.
+        refine (_,,tt).
+        use (make_thunkable_mor (#F (pr11 f))).
+        apply functor_thunkable, (pr21 f).
+    - abstract (use make_is_functor;
+                [ intro a; do 2 apply carrier_eq; apply functor_id
+                | intros a b c f g; do 2 apply carrier_eq; apply functor_comp ]).
+  Defined.
+
+  (** Restriction of a strong duploid functor to negative linear category. *)
+  Lemma strong_duploid_functor_to_negative_linear (F : M ⟶d+ M') : M⁻ₗ ⟶ M'⁻ₗ.
+  Proof.
+    use make_functor.
+    - use make_functor_data.
+      + cbn; intro a; exists (F (pr1 a)).
+        apply functor_negative, a.
+      + cbn; intros a b f.
+        refine (_,,tt).
+        use (make_linear_mor (#F (pr11 f))).
+        apply functor_linear, (pr21 f).
+    - abstract (use make_is_functor;
+                [ intro a; do 2 apply carrier_eq; apply functor_id
+                | intros a b c f g; do 2 apply carrier_eq; apply functor_comp ]).
   Defined.
 
 End duploid_functor.
@@ -487,4 +703,60 @@ Section full.
     - apply preserves_thunkability_of_full_and_lt_essentially_surjective.
   Qed.
 
+  Lemma full_and_lt_essentially_surjective_preserves_positives
+    : preserves_positives F.
+  Proof.
+    intros a H b f.
+    refine (squash_to_prop (Hltsurj b) _ (λ Hb, _)).
+    1: apply isaprop_is_linear.
+    induction Hb as [b' Hb].
+    rewrite <- (lt_iso_inverse_right Hb f).
+    apply is_linear_compose; [|apply lt_iso_is_linear_and_thunkable].
+    refine (squash_to_prop (Hfull a b' (f · lt_iso_inverse Hb)) _ (λ Hf', _)).
+    1: apply isaprop_is_linear.
+    induction Hf' as [f' Hf'].
+    rewrite <- Hf'.
+    apply (functor_linear' _ preserves_linearity_of_full_and_lt_essentially_surjective).
+    apply is_linear_of_positive, H.
+  Qed.
+
+  Lemma full_and_lt_essentially_surjective_preserves_negatives
+    : preserves_negatives F.
+  Proof.
+    intros a H b f.
+    refine (squash_to_prop (Hltsurj b) _ (λ Hb, _)).
+    1: apply isaprop_is_thunkable.
+    induction Hb as [b' Hb].
+    rewrite <- (lt_iso_left Hb f).
+    apply is_thunkable_compose; [apply linear_and_thunkable_mor_is_linear_and_thunkable|].
+    refine (squash_to_prop (Hfull b' a (Hb · f)) _ (λ Hf', _)).
+    1: apply isaprop_is_thunkable.
+    induction Hf' as [f' Hf'].
+    rewrite <- Hf'.
+    apply (functor_thunkable' _ preserves_thunkability_of_full_and_lt_essentially_surjective).
+    apply is_thunkable_of_negative, H.
+  Qed.
+
+  Theorem full_and_lt_essentially_surjective_preserves_polarities
+    : preserves_polarities F.
+  Proof.
+    use make_preserves_polarities.
+    - apply full_and_lt_essentially_surjective_preserves_negatives.
+    - apply full_and_lt_essentially_surjective_preserves_positives.
+  Qed.
+
 End full.
+
+Corollary strong_duploid_functor_from_weak_duploid_equivalence
+  (D : unital_magmoid) (D' : preduploid)
+  (F : weak_duploid_equivalence D D')
+  : strong_duploid_functor D D'.
+Proof.
+  assert (Hfull : full F).
+  1: apply (fully_faithful_implies_full_and_faithful _ _ _ F).
+  use make_strong_duploid_functor.
+  1: use make_duploid_functor.
+  - exact F.
+  - exact (full_and_lt_essentially_surjective_preserves_linearity_and_thunkability F Hfull F).
+  - exact (full_and_lt_essentially_surjective_preserves_polarities F Hfull F).
+Defined.
