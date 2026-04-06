@@ -273,4 +273,10 @@ Section functor_facts.
                  linear_and_thunkable_mor_is_linear_and_thunkable).
     - abstract (exact (inv_of_ff_inv_is_inv _ _ _ Hff _ _ (lt_iso_to_z_iso (make_lt_iso _ Hlt_iso)))).
   Defined.
+
+  Lemma lt_iso_from_fully_faithful_functor_image {a b : M} (f : lt_iso (F a) (F b)) : lt_iso a b.
+  Proof.
+    eapply make_lt_iso, is_lt_iso_from_fully_faithful_functor_image.
+    exact (lt_iso_is_lt_iso f).
+  Defined.
 End functor_facts.

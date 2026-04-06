@@ -27,6 +27,7 @@ Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Isos.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Univalence.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Subcategories.
+Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Functors.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Functors.
 
@@ -323,7 +324,7 @@ Section characterizations.
     : is_univalent C = is_rxgraph_univalent (category_to_rxgraph C).
   Proof. reflexivity. Defined.
 
-  Definition duploid_to_rxgraph (D : duploid) : rxgraph.
+  Definition duploid_to_rxgraph (D : preduploid) : rxgraph.
   Proof.
     use make_rxgraph'.
     - exact (ob D).
@@ -331,9 +332,44 @@ Section characterizations.
     - intros a; exact (lt_iso_identity a).
   Defined.
 
-  Remark duploid_rxgraph_univalent_eq (D : duploid)
+  Remark duploid_rxgraph_univalent_eq (D : preduploid)
     : is_duploid_univalent D = is_rxgraph_univalent (duploid_to_rxgraph D).
   Proof. reflexivity. Defined.
+
+  Lemma weak_duploid_equivalence_to_split {D D' : preduploid}
+    (ua : is_duploid_univalent D)
+    (F : D ⟶ D') (H : is_weak_duploid_equivalence F)
+    : split_lt_essentially_surjective F.
+  Proof.
+    intro b.
+    refine (squash_to_prop (is_weak_duploid_equivalence_to_lt_essentially_surjective _ H b) _ (idfun _)).
+    apply invproofirrelevance; intros Ha₁ Ha₂.
+    induction Ha₁ as [a₁ Ha₁], Ha₂ as [a₂ Ha₂].
+    assert (Ha : ∑ p, lt_iso_compose Ha₁ (lt_iso_inv Ha₂) = p); [eexists; reflexivity|].
+    induction Ha as [Ha Ha_eq].
+    apply (maponpaths (lt_iso_from_fully_faithful_functor_image _ H)) in Ha_eq.
+    induction a₂, (lt_iso_from_fully_faithful_functor_image _ H Ha)
+                    using (@rxgraph_edge_rect (duploid_to_rxgraph D) ua a₁).
+    apply maponpaths.
+    apply subtypePath'; [|apply isaprop_is_lt_iso].
+    apply (cancel_lt_iso_right (lt_iso_inv Ha₂)).
+    etrans; [|apply pathsinv0, lt_iso_is_inverse].
+    apply base_paths in Ha_eq; cbn in Ha_eq.
+    apply (maponpaths #F) in Ha_eq.
+    refine (_ @ Ha_eq @ functor_id F _).
+    apply pathsinv0.
+    use homotweqinvweq.
+  Qed.
+
+  Lemma weak_duploid_equivalence_to_duploid_equivalence {D D' : preduploid}
+    (ua : is_duploid_univalent D)
+    (F : D ⟶ D') (H : is_weak_duploid_equivalence F)
+    : is_duploid_equivalence F.
+  Proof.
+    use make_is_duploid_equivalence.
+    - exact H.
+    - now apply weak_duploid_equivalence_to_split.
+  Qed.
 
   Context (D : duploid).
   (** The following are equivalent:

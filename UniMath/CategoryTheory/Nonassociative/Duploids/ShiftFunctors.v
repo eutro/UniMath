@@ -92,9 +92,9 @@ Section shift_functors.
     (H : is_linear g) : #⇑(f · g) = (#⇑f) · (#⇑g).
   Proof.
     unfold upshiftf.
-    rewrite (assoc_negative _ (⇑b)).
-    do 2 rewrite (assoc_linear _ H).
-    now rewrite delay_force_right.
+    do 2 rewrite (assoc_negative _ (⇑b)).
+    rewrite delay_force_right.
+    now rewrite (assoc_linear _ H).
   Qed.
 
   Lemma is_linear_upshiftf {a b : D} (f : a --> b) (H : is_linear f)
@@ -203,9 +203,9 @@ Section shift_functors.
     (H : is_thunkable g) : #⇓(f ∘ g) = (#⇓f) ∘ (#⇓g).
   Proof.
     unfold downshiftf.
-    rewrite (assoc'_positive _ (⇓b)).
-    do 2 rewrite (assoc'_thunkable _ H).
-    now rewrite wrap_unwrap_left.
+    do 2 rewrite (assoc'_positive _ (⇓b)).
+    rewrite wrap_unwrap_left.
+    now rewrite (assoc'_thunkable _ H).
   Qed.
 
   Lemma is_thunkable_downshiftf {a b : D} (f : a <-- b) (H : is_thunkable f)
