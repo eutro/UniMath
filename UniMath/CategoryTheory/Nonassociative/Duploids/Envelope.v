@@ -975,6 +975,11 @@ Section envelope_defs.
 
 End envelope_defs.
 
+Ltac envelope_induction' θ a
+  := let a' := uconstr:(a : envelope_ob θ) in
+     generalize (a' : envelope_polarization θ a');
+     apply (envelope_polarization_rec' θ (a:=a')).
+
 (** ** 4. Structure theorem *)
 
 Section equalized.
@@ -1191,7 +1196,7 @@ Section equalized.
     exact ({ a : envelope_preob_rxgraph ∇ envelope_polarization θ a })%rxgraph_spec.
   Defined.
 
-  Definition lt_iso_of_positive_to_positive_iso (a b : envelope_duploid θ)
+  Definition z_iso_of_positive_to_positive_iso (a b : envelope_duploid θ)
     (H : lt_iso a b)
     (Ha : is_positive a)
     : z_iso
@@ -1206,7 +1211,7 @@ Section equalized.
     - apply lt_iso_downshift_of_positive, (is_positive_of_lt_iso H), Ha.
   Defined.
 
-  Definition lt_iso_of_negative_to_negative_iso (a b : envelope_duploid θ)
+  Definition z_iso_of_negative_to_negative_iso (a b : envelope_duploid θ)
     (H : lt_iso a b)
     (Ha : is_negative a)
     : z_iso
@@ -1296,7 +1301,7 @@ Section equalized.
 
   Lemma envelope_ob_eq_positive (a : envelope_ob θ)
     (Ha : is_positive (M:=envelope_duploid θ) a)
-    : a = envelope_ob_of_positive _ (envelope_positive_ob _ a).
+    : a = envelope_downshift _ a.
   Proof.
     apply envelope_chosen_positive_of_is_positive in Ha.
     apply envelope_ob_eq_positive', Ha.
@@ -1304,7 +1309,7 @@ Section equalized.
 
   Lemma envelope_positive_ob_eq_positive
     (a : (envelope_duploid θ)⁺)
-    : a = envelope_ob_of_positive θ (envelope_positive_ob θ (pr1 a : envelope_ob _)),,is_positive_envelope_ob_of_positive θ _.
+    : a = ⇓(pr1 a : envelope_duploid θ).
   Proof.
     induction a as [a Ha].
     apply carrier_eq; cbn.
@@ -1398,7 +1403,7 @@ Section equalized.
 
   Lemma envelope_ob_eq_negative (a : envelope_ob θ)
     (Ha : is_negative (M:=envelope_duploid θ) a)
-    : a = envelope_ob_of_negative _ (envelope_negative_ob _ a).
+    : a = envelope_upshift _ a.
   Proof.
     apply envelope_chosen_negative_of_is_negative in Ha.
     apply envelope_ob_eq_negative', Ha.
@@ -1406,7 +1411,7 @@ Section equalized.
 
   Lemma envelope_negative_ob_eq_negative
     (a : (envelope_duploid θ)⁻)
-    : a = envelope_ob_of_negative θ (envelope_negative_ob θ (pr1 a : envelope_ob _)),,is_negative_envelope_ob_of_negative θ _.
+    : a = ⇑(pr1 a : envelope_duploid θ).
   Proof.
     induction a as [a Ha].
     apply carrier_eq; cbn.
@@ -1455,6 +1460,7 @@ Section equalized.
     - apply is_univalent_envelope_positive_thunkable_category.
     - apply is_univalent_envelope_negative_linear_category.
   Qed.
+
 End equalized.
 
 (** Restatement with more bundling *)
