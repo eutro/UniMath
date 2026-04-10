@@ -355,6 +355,13 @@ Section shift_lemmas.
     : (f · wrap b) · (unwrap b · g) = f · g.
   Proof. now rewrite (assoc'_positive _ (⇓b)), wrap_unwrap_left. Qed.
 
+  (** Force and wrap are intermediate. *)
+
+  Lemma is_intermediate_force (a : D) : is_intermediate (force a).
+  Proof. apply is_intermediate_of_negative, (⇑_). Qed.
+  Lemma is_intermediate_wrap (a : D) : is_intermediate (wrap a).
+  Proof. apply is_intermediate_of_positive, (⇓_). Qed.
+
   (** Characterisation of thunkable and linear morphisms *)
 
   Lemma is_thunkable_of_delay_wrap {a b : D} (f : a --> b)

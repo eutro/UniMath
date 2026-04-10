@@ -21,6 +21,8 @@ Require Import UniMath.CategoryTheory.Subcategory.Core.
 Require Import UniMath.CategoryTheory.Subcategory.Full.
 Require Import UniMath.CategoryTheory.catiso.
 Require Import UniMath.CategoryTheory.Adjunctions.Core.
+Require Import UniMath.CategoryTheory.Equivalences.Core.
+Require Import UniMath.CategoryTheory.Core.NaturalTransformations.
 
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Isos.
@@ -30,11 +32,13 @@ Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.FromCategory
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Functors.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Univalence.
+Require Import UniMath.CategoryTheory.Nonassociative.Duploids.EqualizingRequirement.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Envelope.
 
 Local Open Scope cat.
 Local Open Scope unital_magmoid.
 Local Open Scope duploid.
+Local Open Scope oblique_mor.
 
 Section from_category_def.
   Context (C : category).
@@ -183,4 +187,23 @@ Section envelope_duploid.
                 intros a b f _;
                 use linear_and_thunkable_mor_is_linear_and_thunkable).
   Defined.
+
+  Lemma fully_faithful_negative_category_to_envelope_duploid_from_idempotent
+    (H : ∏ (n : N), is_z_isomorphism (adjcounit θ n))
+    : fully_faithful negative_category_to_envelope_duploid.
+  Proof.
+    intros a b.
+    use isweq_iso.
+    - intro f; exact (is_z_isomorphism_mor (H a) · f♭).
+    - abstract (
+          intro f;
+          etrans; [apply assoc|];
+          now apply remove_id_left; [apply is_z_isomorphism_is_inverse_in_precat|]).
+    - abstract (
+          intro f;
+          apply oblique_mor_negative_path;
+          etrans; [apply assoc|];
+          now apply remove_id_left; [apply is_z_isomorphism_is_inverse_in_precat|]).
+  Defined.
+
 End envelope_duploid.
