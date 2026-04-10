@@ -411,6 +411,36 @@ Section inclusion_functors.
     - intros f f' p. apply carrier_eq, p.
   Defined.
 
+  Definition positive_category_to_unital_magmoid : M⁺ ⟶ M
+    := positive_category_to_linear_category ∙ linear_category_to_unital_magmoid.
+
+  Lemma fully_faithful_positive_category_to_unital_magmoid
+    : fully_faithful positive_category_to_unital_magmoid.
+  Proof.
+    intros a b.
+    use isweq_iso.
+    - intro f.
+      refine (make_linear_mor f _,,tt).
+      apply is_linear_of_positive, (pr2 a).
+    - abstract (intros f; now do 2 apply carrier_eq).
+    - easy.
+  Defined.
+
+  Definition negative_category_to_unital_magmoid : M⁻ ⟶ M
+    := negative_category_to_thunkable_category ∙ thunkable_category_to_unital_magmoid.
+
+  Lemma fully_faithful_negative_category_to_unital_magmoid
+    : fully_faithful negative_category_to_unital_magmoid.
+  Proof.
+    intros a b.
+    use isweq_iso.
+    - intro f.
+      refine (make_thunkable_mor f _,,tt).
+      apply is_thunkable_of_negative, (pr2 b).
+    - abstract (intros f; now do 2 apply carrier_eq).
+    - easy.
+  Defined.
+
 End inclusion_functors.
 
 (** ** Extra weak equivalences of polarized subtypes *)
@@ -432,6 +462,14 @@ Section polarized_equivs.
     apply iscontr_is_linear_of_positive, H.
   Defined.
 
+  Lemma weq_mor_to_positive_category {M : unital_magmoid}
+    (a b : positive_ob M) : M⟦a, b⟧ ≃ M⁺⟦a, b⟧.
+  Proof.
+    apply invweq,
+      (weq_from_fully_faithful
+         (fully_faithful_positive_category_to_unital_magmoid M)).
+  Defined.
+
   Lemma iscontr_is_thunkable_of_negative {M : unital_magmoid}
     {a b : M} (f : a <-- b) (H : is_negative a)
     : iscontr (is_thunkable f).
@@ -446,6 +484,14 @@ Section polarized_equivs.
   Proof.
     apply weqpr1; intro f.
     apply iscontr_is_thunkable_of_negative, H.
+  Defined.
+
+  Lemma weq_mor_to_negative_category {M : unital_magmoid}
+    (a b : negative_ob M) : M⟦a, b⟧ ≃ M⁻⟦a, b⟧.
+  Proof.
+    apply invweq,
+      (weq_from_fully_faithful
+         (fully_faithful_negative_category_to_unital_magmoid M)).
   Defined.
 
   Lemma weq_linear_and_thunkable_mor_to_thunkable_mor {M : unital_magmoid}

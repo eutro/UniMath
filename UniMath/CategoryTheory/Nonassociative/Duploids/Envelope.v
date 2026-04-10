@@ -30,11 +30,15 @@ Require Import UniMath.CategoryTheory.Core.Categories.
 Require Import UniMath.CategoryTheory.Core.Functors.
 Require Import UniMath.CategoryTheory.Core.Isos.
 Require Import UniMath.CategoryTheory.Core.NaturalTransformations.
-Require Import UniMath.CategoryTheory.Subcategory.Core.
-Require Import UniMath.CategoryTheory.Subcategory.Full.
+Require Import UniMath.CategoryTheory.Core.Univalence.
 Require Import UniMath.CategoryTheory.Equivalences.Core.
 Require Import UniMath.CategoryTheory.Equivalences.FullyFaithful.
-Require Import UniMath.CategoryTheory.Core.Univalence.
+Require Import UniMath.CategoryTheory.Monads.CoKleisliCategory.
+Require Import UniMath.CategoryTheory.Monads.Comonads.
+Require Import UniMath.CategoryTheory.Monads.KleisliCategory.
+Require Import UniMath.CategoryTheory.Monads.Monads.
+Require Import UniMath.CategoryTheory.Subcategory.Core.
+Require Import UniMath.CategoryTheory.Subcategory.Full.
 Require Import UniMath.CategoryTheory.catiso.
 
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Core.
@@ -973,6 +977,133 @@ Section envelope_defs.
         apply maponpaths, (is_inverse_in_precat2 f).
   Defined.
 
+  (* The (Co)Kleisli categories of the adjunction, as subcategories of the duploid. *)
+  (* We are using the definition where the objects are literally those from the respective
+  categories, rather than as a subcategory of the Eilenberg-Moore category.  The latter deserves
+   its own construction of a duploid. *)
+  Let kleisli_subcategory : category := Kleisli_cat_monad (Monad_from_adjunction θ).
+  Let cokleisli_subcategory : category := Cokleisli_cat_monad (Comonad_from_adjunction θ).
+
+  Definition kleisli_to_envelope_duploid_data : functor_data kleisli_subcategory (positive_category envelope_duploid).
+  Proof.
+    use make_functor_data.
+    - intro p.
+      exists (envelope_ob_of_positive p).
+      apply is_positive_envelope_ob_of_positive.
+    - intros p q f.
+      use weq_mor_to_positive_category.
+      exact (oblique_mor_from_positive θ f).
+  Defined.
+
+  Lemma kleisli_to_envelope_duploid_is_functor : is_functor kleisli_to_envelope_duploid_data.
+  Proof.
+    use make_is_functor.
+    - intro a.
+      do 2 apply carrier_eq.
+      now apply oblique_mor_positive_path.
+    - intros a b c f g.
+      do 2 apply carrier_eq.
+      apply oblique_mor_positive_path; cbn.
+      rewrite id_left; unfold φ_adj_inv.
+      now rewrite !functor_comp.
+  Qed.
+
+  Definition kleisli_to_envelope_duploid : functor kleisli_subcategory (positive_category envelope_duploid)
+    := make_functor _ kleisli_to_envelope_duploid_is_functor.
+
+  Lemma split_essentially_surjective_kleisli_to_envelope_duploid : split_essentially_surjective kleisli_to_envelope_duploid.
+  Proof.
+    intros a; cbn in a.
+    exists ((pr1 a : envelope_ob)⁺).
+    use make_z_iso; [| | split].
+    - use weq_mor_to_positive_category.
+      exact (unwrap (D:=envelope_duploid) (pr1 a)).
+    - use weq_mor_to_positive_category.
+      exact (wrap (D:=envelope_duploid) (pr1 a)).
+    - do 2 apply carrier_eq.
+      apply (unwrap_wrap_id (D:=envelope_duploid)).
+    - do 2 apply carrier_eq.
+      apply (wrap_unwrap_id (D:=envelope_duploid)).
+  Defined.
+
+  Lemma fully_faithful_kleisli_to_envelope_duploid : fully_faithful kleisli_to_envelope_duploid.
+  Proof.
+    intros a b.
+    use isweq_iso.
+    - intro f; exact (pr11 f)♯.
+    - easy.
+    - intro f.
+      do 2 apply carrier_eq.
+      now apply oblique_mor_positive_path.
+  Defined.
+
+  Lemma adjoint_equivalence_kleisli_to_envelope_duploid : adj_equivalence_of_cats kleisli_to_envelope_duploid.
+  Proof.
+    apply rad_equivalence_of_cats'.
+    - apply fully_faithful_kleisli_to_envelope_duploid.
+    - apply split_essentially_surjective_kleisli_to_envelope_duploid.
+  Defined.
+
+  Definition cokleisli_to_envelope_duploid_data : functor_data cokleisli_subcategory (negative_category envelope_duploid).
+  Proof.
+    use make_functor_data.
+    - intro n.
+      exists (envelope_ob_of_negative n).
+      apply is_negative_envelope_ob_of_negative.
+    - intros n m f.
+      use weq_mor_to_negative_category.
+      exact (oblique_mor_from_negative θ f).
+  Defined.
+
+  Lemma cokleisli_to_envelope_duploid_is_functor : is_functor cokleisli_to_envelope_duploid_data.
+  Proof.
+    use make_is_functor.
+    - intro a.
+      do 2 apply carrier_eq.
+      now apply oblique_mor_negative_path.
+    - intros a b c f g.
+      do 2 apply carrier_eq.
+      apply oblique_mor_negative_path; cbn.
+      rewrite id_right; unfold φ_adj.
+      now rewrite !functor_comp.
+  Qed.
+
+  Definition cokleisli_to_envelope_duploid : functor cokleisli_subcategory (negative_category envelope_duploid)
+    := make_functor _ cokleisli_to_envelope_duploid_is_functor.
+
+  Lemma split_essentially_surjective_cokleisli_to_envelope_duploid : split_essentially_surjective cokleisli_to_envelope_duploid.
+  Proof.
+    intros a; cbn in a.
+    exists ((pr1 a : envelope_ob)⁻).
+    use make_z_iso; [| | split].
+    - use weq_mor_to_negative_category.
+      exact (force (D:=envelope_duploid) (pr1 a)).
+    - use weq_mor_to_negative_category.
+      exact (delay (D:=envelope_duploid) (pr1 a)).
+    - do 2 apply carrier_eq.
+      apply (force_delay_id (D:=envelope_duploid)).
+    - do 2 apply carrier_eq.
+      apply (delay_force_id (D:=envelope_duploid)).
+  Defined.
+
+  Lemma fully_faithful_cokleisli_to_envelope_duploid : fully_faithful cokleisli_to_envelope_duploid.
+  Proof.
+    intros a b.
+    use isweq_iso.
+    - intro f; exact (pr11 f)♭.
+    - easy.
+    - intro f.
+      do 2 apply carrier_eq.
+      now apply oblique_mor_negative_path.
+  Defined.
+
+  Lemma adjoint_equivalence_cokleisli_to_envelope_duploid : adj_equivalence_of_cats cokleisli_to_envelope_duploid.
+  Proof.
+    apply rad_equivalence_of_cats'.
+    - apply fully_faithful_cokleisli_to_envelope_duploid.
+    - apply split_essentially_surjective_cokleisli_to_envelope_duploid.
+  Defined.
+
 End envelope_defs.
 
 Ltac envelope_induction' θ a
@@ -980,7 +1111,7 @@ Ltac envelope_induction' θ a
      generalize (a' : envelope_polarization θ a');
      apply (envelope_polarization_rec' θ (a:=a')).
 
-(** ** 4. Structure theorem *)
+(** ** 4. Univalence of the envelope duploid *)
 
 Section equalized.
   Context {N P : category} (θ : adjunction P N).
@@ -1460,6 +1591,56 @@ Section equalized.
     - apply is_univalent_envelope_positive_thunkable_category.
     - apply is_univalent_envelope_negative_linear_category.
   Qed.
+
+  (** The positive subcategory is the Kleisli category. *)
+  Lemma isweq_on_objects_kleisli_to_envelope_duploid
+    : isweq (functor_on_objects (kleisli_to_envelope_duploid θ)).
+  Proof.
+    use isweq_iso.
+    - intro a; exact (envelope_positive_ob θ (pr1 a : envelope_ob θ)).
+    - easy.
+    - intro y; cbn.
+      apply pathsinv0, (envelope_positive_ob_eq_positive y).
+  Defined.
+
+  Lemma is_catiso_kleisli_to_envelope_duploid : is_catiso (kleisli_to_envelope_duploid θ).
+  Proof.
+    split.
+    - apply fully_faithful_kleisli_to_envelope_duploid.
+    - apply isweq_on_objects_kleisli_to_envelope_duploid.
+  Defined.
+
+  Lemma eq_kleisli_subcategory_envelope_duploid_positive
+    : Kleisli_cat_monad (Monad_from_adjunction θ) = (envelope_duploid θ)⁺.
+  Proof.
+    use catiso_to_category_path.
+    exact (_,,is_catiso_kleisli_to_envelope_duploid).
+  Defined.
+
+  (** The negative subcategory is the Kleisli category. *)
+  Lemma isweq_on_objects_cokleisli_to_envelope_duploid
+    : isweq (functor_on_objects (cokleisli_to_envelope_duploid θ)).
+  Proof.
+    use isweq_iso.
+    - intro a; exact (envelope_negative_ob θ (pr1 a : envelope_ob θ)).
+    - easy.
+    - intro y; cbn.
+      apply pathsinv0, (envelope_negative_ob_eq_negative y).
+  Defined.
+
+  Lemma is_catiso_cokleisli_to_envelope_duploid : is_catiso (cokleisli_to_envelope_duploid θ).
+  Proof.
+    split.
+    - apply fully_faithful_cokleisli_to_envelope_duploid.
+    - apply isweq_on_objects_cokleisli_to_envelope_duploid.
+  Defined.
+
+  Lemma eq_cokleisli_subcategory_envelope_duploid_negative
+    : Cokleisli_cat_monad (Comonad_from_adjunction θ) = (envelope_duploid θ)⁻.
+  Proof.
+    use catiso_to_category_path.
+    exact (_,,is_catiso_cokleisli_to_envelope_duploid).
+  Defined.
 
 End equalized.
 
