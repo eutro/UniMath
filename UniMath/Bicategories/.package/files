@@ -46,6 +46,7 @@ Morphisms/Examples/MorphismsInBicatOfUnivCats.v
 Morphisms/Examples/FibrationsInBicatOfUnivCats.v
 Morphisms/Examples/FibrationsInStrictCats.v
 Morphisms/Examples/MorphismsInOp2Bicat.v
+Morphisms/Examples/MapAdjunction.v
 
 DisplayedBicats/DispBicat.v
 DisplayedBicats/DispInvertibles.v

@@ -1011,6 +1011,7 @@ The packages and files are listed here in logical order: each file depends only 
    - [Morphisms/Examples/FibrationsInBicatOfUnivCats.v](Bicategories/Morphisms/Examples/FibrationsInBicatOfUnivCats.v)
    - [Morphisms/Examples/FibrationsInStrictCats.v](Bicategories/Morphisms/Examples/FibrationsInStrictCats.v)
    - [Morphisms/Examples/MorphismsInOp2Bicat.v](Bicategories/Morphisms/Examples/MorphismsInOp2Bicat.v)
+   - [Morphisms/Examples/MapAdjunction.v](Bicategories/Morphisms/Examples/MapAdjunction.v)
    - [DisplayedBicats/DispBicat.v](Bicategories/DisplayedBicats/DispBicat.v)
    - [DisplayedBicats/DispInvertibles.v](Bicategories/DisplayedBicats/DispInvertibles.v)
    - [DisplayedBicats/DispAdjunctions.v](Bicategories/DisplayedBicats/DispAdjunctions.v)
