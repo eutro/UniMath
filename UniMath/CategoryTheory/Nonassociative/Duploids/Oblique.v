@@ -27,6 +27,7 @@ Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.TwoSorted.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Functors.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.EqualizingRequirement.
+Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Univalence.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Isos.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Subcategories.
@@ -464,6 +465,42 @@ Section oblique_defs.
       apply nat_trans_eq; [apply homset_property|].
       intro p.
       apply is_negative_oblique_positive_iff_pre_fixed_point, H.
+  Qed.
+
+  Lemma neg_is_univalent_oblique_from_positive_and_negative
+    (a : oblique_duploid) (Hpositive : is_positive a) (Hnegative : is_negative a)
+    : ¬is_duploid_univalent oblique_duploid.
+  Proof.
+    intro ua.
+    enough (Heq : (⇑a : oblique_duploid) = ⇓a). {
+      apply nopathstruetofalse.
+      apply (maponpaths coprodtobool) in Heq.
+      induction a; exact Heq.
+    }
+    use (lt_iso_to_id ua).
+    induction a as [n | p].
+    - now use (lt_iso_downshift_of_positive (oblique_negative n : oblique_duploid)).
+    - now use (lt_iso_upshift_of_negative (oblique_positive p : oblique_duploid)).
+  Qed.
+
+  Lemma neg_is_univalent_oblique_from_positive_pre_fixed_point
+    (p : P) (H : # (L ∙ R) (η p) = η ((L ∙ R) p))
+    : ¬is_duploid_univalent oblique_duploid.
+  Proof.
+    use neg_is_univalent_oblique_from_positive_and_negative.
+    - exact (oblique_positive p).
+    - apply oblique_positive_is_positive.
+    - now apply is_negative_oblique_positive_iff_pre_fixed_point.
+  Qed.
+
+  Lemma neg_is_univalent_oblique_from_negative_pre_fixed_point
+    (n : N) (H : # (R ∙ L) (ε n) = ε ((R ∙ L) n))
+    : ¬is_duploid_univalent oblique_duploid.
+  Proof.
+    use neg_is_univalent_oblique_from_positive_and_negative.
+    - exact (oblique_negative n).
+    - now apply is_positive_oblique_negative_iff_pre_fixed_point.
+    - apply oblique_negative_is_negative.
   Qed.
 
 End oblique_defs.
