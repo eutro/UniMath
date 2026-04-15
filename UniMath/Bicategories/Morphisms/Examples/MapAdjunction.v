@@ -25,6 +25,8 @@ Require Import UniMath.Bicategories.Core.Invertible_2cells.
 Require Import UniMath.Bicategories.Morphisms.Adjunctions.
 Require Import UniMath.Bicategories.PseudoFunctors.Display.PseudoFunctorBicat.
 Require Import UniMath.Bicategories.PseudoFunctors.PseudoFunctor.
+Require Import UniMath.Bicategories.PseudoFunctors.Examples.Composition.
+Require Import UniMath.Bicategories.PseudoFunctors.Examples.Identity.
 Import PseudoFunctor.Notations.
 
 Local Open Scope bicategory_scope.
@@ -40,6 +42,50 @@ Proof.
   split.
   - exact (psfunctor_id F a • ##F (left_adjoint_unit adj) • (psfunctor_comp F _ _)^-1).
   - exact (psfunctor_comp F _ _ • ##F (left_adjoint_counit adj) • (psfunctor_id F _)^-1).
+Defined.
+
+Lemma map_left_adjoint_data_id {C : bicat}
+  {a b : C} (f : a --> b) (adj : left_adjoint_data f)
+  : map_left_adjoint_data (id_psfunctor C) f adj = adj.
+Proof.
+  use pair_path_in2.
+  abstract (use dirprod_paths; cbn;
+            now rewrite id2_left, id2_right).
+Defined.
+
+Lemma map_left_adjoint_data_comp {C D E : bicat}
+  (G : psfunctor D E) (F : psfunctor C D)
+  {a b : C} (f : a --> b) (adj : left_adjoint_data f)
+  : map_left_adjoint_data (comp_psfunctor G F) f adj
+    = map_left_adjoint_data G _ (map_left_adjoint_data F f adj).
+Proof.
+  use pair_path_in2.
+  use dirprod_paths.
+  - abstract (
+        pose (η := left_adjoint_unit adj);
+        pose (ε := left_adjoint_counit adj);
+        pose (g := left_adjoint_right_adjoint adj);
+        change (
+            psfunctor_id G (F a) • ##G (psfunctor_id F a) • ##G (##F η)
+              • (##G (psfunctor_comp F f g)^-1 • (psfunctor_comp G (#F f) (# F g))^-1)
+            = psfunctor_id G (F a) • ##G ((psfunctor_id F a • ##F η) • (psfunctor_comp F f g)^-1)
+                • (psfunctor_comp G (#F f) (#F g))^-1
+          );
+        rewrite !(psfunctor_vcomp G);
+        now rewrite !vassocr).
+  - abstract (
+        pose (η := left_adjoint_unit adj);
+        pose (ε := left_adjoint_counit adj);
+        pose (g := left_adjoint_right_adjoint adj);
+        change (
+            psfunctor_comp G (#F g) (#F f) • ##G (psfunctor_comp F g f) • ## G (## F ε)
+              • (## G (psfunctor_id F b)^-1 • (psfunctor_id G (F b))^-1)
+            = psfunctor_comp G (# F g) (# F f)
+                • ## G ((psfunctor_comp F g f • ## F ε) • (psfunctor_id F b)^-1)
+                • (psfunctor_id G (F b))^-1
+          );
+        rewrite !(psfunctor_vcomp G);
+        now rewrite !vassocr).
 Defined.
 
 Definition map_left_adjoint_axioms {C D : bicat} (F : psfunctor C D)
@@ -211,7 +257,43 @@ Proof.
   apply (map_left_adjoint_axioms F f adj adj).
 Defined.
 
+Lemma map_left_adjoint_id {C : bicat}
+  {a b : C} (f : a --> b) (adj : left_adjoint f)
+  : map_left_adjoint (id_psfunctor C) f adj = adj.
+Proof.
+  use subtypePath'; [|use isapropdirprod; use cellset_property].
+  use map_left_adjoint_data_id.
+Defined.
+
+Lemma map_left_adjoint_comp {C D E : bicat}
+  (G : psfunctor D E) (F : psfunctor C D)
+  {a b : C} (f : a --> b) (adj : left_adjoint f)
+  : map_left_adjoint (comp_psfunctor G F) f adj
+    = map_left_adjoint G _ (map_left_adjoint F f adj).
+Proof.
+  use subtypePath'; [|use isapropdirprod; use cellset_property].
+  use map_left_adjoint_data_comp.
+Defined.
+
 Definition map_adjunction {C D : bicat} (F : psfunctor C D)
   {a b : C} (adj : adjunction a b)
   : adjunction (F a) (F b)
   := _,,map_left_adjoint F _ (pr2 adj).
+
+Lemma map_adjunction_id {C : bicat}
+  {a b : C} (adj : adjunction a b)
+  : map_adjunction (id_psfunctor C) adj = adj.
+Proof.
+  use pair_path_in2.
+  use map_left_adjoint_id.
+Defined.
+
+Lemma map_adjunction_comp {C D E : bicat}
+  (G : psfunctor D E) (F : psfunctor C D)
+  {a b : C} (adj : adjunction a b)
+  : map_adjunction (comp_psfunctor G F) adj
+    = map_adjunction G (map_adjunction F adj).
+Proof.
+  use pair_path_in2.
+  use map_left_adjoint_comp.
+Defined.
