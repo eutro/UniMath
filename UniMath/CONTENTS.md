@@ -1008,6 +1008,7 @@ The packages and files are listed here in logical order: each file depends only 
    - [Core/Examples/OpFibSlice.v](Bicategories/Core/Examples/OpFibSlice.v)
    - [Morphisms/Properties/AdjunctionsRepresentable.v](Bicategories/Morphisms/Properties/AdjunctionsRepresentable.v)
    - [Morphisms/Examples/MorphismsInBicatOfUnivCats.v](Bicategories/Morphisms/Examples/MorphismsInBicatOfUnivCats.v)
+   - [Morphisms/Examples/MorphismsInBicatOfCats.v](Bicategories/Morphisms/Examples/MorphismsInBicatOfCats.v)
    - [Morphisms/Examples/FibrationsInBicatOfUnivCats.v](Bicategories/Morphisms/Examples/FibrationsInBicatOfUnivCats.v)
    - [Morphisms/Examples/FibrationsInStrictCats.v](Bicategories/Morphisms/Examples/FibrationsInStrictCats.v)
    - [Morphisms/Examples/MorphismsInOp2Bicat.v](Bicategories/Morphisms/Examples/MorphismsInOp2Bicat.v)

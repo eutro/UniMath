@@ -43,6 +43,7 @@ Core/Examples/OpFibSlice.v
 
 Morphisms/Properties/AdjunctionsRepresentable.v
 Morphisms/Examples/MorphismsInBicatOfUnivCats.v
+Morphisms/Examples/MorphismsInBicatOfCats.v
 Morphisms/Examples/FibrationsInBicatOfUnivCats.v
 Morphisms/Examples/FibrationsInStrictCats.v
 Morphisms/Examples/MorphismsInOp2Bicat.v
