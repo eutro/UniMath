@@ -38,6 +38,7 @@ Nonassociative/Duploids/Univalence.v
 Nonassociative/Duploids/StructureTheorem.v
 Nonassociative/UnitalMagmoids/Core.v
 Nonassociative/UnitalMagmoids/EpisAndMonics.v
+Nonassociative/UnitalMagmoids/Examples.v
 Nonassociative/UnitalMagmoids/FromCategory.v
 Nonassociative/UnitalMagmoids/Functors.v
 Nonassociative/UnitalMagmoids/HomFunctors.v
