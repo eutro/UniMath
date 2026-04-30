@@ -181,16 +181,15 @@ Section equivalences.
     - exact univalent_duploid.
     - intros a b; exact (catiso a b).
     - intros a; exact (identity_catiso a).
-    - use (rxgraph_univalent_from_iso_b univalent_duploid_rxgraph0).
+    - use (rxgraph_univalent_from_iso_b' univalent_duploid_rxgraph0).
       1: apply rxgraph_univalence.
-      use make_rxgraph_iso; [use make_pregraph_iso|]; cbn.
+      use make_pregraph_iso; cbn.
       + use weq_iso.
         * intros [[M H1] H2]; exists (M,,H2); exact H1.
         * intros [[M H2] H1]; exists (M,,H1); exact H2.
         * easy.
         * easy.
       + intros a b; exact (idweq _).
-      + now intros a.
   Defined.
 
   Lemma isweq_on_objects_from_equivalence (D D' : preduploid)
@@ -278,16 +277,13 @@ Section equivalences.
     - exact univalent_duploid.
     - intros a b; exact (duploid_equivalence a b).
     - intros a; exact (duploid_equivalence_identity a).
-    - use (rxgraph_univalent_from_iso_b univalent_duploid_rxgraph1).
+    - use (rxgraph_univalent_from_iso_b' univalent_duploid_rxgraph1).
       1: apply rxgraph_univalence.
-      use make_rxgraph_iso; [use make_pregraph_iso|]; cbn.
+      use make_pregraph_iso; cbn.
       + exact (idweq _).
       + intros a b.
-        use (weq_duploid_equivalence_catiso a b); apply duploid_univalence.
-      + intro a.
-        apply subtypePath'.
-        2: apply isaprop_is_catiso.
-        reflexivity.
+        use (weq_duploid_equivalence_catiso a b);
+          apply duploid_univalence.
   Defined.
 
   Hypothesis (D D' : univalent_duploid).
@@ -320,9 +316,8 @@ Section characterizations.
     - intros a; exact (identity_z_iso a).
   Defined.
 
-  Remark category_rxgraph_univalent_eq (C : category)
-    : is_univalent C = is_rxgraph_univalent (category_to_rxgraph C).
-  Proof. reflexivity. Defined.
+  Coercion is_rxgraph_univalent_category {C : category}
+    (H : is_univalent C) : is_rxgraph_univalent (category_to_rxgraph C) := H.
 
   Definition duploid_to_rxgraph (D : preduploid) : rxgraph.
   Proof.
@@ -459,8 +454,8 @@ Section characterizations.
     1: set (HC := Hnegative).                    2: set (HC := Hpositive).
     1: set (is_p := @is_negative D).             2: set (is_p := @is_positive D).
     all: set (a' := a,,Ha : C).
-    all: use (isofhlevelweqb 1 (Y:=@edges_from (category_to_rxgraph C) a'));
-      [|exact (is_rxgraph_univalent_to_isaprop_edges_from (category_to_rxgraph C) HC _)].
+    all: use (isofhlevelweqb 1 (Y:=edges_from (a' : category_to_rxgraph C)));
+      [|exact (is_rxgraph_univalent_to_isaprop_edges_from _ HC _)].
     all: eapply weqcomp; [|apply weqtotal2asstol].
     all: use weqbandf; [exact (idweq D)|]; intro b; cbn in b |- *.
     all: intermediate_weq (∑ _ : z_iso a b, is_p b).

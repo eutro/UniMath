@@ -207,14 +207,13 @@ Proof.
   - exact unital_magmoid.
   - intros a b; exact (catiso a b).
   - intro a; exact (identity_catiso a).
-  - use (rxgraph_univalent_from_iso_b unital_magmoid_rxgraph0).
+  - use (rxgraph_univalent_from_iso_b' unital_magmoid_rxgraph0).
     1: apply rxgraph_univalence.
-    use make_rxgraph_iso; [use make_pregraph_iso|]; cbn.
+    use make_pregraph_iso; cbn.
     + use weq_iso.
       * intros [[M H1] H2]; exists (M,,H2); exact H1.
       * intros [[M H2] H1]; exists (M,,H1); exact H2.
       * easy.
       * easy.
     + intros a b; exact (idweq _).
-    + now intros a.
 Defined.

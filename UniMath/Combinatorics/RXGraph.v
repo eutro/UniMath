@@ -539,7 +539,9 @@ Section constructions.
                             UU_rxgraph)))).
   Defined.
 
-  Definition pregraph_iso (G G' : pregraph) := edge pregraph_rxgraph G G'.
+  Definition pregraph_iso (G G' : pregraph)
+    := (* edge pregraph_rxgraph G G' *)
+    ∑ (e : vertex G ≃ vertex G'), ∏ a b, edge G a b ≃ edge G' (e a) (e b).
   Coercion pregraph_iso_vertex_weq {G G' : pregraph} (f : pregraph_iso G G')
     : vertex G ≃ vertex G' := pr1 f.
   Definition edge_weq {G G' : pregraph} (f : pregraph_iso G G')
@@ -570,16 +572,82 @@ Section constructions.
   Definition rxgraph_rxgraph : univalent_rxgraph
     := univalent_total_rxgraph has_refl_rxgraph.
 
-  Definition rxgraph_iso (G G' : rxgraph) := edge rxgraph_rxgraph G G'.
+  Definition rxgraph_iso (G G' : rxgraph)
+    := (* edge rxgraph_rxgraph G G' *)
+    ∑ (e : pregraph_iso G G'), ∏ (a : vertex G), edge_weq e (grefl a) = grefl (e a).
   Coercion rxgraph_iso_to_pregraph_iso {G G' : rxgraph} (f : rxgraph_iso G G')
     : pregraph_iso G G' := pr1 f.
   Definition rxgraph_iso_grefl {G G' : rxgraph} (f : rxgraph_iso G G')
     : ∏ (a : G), edge_weq f (grefl a) = grefl (f a) := pr2 f.
 
+  Goal ∏ G G', edge rxgraph_rxgraph G G' = rxgraph_iso G G'. easy. Qed.
+
   Definition make_rxgraph_iso {G G' : rxgraph}
     (f : pregraph_iso G G')
     (H : ∏ (a : G), edge_weq f (grefl a) = grefl (f a))
     : rxgraph_iso G G' := f,,H.
+
+  Definition pregraph_iso_inv {G G' : pregraph}
+    (f : pregraph_iso G G')
+    : pregraph_iso G' G.
+  Proof.
+    use make_pregraph_iso.
+    - exact (invweq f).
+    - intros a b.
+      use invweq.
+      intermediate_weq (f (invweq f a) ≈ f (invweq f b)).
+      1: exact (edge_weq f).
+      intermediate_weq (a ≈ f (invweq f b)).
+      1: exact (make_weq _ (isweqtransportf (λ a', a' ≈ _) (homotweqinvweq f a))).
+      exact (make_weq _ (isweqtransportf (λ b', _ ≈ b') (homotweqinvweq f b))).
+  Defined.
+
+  Definition rxgraph_iso_inv {G G' : rxgraph}
+    (f : rxgraph_iso G G')
+    : rxgraph_iso G' G.
+  Proof.
+    use (make_rxgraph_iso (pregraph_iso_inv f)).
+    intro a.
+    use pathsinv0; use pathsweq1.
+    induction (homotweqinvweq f a).
+    cbn.
+    use (rxgraph_iso_grefl f).
+  Defined.
+
+  Definition pregraph_iso_to_edges_from_iso {G G' : pregraph}
+    (f : pregraph_iso G G')
+    : ∏ a, edges_from a ≃ edges_from (f a).
+  Proof.
+    intro a.
+    use weqbandf.
+    - exact f.
+    - intro b; exact (edge_weq f).
+  Defined.
+
+  Definition rxgraph_univalent_from_iso_b'
+    {G : rxgraph} (G' : rxgraph)
+    (H : is_rxgraph_univalent G')
+    (e : pregraph_iso G G')
+    : is_rxgraph_univalent G.
+  Proof.
+    use is_rxgraph_univalent_from_isaprop_edges_from; intro a.
+    use (isofhlevelweqb 1 (Y:=edges_from (e a))).
+    2: use (is_rxgraph_univalent_to_isaprop_edges_from _ H).
+    exact (pregraph_iso_to_edges_from_iso e a).
+  Qed.
+
+  Definition rxgraph_univalent_from_iso_f'
+    (G : rxgraph) {G' : rxgraph}
+    (H : is_rxgraph_univalent G)
+    (e : pregraph_iso G G')
+    : is_rxgraph_univalent G'.
+  Proof.
+    use is_rxgraph_univalent_from_isaprop_edges_from; intro a.
+    use (isofhlevelweqf 1 (X:=edges_from (invweq e a))).
+    2: use (is_rxgraph_univalent_to_isaprop_edges_from _ H).
+    use invweq.
+    exact (pregraph_iso_to_edges_from_iso (pregraph_iso_inv e) a).
+  Qed.
 
   Definition rxgraph_univalent_from_iso_b
     {G : rxgraph} (G' : rxgraph)
@@ -587,8 +655,8 @@ Section constructions.
     (e : rxgraph_iso G G')
     : is_rxgraph_univalent G.
   Proof.
-    induction G', e using (rxgraph_edge_rect rxgraph_rxgraph G).
-    exact H.
+    Succeed now induction G', e using (rxgraph_edge_rect rxgraph_rxgraph G).
+    exact (rxgraph_univalent_from_iso_b' G' H e).
   Defined.
 
   Definition rxgraph_univalent_from_iso_f
@@ -597,8 +665,8 @@ Section constructions.
     (e : rxgraph_iso G G')
     : is_rxgraph_univalent G'.
   Proof.
-    induction G', e using (rxgraph_edge_rect rxgraph_rxgraph G).
-    exact H.
+    Succeed now induction G', e using (rxgraph_edge_rect rxgraph_rxgraph G).
+    exact (rxgraph_univalent_from_iso_f' G H e).
   Defined.
 
   Definition dirprod_rxgraph (A B : rxgraph) : rxgraph.
@@ -627,38 +695,6 @@ Section constructions.
 
   Definition dirprod_rxgraph' (A B : univalent_rxgraph) : univalent_rxgraph
     := make_univalent_rxgraph _ (is_univalent_dirprod_rxgraph _ _ A B).
-
-  Definition disp_rxgraph_from_family_f
-    (B : rxgraph) (E : B -> rxgraph)
-    (HB : is_rxgraph_univalent B)
-    : disp_rxgraph B.
-  Proof.
-    use make_disp_rxgraph'.
-    - exact E.
-    - intros a b e aa bb.
-      exact (transportf E (edge_to_id HB a b e) aa ≈ bb).
-    - intros a aa.
-      exact (transportf
-               (λ p, transportf E p aa ≈ aa)
-               (edge_to_id_grefl HB a) (grefl aa)).
-  Defined.
-
-  Definition is_univalent_disp_rxgraph_from_family_f
-    (B : rxgraph) (E : B -> rxgraph)
-    (HB : is_rxgraph_univalent B)
-    (HE : ∏ (x : B), is_rxgraph_univalent (E x))
-    : is_disp_rxgraph_univalent (disp_rxgraph_from_family_f B E HB).
-  Proof.
-    intro x.
-    apply is_rxgraph_univalent_from_isaprop_edges_from.
-    intro a; cbn in a.
-    apply (isofhlevelweqb 1 (Y:=edges_from a)).
-    2: apply is_rxgraph_univalent_to_isaprop_edges_from, HE.
-    use weqtotal2; [apply idweq|].
-    intro b; cbn in b |- *.
-    rewrite <- edge_to_id_grefl.
-    apply idweq.
-  Defined.
 End constructions.
 
 Declare Scope rxgraph_spec.
