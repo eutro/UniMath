@@ -25,52 +25,30 @@ Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.FromCategory.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Isos.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Subcategories.
+Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Functors.
 
 Local Open Scope cat.
 Local Open Scope unital_magmoid.
 
-Section notfunctor_magmoid.
-  (* A not-quite-functor is a functor which does not preserve composition. *)
-  Definition notfunctor (M M' : unital_premagmoid_data)
-    := ∑ (F : functor_data M M'), functor_idax F.
-  Definition make_notfunctor {M M' : unital_premagmoid_data}
-    (F : functor_data M M') (H : functor_idax F)
-    : notfunctor M M' := F,,H.
-  Coercion notfunctor_to_functor_data {M M' : unital_premagmoid_data} (F : notfunctor M M')
-    := pr1 F.
-
-  Definition notfunctor_id {M M' : unital_premagmoid_data} (F : notfunctor M M')
-    : ∏ (a : M), #F (identity a) = identity (F a)
-    := pr2 F.
-
-  Definition functor_to_notfunctor {M M' : unital_premagmoid_data} (F : functor M M') : notfunctor M M'.
-  Proof.
-    use (make_notfunctor F).
-    intro a; apply functor_id.
-  Defined.
-  Coercion functor_to_notfunctor : functor >-> notfunctor.
-
-  Definition notfunctor_identity (M : unital_premagmoid_data)
-    : notfunctor M M := functor_identity M.
-
+Section rxfunctor_magmoid.
   (* Not-quite-functors do not preserve composition, so their morphisms do not either. *)
-  Definition notfunctor_magmoid_ob_mor (M M' : unital_premagmoid_data) : precategory_ob_mor.
+  Definition rxfunctor_magmoid_ob_mor (M M' : unital_premagmoid_data) : precategory_ob_mor.
   Proof.
     use make_precategory_ob_mor.
-    - exact (notfunctor M M').
+    - exact (rxfunctor M M').
     - intros F G; exact (nat_trans_data F G).
   Defined.
 
-  Definition notfunctor_magmoid_data (M M' : unital_premagmoid_data) : unital_premagmoid_data.
+  Definition rxfunctor_magmoid_data (M M' : unital_premagmoid_data) : unital_premagmoid_data.
   Proof.
-    use (make_precategory_data (notfunctor_magmoid_ob_mor M M')).
+    use (make_precategory_data (rxfunctor_magmoid_ob_mor M M')).
     - intros F a; apply identity.
     - intros F G H α β a;
         apply (α a · β a).
   Defined.
 
-  Definition notfunctor_magmoid_is_unital (M : unital_premagmoid_data) (M' : unital_premagmoid)
-    : is_unital_premagmoid (notfunctor_magmoid_data M M').
+  Definition rxfunctor_magmoid_is_unital (M : unital_premagmoid_data) (M' : unital_premagmoid)
+    : is_unital_premagmoid (rxfunctor_magmoid_data M M').
   Proof.
     split; intros F G α;
       apply funextsec; intro a.
@@ -78,8 +56,8 @@ Section notfunctor_magmoid.
     - apply magmoid_id_right.
   Defined.
 
-  Definition notfunctor_magmoid_is_assoc (M : unital_premagmoid_data) (M' : precategory)
-    : is_assoc_premagmoid (notfunctor_magmoid_data M M').
+  Definition rxfunctor_magmoid_is_assoc (M : unital_premagmoid_data) (M' : precategory)
+    : is_assoc_premagmoid (rxfunctor_magmoid_data M M').
   Proof.
     split; intros F G H K α β δ;
       apply funextsec; intro a.
@@ -87,23 +65,23 @@ Section notfunctor_magmoid.
     - apply assoc'.
   Defined.
 
-  Definition notfunctor_unital_premagmoid (M : unital_premagmoid_data) (M' : unital_premagmoid)
+  Definition rxfunctor_unital_premagmoid (M : unital_premagmoid_data) (M' : unital_premagmoid)
     : unital_premagmoid
-    := make_unital_premagmoid _ (notfunctor_magmoid_is_unital M M').
+    := make_unital_premagmoid _ (rxfunctor_magmoid_is_unital M M').
 
-  Definition has_homsets_notfunctor_unital_premagmoid (M M' : unital_premagmoid_data)
+  Definition has_homsets_rxfunctor_unital_premagmoid (M M' : unital_premagmoid_data)
     (hs : has_homsets M')
-    : has_homsets (notfunctor_magmoid_data M M').
+    : has_homsets (rxfunctor_magmoid_data M M').
   Proof.
     intros F G.
     apply impred_isaset; intro a; apply hs.
   Qed.
 
-  Definition notfunctor_unital_magmoid (M : unital_premagmoid_data) (M' : unital_magmoid) : unital_magmoid.
+  Definition rxfunctor_unital_magmoid (M : unital_premagmoid_data) (M' : unital_magmoid) : unital_magmoid.
   Proof.
     use make_unital_magmoid.
-    - exact (notfunctor_unital_premagmoid M M').
-    - abstract (apply has_homsets_notfunctor_unital_premagmoid, unital_magmoid_has_homsets).
+    - exact (rxfunctor_unital_premagmoid M M').
+    - abstract (apply has_homsets_rxfunctor_unital_premagmoid, unital_magmoid_has_homsets).
   Defined.
 
   (** Call α "locally natural" at [f : a --> b] when the naturality square communtes. *)
@@ -111,7 +89,106 @@ Section notfunctor_magmoid.
     {a b : C} (f : a --> b) : UU
     := # F f · α b = α a · #G f.
 
-End notfunctor_magmoid.
+End rxfunctor_magmoid.
+
+Section rxfunctor_magmoid.
+  (* Subcategory of [rxfunctor_magmoid] with morphisms natural. *)
+  Definition natrxfunctor_magmoid_ob_mor (M M' : unital_premagmoid_data) : precategory_ob_mor.
+  Proof.
+    use make_precategory_ob_mor.
+    - exact (rxfunctor M M').
+    - intros F G; exact (nat_trans F G).
+  Defined.
+
+  Definition natrxfunctor_magmoid_data (M : unital_premagmoid_data) (M' : precategory) : unital_premagmoid_data.
+  Proof.
+    use (make_precategory_data (natrxfunctor_magmoid_ob_mor M M')).
+    - intros F.
+      cbn in F |- *; red.
+      exists (λ a : M, identity (F a)).
+      abstract (intros a b f; now rewrite id_right, id_left).
+    - intros F G H α β.
+      cbn in F, G, H, α, β |- *; red.
+      exists (λ a : M, α a · β a).
+      abstract (
+          intros a b f;
+          rewrite assoc, (nat_trans_ax α);
+          rewrite assoc', (nat_trans_ax β);
+          apply assoc).
+  Defined.
+
+  Definition natrxfunctor_magmoid_is_unital (M : unital_premagmoid_data) (M' : category)
+    : is_unital_premagmoid (natrxfunctor_magmoid_data M M').
+  Proof.
+    split; intros F G α; apply (nat_trans_eq M'); intro a.
+    - apply id_left.
+    - apply id_right.
+  Defined.
+
+  Definition natrxfunctor_magmoid_is_assoc (M : unital_premagmoid_data) (M' : category)
+    : is_assoc_premagmoid (natrxfunctor_magmoid_data M M').
+  Proof.
+    split; intros F G H K α β δ; apply (nat_trans_eq M'); intro a.
+    - apply assoc.
+    - apply assoc'.
+  Defined.
+
+  Definition natrxfunctor_precategory (M : unital_premagmoid_data) (M' : category)
+    : precategory
+    := make_precategory (natrxfunctor_magmoid_data M M')
+         (make_dirprod
+            (natrxfunctor_magmoid_is_unital M M')
+            (natrxfunctor_magmoid_is_assoc M M')).
+
+  Definition has_homsets_natrxfunctor_precategory (M : unital_premagmoid_data) (M' : category)
+    : has_homsets (natrxfunctor_magmoid_data M M').
+  Proof.
+    intros F G.
+    apply isaset_nat_trans, M'.
+  Qed.
+
+  Definition natrxfunctor_category (M : unital_premagmoid_data) (M' : category) : category
+    := make_category (natrxfunctor_precategory M M') (has_homsets_natrxfunctor_precategory M M').
+
+  Lemma natrxfunctor_is_nat_iso_iff_is_z_isomorphism (M : unital_premagmoid_data) (M' : category)
+    (F G : natrxfunctor_category M M') (α : F --> G)
+    : is_z_isomorphism α <-> is_nat_z_iso (α : nat_trans _ _).
+  Proof.
+    split.
+    - intros αinv a.
+      exists ((is_z_isomorphism_mor αinv : nat_trans _ _) a).
+      abstract (
+          split;
+          [ exact (eqtohomot (base_paths _ _ (is_inverse_in_precat1 αinv)) a)
+          | exact (eqtohomot (base_paths _ _ (is_inverse_in_precat2 αinv)) a) ]).
+    - intros αinv.
+      use tpair. {
+        exists (λ a, is_z_isomorphism_mor (αinv a)).
+        abstract (
+            intros a b f;
+            apply pathsinv0, (z_iso_inv_on_right (C:=M') _ _ _ (_,,αinv a));
+            rewrite assoc;
+            apply (z_iso_inv_on_left (C:=M') _ _ _ _ (_,,αinv b)), pathsinv0;
+            apply (nat_trans_ax α)).
+      }
+      abstract (
+          split; apply (nat_trans_eq M'); intro a;
+          [ exact (is_inverse_in_precat1 (αinv a))
+          | exact (is_inverse_in_precat2 (αinv a)) ]).
+  Defined.
+
+  Lemma natrxfunctor_category_z_iso_weq_nat_z_iso (M : unital_premagmoid_data) (M' : category)
+  (F G : natrxfunctor_category M M')
+    : z_iso F G ≃ (∑ α : F --> G, is_nat_z_iso (α : nat_trans _ _)).
+  Proof.
+    use weqbandf; [apply idweq|].
+    intro α; apply weqiff.
+    - apply natrxfunctor_is_nat_iso_iff_is_z_isomorphism.
+    - abstract (apply isaprop_is_z_isomorphism).
+    - abstract (apply impred; intro; apply isaprop_is_z_isomorphism).
+  Defined.
+
+End rxfunctor_magmoid.
 
 Section yoneda.
   Context [M : unital_magmoid].
@@ -126,6 +203,7 @@ Section yoneda.
   Definition um_yoneda_objects_mor (a : M) {b b' : M} (f : b --> b')
     : um_yoneda_objects_ob a b' -> um_yoneda_objects_ob a b
     := λ g, f · g.
+  Arguments um_yoneda_objects_mor _ {_ _} _ / _.
 
   Definition um_yoneda_objects (a : M) : functor_data Mᵒᵖ HSET.
   Proof.
@@ -161,8 +239,8 @@ Section yoneda.
     apply assoc'_thunkable, Hg.
   Qed.
 
-  Definition um_yoneda_ob (a : M) : notfunctor Mᵒᵖ HSET
-    := make_notfunctor _ (um_yoneda_objects_id a).
+  Definition um_yoneda_ob (a : M) : rxfunctor Mᵒᵖ HSET
+    := make_rxfunctor _ (um_yoneda_objects_id a).
 
   Definition um_yoneda_ob_thunkable (a : M) : functor Mₜᵒᵖ HSET.
   Proof.
@@ -183,6 +261,7 @@ Section yoneda.
   Definition um_yoneda_morphisms {a a' : M} (f : a --> a')
     : nat_trans_data (um_yoneda_objects a) (um_yoneda_objects a')
     := λ b g, g · f.
+  Arguments um_yoneda_morphisms {_ _} _ _ / _.
 
   (** Precomposition is not natural in general *)
   Lemma is_nat_trans_um_yoneda_morphisms {a a' : M} (f : a --> a')
@@ -206,15 +285,15 @@ Section yoneda.
     {a : M} {F : functor_data Mᵒᵖ HSET} (α : nat_trans_data (um_yoneda_objects a) F) : UU
     := ∏ (b : M) (f : b --> a), is_locally_yoneda_natural α f.
 
-  Definition yoneda_nat_trans (a : M) (F : notfunctor Mᵒᵖ HSET) : UU
+  Definition yoneda_nat_trans (a : M) (F : rxfunctor Mᵒᵖ HSET) : UU
     := ∑ (α : nat_trans_data (um_yoneda_objects a) F), is_yoneda_natural α.
-  Definition make_yoneda_nat_trans {a : M} {F : notfunctor Mᵒᵖ HSET}
+  Definition make_yoneda_nat_trans {a : M} {F : rxfunctor Mᵒᵖ HSET}
     (α : nat_trans_data (um_yoneda_objects a) F)
     (H : is_yoneda_natural α) : yoneda_nat_trans a F
     := α,,H.
-  Coercion yoneda_nat_trans_to_nat_trans_data {a : M} {F : notfunctor Mᵒᵖ HSET}
+  Coercion yoneda_nat_trans_to_nat_trans_data {a : M} {F : rxfunctor Mᵒᵖ HSET}
     (α : yoneda_nat_trans a F) : nat_trans_data (um_yoneda_objects a) F := pr1 α.
-  Coercion yoneda_nat_trans_is_yoneda_natural {a : M} {F : notfunctor Mᵒᵖ HSET}
+  Coercion yoneda_nat_trans_is_yoneda_natural {a : M} {F : rxfunctor Mᵒᵖ HSET}
     (α : yoneda_nat_trans a F) : is_yoneda_natural α := pr2 α.
 
   Lemma isaprop_is_locally_yoneda_natural
@@ -273,7 +352,7 @@ Section yoneda.
 
   (** [um_yoneda] is the not-quite-functor M ⟶ [Mᵒᵖ, HSET] mapping objects to their not-quite-functor *)
   Definition um_yoneda_functor_data
-    : functor_data M (notfunctor_unital_magmoid Mᵒᵖ HSET).
+    : functor_data M (rxfunctor_unital_magmoid Mᵒᵖ HSET).
   Proof.
     use make_functor_data.
     - intro a; exact (um_yoneda_ob a).
@@ -311,26 +390,27 @@ Section yoneda.
 
   (** [um_yoneda] is the mapping of a unital magmoid into its category of (almost) presheaves *)
   Definition um_yoneda
-    : notfunctor M (notfunctor_unital_magmoid Mᵒᵖ HSET)
-    := make_notfunctor _ um_yoneda_functor_id.
+    : rxfunctor M (rxfunctor_unital_magmoid Mᵒᵖ HSET)
+    := make_rxfunctor _ um_yoneda_functor_id.
 
   (** [um_yoneda] restricted to linear maps: a functor *)
-  Lemma um_yoneda_linear : functor (M ₗ) (notfunctor_unital_magmoid Mᵒᵖ HSET).
+  Lemma um_yoneda_linear : functor (M ₗ) (natrxfunctor_category Mᵒᵖ HSET).
   Proof.
     use make_functor.
     - use make_functor_data.
       + intro a; exact (um_yoneda_ob a).
       + intros a b f; exact (um_yoneda_morphisms_linear f).
     - abstract (use make_is_functor;
-                [ intro a; apply um_yoneda_functor_id
+                [ intro a; apply (nat_trans_eq HSET), eqtohomot, um_yoneda_functor_id
                 | intros a b c f g; cbn in g;
-                  apply um_yoneda_functor_comp_linear, g ]).
+                  apply (nat_trans_eq HSET), eqtohomot,
+                    um_yoneda_functor_comp_linear, g ]).
   Defined.
 
   (** [um_yoneda] restricted to thunkable maps in the second argument: the codomain is functors *)
-  Lemma um_yoneda_thunkable : notfunctor M [Mₜᵒᵖ, HSET].
+  Lemma um_yoneda_thunkable : rxfunctor M [Mₜᵒᵖ, HSET].
   Proof.
-    use make_notfunctor.
+    use make_rxfunctor.
     - use make_functor_data.
       + intro a; exact (um_yoneda_ob_thunkable a).
       + intros a b f; exact (um_yoneda_morphisms_thunkable f).
@@ -346,7 +426,7 @@ Section yoneda.
     use make_functor.
     - exact (functor_composite_data (linear_category_to_unital_magmoid M) um_yoneda_thunkable).
     - abstract (use make_is_functor;
-                [ intro a; apply (notfunctor_id um_yoneda_thunkable)
+                [ intro a; apply (rxfunctor_id um_yoneda_thunkable)
                 | intros a b c f g; cbn in g;
                   apply subtypePath'; [|apply isaprop_is_nat_trans, homset_property];
                   apply um_yoneda_functor_comp_linear, g ]).
@@ -457,23 +537,23 @@ Section yoneda.
   Defined.
 
   (** In fact, [yoneda_map_2] is a weak equivalence [F a ≃ (yoneda_nat_trans (um_yoneda a) F)]
-      for all [notfunctor]s *)
-  Lemma isweq_um_yoneda_map_2_yoneda_natural {a : M} {F : notfunctor Mᵒᵖ HSET}
+      for all [rxfunctor]s *)
+  Lemma isweq_um_yoneda_map_2_yoneda_natural {a : M} {F : rxfunctor Mᵒᵖ HSET}
     : isweq (λ (x : (F a : hSet)),
           make_yoneda_nat_trans
             (um_yoneda_map_2 x)
-            (is_yoneda_natural_um_yoneda_map_2 (notfunctor_id F) x)).
+            (is_yoneda_natural_um_yoneda_map_2 (rxfunctor_id F) x)).
   Proof.
     use isweq_iso.
     - intro α; exact (um_yoneda_map_1 α).
-    - abstract (intro x; cbn; apply (eqtohomot (notfunctor_id F a))).
+    - abstract (intro x; cbn; apply (eqtohomot (rxfunctor_id F a))).
     - abstract (intro α;
                 apply subtypePath'; [|apply isaprop_is_yoneda_natural];
                 apply um_yoneda_map_1_2_yoneda_natural, α).
   Defined.
 
-  (** [yoneda_map_1] is surjective for F a [notfunctor] *)
-  Lemma issurjective_um_yoneda_map_1 {a : M} {F : notfunctor Mᵒᵖ HSET}
+  (** [yoneda_map_1] is surjective for F a [rxfunctor] *)
+  Lemma issurjective_um_yoneda_map_1 {a : M} {F : rxfunctor Mᵒᵖ HSET}
     : issurjective (λ (α : nat_trans_data (um_yoneda_objects a) F), um_yoneda_map_1 α).
   Proof.
     intro α.
@@ -481,8 +561,8 @@ Section yoneda.
     abstract (apply um_yoneda_map_2_1, F).
   Defined.
 
-  (** Likewise, [yoneda_map_2] is injective for F a [notfunctor] *)
-  Lemma isincl_um_yoneda_map_2 {a : M} {F : notfunctor Mᵒᵖ HSET}
+  (** Likewise, [yoneda_map_2] is injective for F a [rxfunctor] *)
+  Lemma isincl_um_yoneda_map_2 {a : M} {F : rxfunctor Mᵒᵖ HSET}
     : isincl (λ (x : (F a : hSet)), um_yoneda_map_2 x).
   Proof.
     apply isinclbetweensets.
@@ -490,7 +570,7 @@ Section yoneda.
     - apply impred_isaset; intro; apply homset_property.
     - intros x x' H.
       apply (maponpaths um_yoneda_map_1) in H.
-      refine (!_ @ H @ _); apply (um_yoneda_map_2_1 (notfunctor_id F)).
+      refine (!_ @ H @ _); apply (um_yoneda_map_2_1 (rxfunctor_id F)).
   Qed.
 
   (** [um_yoneda] is [faithful] in general *)
@@ -520,9 +600,23 @@ Section yoneda.
     apply funextsec; intro c.
     apply funextsec; intro f.
     apply pathsinv0, Hα.
-  Qed.
+  Defined.
 
-  (** [um_yoneda] preserves isomorphisms *)
+  Corollary isweq_um_yoneda_to_yoneda_natural (a b : M)
+    : isweq (λ (f : a --> b),
+        make_yoneda_nat_trans
+            (#um_yoneda f)
+            (is_yoneda_natural_um_yoneda_morphism f)).
+  Proof.
+    use isweqinclandsurj.
+    - use (isincltwooutof3a _ pr1).
+      + use isinclpr1.
+        intro; use isaprop_is_yoneda_natural.
+      + use faithful_um_yoneda.
+    - use full_um_yoneda.
+  Defined.
+
+  (** [um_yoneda] preserves linear-and-thunkable isomorphisms *)
   Definition um_yoneda_on_lt_iso {a b : M} (f : lt_iso a b)
     : is_z_isomorphism (#um_yoneda f).
   Proof.
@@ -531,6 +625,65 @@ Section yoneda.
     - abstract (split; do 2 (apply funextsec; intro);
                 [ apply lt_iso_right
                 | apply lt_iso_inverse_right ]).
+  Defined.
+
+  (** [um_yoneda_map_1] is linear if the transformation is natural *)
+  Definition is_linear_um_yoneda_map_1_from_is_nat_trans {a b : M}
+    (α : um_yoneda a --> um_yoneda b)
+    (Hα : is_nat_trans _ _ α)
+    : is_linear (um_yoneda_map_1 α).
+  Proof.
+    intros c d g h.
+    unfold um_yoneda_map_1.
+    etrans; [apply pathsinv0, (eqtohomot (Hα _ _ _) _)|]; cbn.
+    etrans; [|apply cancel_precomposition, (eqtohomot (Hα _ _ _) _)]; cbn.
+    etrans; [|apply (eqtohomot (Hα _ _ _) _)]; cbn.
+    apply maponpaths.
+    now rewrite !magmoid_id_right.
+  Qed.
+
+  Lemma um_yoneda_linear_fully_faithful : fully_faithful um_yoneda_linear.
+  Proof.
+    intros a b.
+    use isweq_iso.
+    - intro α; cbn in α.
+      exact (make_linear_mor _ (is_linear_um_yoneda_map_1_from_is_nat_trans α (nat_trans_ax α))).
+    - abstract (
+          intro f; apply carrier_eq; cbn;
+          apply magmoid_id_left).
+    - abstract (
+          cbn; intro α;
+          apply (nat_trans_eq HSET), eqtohomot,
+            (um_yoneda_map_1_2_natural α (nat_trans_ax α))).
+  Defined.
+
+  Definition weq_um_yoneda_linear (a b : M)
+    : linear_mor a b ≃ nat_trans (um_yoneda a : _ ⟶¹ _) (um_yoneda b : _ ⟶¹ _)
+    := weq_from_fully_faithful um_yoneda_linear_fully_faithful a b.
+
+  (** [um_yoneda] reflects natural isomorphisms into linear isomorphisms *)
+  Definition um_yoneda_on_linear_iso {a b : M}
+    (f : z_iso (C:=linear_category M) a b)
+    : is_z_isomorphism (#um_yoneda_linear (z_iso_mor f))
+    := functor_on_is_z_isomorphism _ (z_iso_is_z_isomorphism f).
+
+  Definition um_yoneda_reflects_iso {a b : M}
+    (α : z_iso (um_yoneda_linear a) (um_yoneda_linear b))
+    : z_iso (C:=linear_category M) a b
+    := make_z_iso' _ (fully_faithful_reflects_iso_proof _ _ _
+         um_yoneda_linear_fully_faithful _ _ α).
+
+  (** A linear isomorphism [a ≅ₗ b] is equivalently a natural isomorphism [M⟦-, a⟧ ≅ M⟦-, b⟧]. *)
+  Definition weq_um_yoneda_linear_isos' {a b : M}
+    : z_iso (C:=linear_category M) a b
+        ≃ z_iso (um_yoneda_linear a) (um_yoneda_linear b).
+  Proof.
+    use weq_iso.
+    - intro f; exact (make_z_iso' _ (um_yoneda_on_linear_iso f)).
+    - intros α; exact (um_yoneda_reflects_iso α).
+    - abstract (intro f; apply z_iso_eq, carrier_eq, magmoid_id_left).
+    - abstract (intro α; apply z_iso_eq, (nat_trans_eq HSET), eqtohomot,
+                  (um_yoneda_map_1_2_natural _ (nat_trans_ax (z_iso_mor α)))).
   Defined.
 
 End yoneda.
