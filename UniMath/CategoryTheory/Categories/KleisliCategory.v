@@ -22,6 +22,7 @@
  2. The univalent Kleisli category
  3. The weak equivalence
  4. The universal property
+ 5. The free–forgetful adjunction
 
  ********************************************************************)
 Require Import UniMath.Foundations.All.
@@ -38,6 +39,7 @@ Require Import UniMath.CategoryTheory.Monads.Monads.
 Require Import UniMath.CategoryTheory.Monads.KleisliCategory.
 Require Import UniMath.CategoryTheory.whiskering.
 Require Import UniMath.CategoryTheory.PrecompEquivalence.
+Require Import UniMath.CategoryTheory.Adjunctions.Core.
 
 Local Open Scope cat.
 
@@ -727,3 +729,63 @@ Section KleisliUMP2.
       apply id_left.
   Qed.
 End KleisliUMP2.
+
+(**
+ 5. The free–forgetful adjunction
+ *)
+Definition kleisli_pr
+  {C : category} (m : Monad C)
+  : kleisli_cat m ⟶ C
+  := restrict_functor_to_sub_precategory _
+       (eilenberg_moore_pr m).
+
+Lemma kleisli_incl_and_pr_adjunction_data
+  {C : category} (m : Monad C)
+  : adjunction_data C (kleisli_cat m).
+Proof.
+  exists (kleisli_incl m).
+  exists (kleisli_pr m).
+  pose (θ := are_adjoints_eilenberg_moore_free_and_pr m).
+  split.
+  - exact (η m).
+  - use make_nat_trans.
+    + intro x; exact (adjcounit θ (pr1 x),,tt).
+    + abstract (
+          intros a b f;
+          apply carrier_eq;
+          exact (nat_trans_ax (adjcounit θ) _ _ _)).
+Defined.
+
+Lemma kleisli_incl_and_pr_form_adjunction
+  {C : category} (m : Monad C)
+  : form_adjunction' (kleisli_incl_and_pr_adjunction_data m).
+Proof.
+  pose (θ := are_adjoints_eilenberg_moore_free_and_pr m).
+  split.
+  - intro a; apply carrier_eq, eq_mor_eilenberg_moore; cbn.
+    rewrite id_left.
+    apply Monad_law2.
+  - intro x; cbn.
+    rewrite id_left.
+    exact (eilenberg_moore_ob_unit (pr1 x)).
+Qed.
+
+Definition are_adjoints_kleisli_incl_and_pr
+  {C : category} (m : Monad C)
+  : are_adjoints (kleisli_incl m) (kleisli_pr m)
+  := make_are_adjoints _ _ _ _
+       (kleisli_incl_and_pr_form_adjunction m).
+
+Definition is_right_adjoint_kleisli_pr
+  {C : category}
+  (m : Monad C)
+  : is_right_adjoint (kleisli_pr m)
+  := are_adjoints_to_is_right_adjoint _ _
+       (are_adjoints_kleisli_incl_and_pr m).
+
+Definition is_left_adjoint_kleisli_incl
+  {C : category}
+  (m : Monad C)
+  : is_left_adjoint (kleisli_incl m)
+  := are_adjoints_to_is_left_adjoint _ _
+       (are_adjoints_kleisli_incl_and_pr m).
