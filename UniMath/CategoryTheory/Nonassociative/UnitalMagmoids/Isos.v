@@ -3,10 +3,11 @@
  Isomorphisms in Unital Magmoids
 
  Contents:
- 1. Definitions of inverses and when they are unique
- 2. Composition of inverses when they exist
- 3. Linear-and-thunkable isomorphisms [lt_iso]
- 4. Lemmas about linear-and-thunkable isomorphisms
+ 1. Inverses in wide submagmoids
+ 2. Specific inverses and when they are unique
+ 3. Composition of inverses when they exist
+ 4. Linear-and-thunkable (and other) isomorphisms [lt_iso]
+ 5. Lemmas about isomorphisms
 
  Author: B. Szilvasy
  January 2026
@@ -24,10 +25,238 @@ Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Opposite.
 
 Local Open Scope cat.
 
-(** ** 1. Inverses and when they are unique *)
+(** ** 1. Inverses in wide submagmoids *)
+
 Lemma isaprop_is_inverse_in_precat_of_magmoid
   {M : unital_magmoid} {a b : M} (f : a --> b) (g : a <-- b) : isaprop (is_inverse_in_precat f g).
 Proof. apply isapropdirprod; apply unital_magmoid_has_homsets. Qed.
+Definition ish_inverse_in_unital_magmoid
+  {M : unital_magmoid} {a b : M} (f : a --> b) (g : a <-- b)
+  : hProp
+  := make_hProp (is_inverse_in_precat f g) (isaprop_is_inverse_in_precat_of_magmoid f g).
+
+Lemma is_inverse_in_precat_identity_of_magmoid {M : unital_magmoid} (a : M)
+  : is_inverse_in_precat (identity a) (identity a).
+Proof.
+  apply make_is_inverse_in_precat.
+  1, 2: apply magmoid_id_left.
+Qed.
+
+Section wide_submagmoid_inverses.
+  Context {M : unital_magmoid} (P : wide_submagmoid M).
+
+  Definition has_submm_inverse'
+    {a b : M} (f : a --> b) : UU
+    := ∑ (g : a <-- b), P _ _ g ∧ ish_inverse_in_unital_magmoid f g.
+  Definition has_submm_inverse
+    {a b : M} (f : a --> b) : UU
+    := ∑ (g : P b a), ish_inverse_in_unital_magmoid f (pr1carrier _ g).
+  Definition weq_has_submm_inverse'
+    {a b : M} (f : a --> b)
+    : has_submm_inverse' f ≃ has_submm_inverse f
+    := totalAssociativity _.
+
+  Definition submm_inverse'_mor
+    {a b : M} {f : a --> b} (g : has_submm_inverse' f)
+    : a <-- b := pr1 g.
+  Definition submm_inverse'_property
+    {a b : M} {f : a --> b} (g : has_submm_inverse' f)
+    : P _ _ (submm_inverse'_mor g) := pr12 g.
+  Coercion has_submm_inverse'_is_inverse
+    {a b : M} {f : a --> b} (g : has_submm_inverse' f)
+    : is_inverse_in_precat f (submm_inverse'_mor g) := pr22 g.
+  Coercion has_submm_inverse'_to_is_z_isomorphism
+    {a b : M} {f : a --> b} (g : has_submm_inverse' f)
+    : is_z_isomorphism f
+    := make_is_z_isomorphism _ (submm_inverse'_mor g) g.
+  Definition make_has_submm_inverse'
+    {a b : M} (f : a --> b) (g : a <-- b)
+    (Hf : P _ _ g) (Hfg : ish_inverse_in_unital_magmoid f g)
+    : has_submm_inverse' f
+    := g,, Hf,, Hfg.
+
+  Definition submm_inverse_to_submm
+    {a b : M} {f : a --> b} (g : has_submm_inverse f)
+    : P b a := pr1 g.
+  Definition submm_inverse_mor
+    {a b : M} {f : a --> b} (g : has_submm_inverse f)
+    : a <-- b := pr1carrier _ (submm_inverse_to_submm g).
+  Definition submm_inverse_property
+    {a b : M} {f : a --> b} (g : has_submm_inverse f)
+    : P _ _ (submm_inverse_mor g)
+    := pr2 (submm_inverse_to_submm g).
+  Coercion has_submm_inverse_is_inverse
+    {a b : M} {f : a --> b} (g : has_submm_inverse f)
+    : is_inverse_in_precat f (submm_inverse_mor g) := pr2 g.
+  Coercion has_submm_inverse_to_is_z_isomorphism
+    {a b : M} {f : a --> b} (g : has_submm_inverse f)
+    : is_z_isomorphism f
+    := make_is_z_isomorphism _ (submm_inverse_mor g) g.
+  Definition make_has_submm_inverse
+    {a b : M} (f : a --> b) (g : P b a)
+    (Hfg : ish_inverse_in_unital_magmoid f (pr1carrier _ g))
+    : has_submm_inverse f
+    := g,, Hfg.
+
+  Definition is_submm_iso
+    {a b : M} (f : a --> b)
+    := P _ _ f × has_submm_inverse f.
+
+  Definition is_submm_iso_property
+    {a b : M} {f : a --> b} (g : is_submm_iso f)
+    : P _ _ f := pr1 g.
+  Coercion is_submm_iso_to_has_submm_inverse
+    {a b : M} {f : a --> b} (g : is_submm_iso f)
+    : has_submm_inverse f
+    := pr2 g.
+
+  Definition submm_iso' (a b : M) : UU
+    := ∑ (f : a --> b), is_submm_iso f.
+  Definition submm_iso (a b : M) : UU
+    := ∑ (f : P a b), has_submm_inverse (pr1carrier _ f).
+  Definition weq_submm_iso' (a b : M)
+    : submm_iso' a b ≃ submm_iso a b
+    := totalAssociativity _.
+  Definition weq_submm_iso (a b : M)
+    : submm_iso a b ≃ submm_iso' a b
+    := invweq (weq_submm_iso' a b).
+
+  Coercion submm_iso'_mor
+    {a b : M} (f : submm_iso' a b)
+    : a --> b := pr1 f.
+  Definition submm_iso'_property
+    {a b : M} (f : submm_iso' a b)
+    : P _ _ f := pr12 f.
+  Coercion submm_iso'_has_submm_inverse
+    {a b : M} (f : submm_iso' a b)
+    : has_submm_inverse f := pr22 f.
+  Definition make_submm_iso' {a b : M}
+    (f : a --> b) (Hf : P _ _ f)
+    (g : has_submm_inverse f)
+    : submm_iso' a b
+    := f,, Hf,, g.
+
+  Definition submm_iso_to_submagmoid
+    {a b : M} (f : submm_iso a b)
+    : P a b := pr1 f.
+  Coercion submm_iso_mor
+    {a b : M} (f : submm_iso a b)
+    : a --> b := pr1carrier _ (submm_iso_to_submagmoid f).
+  Definition submm_iso_property
+    {a b : M} (f : submm_iso a b)
+    : P _ _ f := pr2 (submm_iso_to_submagmoid f).
+  Coercion submm_iso_has_submm_inverse
+    {a b : M} (f : submm_iso a b)
+    : has_submm_inverse f := pr2 f.
+  Definition make_submm_iso {a b : M}
+    (f : P a b) (g : has_submm_inverse (pr1carrier _ f))
+    : submm_iso a b
+    := f,, g.
+
+  Definition make_submm_iso_2 {a b : M}
+    (f : P a b) (g : P b a)
+    (Hfg : is_inverse_in_precat (pr1carrier _ f) (pr1carrier _ g))
+    := make_submm_iso f (make_has_submm_inverse _ g Hfg).
+
+  Lemma isincl_submm_iso'_mor (a b : M)
+    (H : ∏ (f : submm_iso' a b), isaprop (is_submm_iso f))
+    : isincl (@submm_iso'_mor a b).
+  Proof.
+    apply isinclpr1.
+    intro f.
+    apply isaprop_assume_it_is.
+    intro Hf.
+    apply (H (make_submm_iso' f (pr1 Hf) (pr2 Hf))).
+  Defined.
+
+  Corollary isaset_submm_iso' (a b : M)
+    (H : ∏ (f : submm_iso' a b), isaprop (is_submm_iso f))
+    : isaset (submm_iso' a b).
+  Proof.
+    apply (isasetsubset (@submm_iso'_mor a b)).
+    - apply unital_magmoid_has_homsets.
+    - apply isincl_submm_iso'_mor, H.
+  Qed.
+
+  Lemma isincl_submm_iso_mor (a b : M)
+    (H : ∏ (f : submm_iso a b), isaprop (is_submm_iso f))
+    : isincl (@submm_iso_mor a b).
+  Proof.
+    use isofhlevelfhomot.
+    - intro f.
+      apply submm_iso'_mor.
+      apply (weq_submm_iso _ _ f).
+    - easy.
+    - apply isinclgtogw.
+      apply isincl_submm_iso'_mor.
+      intro f.
+      apply (H (weq_submm_iso' _ _ f)).
+  Defined.
+
+  Corollary isaset_submm_iso (a b : M)
+    (H : ∏ (f : submm_iso a b), isaprop (is_submm_iso f))
+    : isaset (submm_iso a b).
+  Proof.
+    apply (isasetsubset (@submm_iso_mor a b)).
+    - apply unital_magmoid_has_homsets.
+    - apply isincl_submm_iso_mor, H.
+  Qed.
+
+  Definition submm_iso_inv {a b : M}
+    (f : submm_iso a b)
+    : submm_iso b a.
+  Proof.
+    use make_submm_iso_2.
+    - apply (submm_inverse_to_submm f).
+    - apply (submm_iso_to_submagmoid f).
+    - apply is_inverse_in_precat_inv.
+      exact f.
+  Defined.
+
+  Definition submm_iso'_inv {a b : M}
+    (f : submm_iso' a b)
+    : submm_iso' b a
+    := weq_submm_iso _ _
+         (submm_iso_inv
+            (weq_submm_iso' _ _ f)).
+
+  Definition is_submm_iso_identity (a : M)
+    : is_submm_iso (identity a).
+  Proof.
+    split.
+    - apply wide_submagmoid_identity_holds.
+    - use make_has_submm_inverse.
+      + exact (wide_submagmoid_identity _ a).
+      + apply is_inverse_in_precat_identity_of_magmoid.
+  Defined.
+
+  Definition submm_iso_identity (a : M)
+    : submm_iso a a.
+  Proof.
+    use make_submm_iso.
+    - exact (wide_submagmoid_identity _ a).
+    - exact (is_submm_iso_identity a).
+  Defined.
+
+  Definition submm_iso'_identity (a : M)
+    : submm_iso' a a
+    := weq_submm_iso _ _ (submm_iso_identity a).
+
+  Definition id_to_submm_iso (a b : M) (p : a = b)
+    : submm_iso a b.
+  Proof.
+    induction p; apply submm_iso_identity.
+  Defined.
+
+  Definition id_to_submm_iso' (a b : M) (p : a = b)
+    : submm_iso' a b.
+  Proof.
+    induction p; apply submm_iso'_identity.
+  Defined.
+
+End wide_submagmoid_inverses.
+
+(** ** 2. Specific inverses and when they are unique *)
 
 Section inverses.
   Context {M : unital_magmoid} {a b : M} (f : a --> b).
@@ -49,16 +278,15 @@ Section inverses.
   Definition make_has_linear_inverse
     (g : linear_mor b a) (H : is_inverse_in_precat f g)
     : has_linear_inverse := g,,H.
-  Coercion has_linear_inverse_to_mor (I : has_linear_inverse) : linear_mor b a := pr1 I.
+  Coercion has_linear_inverse_mor (I : has_linear_inverse) : linear_mor b a := pr1 I.
   Definition has_linear_inverse_is_inverse (I : has_linear_inverse) : is_inverse_in_precat f I := pr2 I.
 
   Lemma isaprop_has_linear_inverse : isaprop has_linear_inverse.
   Proof.
+    apply (isofhlevelweqf 1 (weq_has_submm_inverse' (isw_linear M) f)).
     apply invproofirrelevance; intros g g'.
-    apply subtypePath'.
-    2: apply isaprop_is_inverse_in_precat_of_magmoid.
     apply carrier_eq, inverse_unique_linear.
-    - apply (has_linear_inverse_to_mor g).
+    - apply g.
     - apply g.
     - apply g'.
   Qed.
@@ -80,27 +308,27 @@ Section inverses.
   Definition make_has_thunkable_inverse
     (g : thunkable_mor b a) (H : is_inverse_in_precat g f)
     : has_thunkable_inverse := g,,H.
-  Coercion has_thunkable_inverse_to_mor (I : has_thunkable_inverse) : thunkable_mor b a := pr1 I.
+  Coercion has_thunkable_inverse_mor (I : has_thunkable_inverse) : thunkable_mor b a := pr1 I.
   Definition has_thunkable_inverse_is_inverse (I : has_thunkable_inverse) : is_inverse_in_precat I f := pr2 I.
 
   Lemma isaprop_has_thunkable_inverse : isaprop has_thunkable_inverse.
   Proof.
+    apply (isofhlevelweqf 1 (X:=∑ g, ish_thunkable g ∧ ish_inverse_in_unital_magmoid g f)
+             (totalAssociativity _)).
     apply invproofirrelevance; intros g g'.
-    apply subtypePath'.
-    2: apply isaprop_is_inverse_in_precat_of_magmoid.
     apply carrier_eq, inverse_unique_thunkable.
-    - apply (has_thunkable_inverse_to_mor g).
+    - apply g.
     - apply g.
     - apply g'.
   Qed.
 
   (* Thunkable-and-linear inverses are of course unique *)
   Definition has_linear_and_thunkable_inverse : UU
-    := ∑ (g : linear_and_thunkable_mor b a), is_inverse_in_precat f g.
+    := has_submm_inverse (isw_linear_and_thunkable M) f.
   Definition make_has_linear_and_thunkable_inverse
     (g : linear_and_thunkable_mor b a) (H : is_inverse_in_precat f g)
     : has_linear_and_thunkable_inverse := g,,H.
-  Coercion has_linear_and_thunkable_inverse_to_mor (I : has_linear_and_thunkable_inverse)
+  Coercion has_linear_and_thunkable_inverse_mor (I : has_linear_and_thunkable_inverse)
     : linear_and_thunkable_mor b a := pr1 I.
   Definition has_linear_and_thunkable_inverse_is_inverse (I : has_linear_and_thunkable_inverse)
     : is_inverse_in_precat f I := pr2 I.
@@ -118,6 +346,18 @@ Section inverses.
     set (H := proofirrelevance _ isaprop_has_linear_inverse g g').
     do 2 apply base_paths in H.
     apply H.
+  Qed.
+
+  (* If a morphism is intermediate then its inverses are unique. *)
+  Lemma inverse_unique_intermediate
+    (g g' : a <-- b) (H : is_intermediate f)
+    (Hg : is_inverse_in_precat f g)
+    (Hg' : is_inverse_in_precat f g')
+    : g = g'.
+  Proof.
+    refine (!magmoid_id_right _ @ _ @ magmoid_id_left _).
+    now rewrite <- (is_inverse_in_precat2 Hg),
+      <- (is_inverse_in_precat1 Hg'), (assoc_intermediate _ H).
   Qed.
 
 End inverses.
@@ -140,17 +380,10 @@ Lemma isweq_opp_magmoid_has_linear_and_thunkable_inverse {M : unital_magmoid} {a
   : isweq (opp_magmoid_has_linear_and_thunkable_inverse f).
 Proof. opp_magmoid_involution. Defined.
 
-(** ** 2. Composition of inverses when they exist *)
+(** ** 3. Composition of inverses when they exist *)
 
 Section composition.
   Context {M : unital_magmoid}.
-
-  Lemma is_inverse_in_precat_identity_of_magmoid (a : M)
-    : is_inverse_in_precat (identity a) (identity a).
-  Proof.
-    apply make_is_inverse_in_precat.
-    1, 2: apply magmoid_id_left.
-  Qed.
 
   (** Linear or thunkable inverses have identities. *)
 
@@ -269,50 +502,48 @@ Section composition.
         * apply (is_inverse_in_precat2 (has_thunkable_inverse_is_inverse _ g)).
         * apply (is_inverse_in_precat2 (has_thunkable_inverse_is_inverse _ g')).
   Defined.
+
 End composition.
 
-(** ** 3. Linear-and-thunkable isomorphisms [lt_iso] *)
+(** ** 4. Linear-and-thunkable (and other) isomorphisms [lt_iso] *)
 
 Section isos.
   Context {M : unital_magmoid}.
 
   Definition is_lt_iso {a b : M} (f : a --> b) : UU
-    := is_linear_and_thunkable f × has_linear_and_thunkable_inverse f.
+    := is_submm_iso (isw_linear_and_thunkable M) f.
 
   Definition make_is_lt_iso {a b : M} {f : a --> b}
     (H1 : is_linear_and_thunkable f)
     (g : has_linear_and_thunkable_inverse f)
-    := H1,,g.
+    : is_lt_iso f
+    := H1,, g.
 
   Definition make_is_lt_iso' {a b : M} {f : a --> b}
     (Hf : is_linear_and_thunkable f)
     (g : b --> a)
     (Hg : is_linear_and_thunkable g)
     (Hfg : is_inverse_in_precat f g)
+    : is_lt_iso f
     := make_is_lt_iso Hf
          (make_has_linear_and_thunkable_inverse _
             (make_linear_and_thunkable_mor g Hg)
             Hfg).
 
   Definition is_lt_iso_to_is_linear_and_thunkable {a b : M} (f : a --> b) (H : is_lt_iso f)
-    : is_linear_and_thunkable f := pr1 H.
+    : is_linear_and_thunkable f := is_submm_iso_property _ H.
   Coercion is_lt_iso_to_has_linear_and_thunkable_inverse {a b : M} (f : a --> b) (H : is_lt_iso f)
-    : has_linear_and_thunkable_inverse f := pr2 H.
+    : has_linear_and_thunkable_inverse f := is_submm_iso_to_has_submm_inverse _ H.
   Definition isaprop_is_lt_iso {a b : M} (f : a --> b)
     : isaprop (is_lt_iso f).
   Proof.
-    apply isofhleveldirprod.
-    - apply isaprop_is_linear_and_thunkable.
-    - apply isaprop_has_linear_and_thunkable_inverse.
+    apply isapropdirprod.
+    - apply propproperty.
+    - apply (isaprop_has_linear_and_thunkable_inverse f).
   Qed.
 
   Lemma is_lt_iso_identity (a : M) : is_lt_iso (identity a).
-  Proof.
-    use make_is_lt_iso'.
-    2: apply (identity a).
-    1, 2: apply is_linear_and_thunkable_identity.
-    apply is_inverse_in_precat_identity_of_magmoid.
-  Defined.
+  Proof. apply is_submm_iso_identity. Defined.
 
   Lemma is_lt_iso_compose {a b c : M} (f : a --> b) (g : b --> c)
     (Hf : is_lt_iso f) (Hg : is_lt_iso g) : is_lt_iso (f · g).
@@ -325,17 +556,14 @@ Section isos.
         [apply Hf | apply Hg].
   Qed.
 
-  Definition is_lt_iso_to_is_z_isomorphism {a b : M} (f : a --> b) (g : is_lt_iso f) : is_z_isomorphism f.
-  Proof.
-    exists g; cbn.
-    apply has_linear_and_thunkable_inverse_is_inverse.
-  Defined.
+  Definition is_lt_iso_to_is_z_isomorphism {a b : M} (f : a --> b) (g : is_lt_iso f) : is_z_isomorphism f
+    := g : is_submm_iso _ _.
 
-  Definition lt_iso (a b : M) : UU :=
-    ∑ f : a --> b, is_lt_iso f.
+  Definition lt_iso (a b : M) : UU
+    := submm_iso' (isw_linear_and_thunkable M) a b.
   Definition make_lt_iso {a b : M}
     (f : a --> b) (H : is_lt_iso f)
-    : lt_iso a b := f,,H.
+    : lt_iso a b := f,, H.
   Coercion lt_iso_mor {a b : M} (f : lt_iso a b) : a --> b := pr1 f.
   Coercion lt_iso_is_linear_and_thunkable {a b : M} (f : lt_iso a b) : is_linear_and_thunkable f := pr12 f.
   Definition lt_iso_to_lt_mor {a b : M} (f : lt_iso a b)
@@ -364,6 +592,13 @@ Section isos.
     : f = g.
   Proof. apply (subtypePath' H), isaprop_is_lt_iso. Defined.
 
+  Lemma isaset_lt_iso (a b : M)
+    : isaset (lt_iso a b).
+  Proof.
+    apply isaset_submm_iso'.
+    intro; apply isaprop_is_lt_iso.
+  Qed.
+
   Definition lt_iso_inv {a b : M} (f : lt_iso a b) : lt_iso b a.
   Proof.
     use make_lt_iso'.
@@ -376,12 +611,8 @@ Section isos.
     : lt_iso_inv (lt_iso_inv f) = f.
   Proof. apply idpath. Defined.
 
-  Definition lt_iso_identity (a : M) : lt_iso a a.
-  Proof.
-    use make_lt_iso.
-    - apply identity.
-    - apply is_lt_iso_identity.
-  Defined.
+  Definition lt_iso_identity (a : M) : lt_iso a a
+    := submm_iso'_identity _ a.
 
   Definition lt_iso_compose {a b c : M} (f : lt_iso a b) (g : lt_iso b c) : lt_iso a c.
   Proof.
@@ -398,10 +629,129 @@ Section isos.
     apply is_lt_iso_identity.
   Defined.
 
-  Definition id_to_lt_iso {a b : M} (p : a = b) : lt_iso a b.
+  Definition id_to_lt_iso {a b : M} (p : a = b) : lt_iso a b
+    := id_to_submm_iso' _ _ _ p.
+
+  (** Intermediate variant *)
+  Definition is_i_iso {a b : M} (f : a --> b)
+    : UU := is_submm_iso (isw_intermediate M) f.
+  Identity Coercion Id_is_i_iso : is_i_iso >-> is_submm_iso.
+  Lemma isaprop_is_i_iso {a b : M} (f : a --> b) : isaprop (is_i_iso f).
   Proof.
-    induction p.
-    apply lt_iso_identity.
+    apply invproofirrelevance; intros g g'.
+    apply dirprod_paths; [apply proofirrelevance, propproperty|].
+    do 2 apply carrier_eq.
+    apply (inverse_unique_intermediate f).
+    - exact (is_submm_iso_property _ g).
+    - exact g.
+    - exact g'.
+  Qed.
+
+  Definition i_iso (a b : M) : UU := submm_iso (isw_intermediate M) a b.
+  Identity Coercion Id_i_iso : i_iso >-> submm_iso.
+
+  Lemma isaset_i_iso {a b : M} : isaset (i_iso a b).
+  Proof.
+    apply isaset_submm_iso.
+    intro; apply isaprop_is_i_iso.
+  Qed.
+
+  Definition i_iso_eq {a b : M} (f g : i_iso a b)
+    (H : submm_iso_mor _ f = submm_iso_mor _ g)
+    : f = g.
+  Proof.
+    refine (invmaponpathsincl (submm_iso_mor _) _ _ _ H).
+    apply isincl_submm_iso_mor.
+    intro; apply isaprop_is_i_iso.
+  Qed.
+
+  Definition isw_linear_and_thunkable_and_intermediate : wide_submagmoid M
+    := wide_submagmoid_intersection
+         (isw_linear_and_thunkable M)
+         (isw_intermediate M).
+
+  Definition is_lti_iso {a b : M} (f : a --> b)
+    : UU
+    := is_submm_iso isw_linear_and_thunkable_and_intermediate f.
+  Identity Coercion Id_is_lti_iso : is_lti_iso >-> is_submm_iso.
+  Lemma isaprop_is_lti_iso {a b : M} (f : a --> b) : isaprop (is_lti_iso f).
+  Proof.
+    apply invproofirrelevance; intros g g'.
+    apply dirprod_paths; [apply proofirrelevance, propproperty|].
+    do 2 apply carrier_eq.
+    apply (inverse_unique_intermediate f).
+    - exact (pr2 (is_submm_iso_property _ g)).
+    - exact g.
+    - exact g'.
+  Qed.
+
+  Definition lti_iso (a b : M) : UU
+    := submm_iso isw_linear_and_thunkable_and_intermediate a b.
+  Identity Coercion Id_lti_iso : lti_iso >-> submm_iso.
+
+  Coercion lti_iso_to_lt_iso {a b : M} (f : lti_iso a b) : lt_iso a b.
+  Proof.
+    use make_lt_iso'.
+    - apply (make_linear_and_thunkable_mor f).
+      abstract exact (pr1 (submm_iso_property _ f)).
+    - apply (make_linear_and_thunkable_mor (submm_inverse_mor _ f)).
+      abstract exact (pr1 (submm_inverse_property _ f)).
+    - exact f.
+  Defined.
+
+  Definition lti_iso_to_i_iso {a b : M} (f : lti_iso a b) : i_iso a b.
+  Proof.
+    use make_submm_iso_2.
+    - apply (make_carrier _ (submm_iso_mor _ f)).
+      exact (pr2 (submm_iso_property _ f)).
+    - apply (make_carrier _ (submm_inverse_mor _ f)).
+      exact (pr2 (submm_inverse_property _ f)).
+    - exact f.
+  Defined.
+
+  Lemma isaset_lti_iso {a b : M} : isaset (lti_iso a b).
+  Proof.
+    apply isaset_submm_iso.
+    intro; apply isaprop_is_lti_iso.
+  Qed.
+
+  Definition lti_iso_eq {a b : M} (f g : lti_iso a b)
+    (H : submm_iso_mor _ f = submm_iso_mor _ g)
+    : f = g.
+  Proof.
+    refine (invmaponpathsincl (submm_iso_mor _) _ _ _ H).
+    apply isincl_submm_iso_mor.
+    intro; apply isaprop_is_lti_iso.
+  Qed.
+
+  Corollary isincl_lti_iso_to_lt_iso (a b : M)
+    : isincl (@lti_iso_to_lt_iso a b).
+  Proof.
+    apply isinclbetweensets.
+    - apply isaset_lti_iso.
+    - apply isaset_lt_iso.
+    - intros f g H.
+      apply lti_iso_eq.
+      apply base_paths in H.
+      exact H.
+  Qed.
+
+  Definition lti_iso_from_intermediate_lt_iso {a b : M}
+    (f : lt_iso a b)
+    (Hf : is_intermediate f)
+    (Hfinv : is_intermediate (lt_iso_inverse f))
+    : lti_iso a b.
+  Proof.
+    use make_submm_iso_2.
+    - exists f.
+      split.
+      + apply lt_iso_is_linear_and_thunkable.
+      + exact Hf.
+    - exists (lt_iso_inverse f).
+      split.
+      + apply linear_and_thunkable_mor_is_linear_and_thunkable.
+      + exact Hfinv.
+    - exact (has_linear_and_thunkable_inverse_is_inverse f (lt_iso_is_lt_iso f)).
   Defined.
 
 End isos.
@@ -434,7 +784,7 @@ Lemma isweq_opp_magmoid_lt_iso {M : unital_magmoid} (a b : M)
   : isweq (opp_magmoid_lt_iso a b).
 Proof. opp_magmoid_involution. Defined.
 
-(** ** 4. Lemmas about linear-and-thunkable isomorphisms *)
+(** ** 5. Lemmas about isomorphisms *)
 
 Section isos_facts.
   Context {M : unital_magmoid}.
@@ -473,7 +823,7 @@ Section isos_facts.
     (p : lt_iso b a) (f : b --> c)
     : p · (lt_iso_inverse p · f) = f.
   Proof.
-    change ((lt_iso_inv (lt_iso_inv p)) · (lt_iso_inverse (lt_iso_inv (lt_iso_inv p)) · f) = f).
+    change (lt_iso_inverse (lt_iso_inv p) · (lt_iso_inverse (lt_iso_inv (lt_iso_inv p)) · f) = f).
     apply lt_iso_left.
   Qed.
 
@@ -481,7 +831,7 @@ Section isos_facts.
     (p : lt_iso b a) (f : b <-- c)
     : (f · p) · lt_iso_inverse p = f.
   Proof.
-    change ((f · (lt_iso_inv (lt_iso_inv p))) · lt_iso_inverse (lt_iso_inv (lt_iso_inv p)) = f).
+    change ((f · (lt_iso_inverse (lt_iso_inv p))) · lt_iso_inverse (lt_iso_inv (lt_iso_inv p)) = f).
     apply lt_iso_inverse_right.
   Qed.
 
@@ -503,24 +853,51 @@ Section isos_facts.
     refine (!lt_iso_right _ _ @ H @ lt_iso_right _ _).
   Qed.
 
-  (** Any [z_iso] can be "interposed", putting it in the middle, so long as it is an
-      intermediate morphism. *)
+  (** Any [i_iso] can be "interposed", putting it in the middle. *)
 
-  Lemma intermediate_z_iso_interpose {a b b' c : M}
-    (p : z_iso b b') (f : a --> b) (g : b --> c)
-    (Hp : is_intermediate p) (Hpinv : is_intermediate (inv_from_z_iso p))
-    : (f · p) · (inv_from_z_iso p · g) = f · g.
+  Lemma i_iso_interpose {a b b' c : M}
+    (p : i_iso b b') (f : a --> b) (g : b --> c)
+    : (f · p) · (submm_inverse_mor _ p · g) = f · g.
   Proof.
-    rewrite (assoc'_intermediate _ Hp), (assoc_intermediate _ Hpinv).
+    rewrite (assoc'_intermediate _ (submm_iso_property _ p)).
+    rewrite (assoc_intermediate _ (submm_inverse_property _ p)).
     now rewrite (is_inverse_in_precat1 p), magmoid_id_left.
   Qed.
 
-  Lemma intermediate_z_iso_inv_interpose {a b b' c : M}
-    (p : z_iso b' b) (f : a --> b) (g : b --> c)
-    (Hp : is_intermediate p) (Hpinv : is_intermediate (inv_from_z_iso p))
-    : (f · inv_from_z_iso p) · (p · g) = f · g.
+  Lemma is_intermediate_from_interpose {b b' : M}
+    (p : b --> b')
+    (pinv : has_thunkable_inverse p)
+    (Hp : ∏ (a c : M) (f : a --> b) (g : b --> c),
+        (f · p) · (pinv · g) = f · g)
+    : is_intermediate p.
   Proof.
-    apply (intermediate_z_iso_interpose (z_iso_inv p)); assumption.
+    intros a c f g.
+    intermediate_path ((f · p) · (pinv · (p · g))). {
+      apply pathsinv0, Hp.
+    }
+    rewrite (assoc_thunkable _ pinv).
+    rewrite (is_inverse_in_precat1
+               (has_thunkable_inverse_is_inverse
+                  p pinv)).
+    now rewrite magmoid_id_left.
+  Qed.
+
+  Lemma lt_iso_i_from_interpose {b b' : M}
+    (p : lt_iso b b')
+    (Hp : ∏ (a c : M) (f : a --> b) (g : b --> c),
+        (f · p) · (lt_iso_inverse p · g) = f · g)
+    : is_i_iso p.
+  Proof.
+    simple refine (_,,((_,,_),,_,,_)).
+    - apply (is_intermediate_from_interpose p (lt_iso_is_lt_iso p)).
+      apply Hp.
+    - exact (lt_iso_inverse p).
+    - apply (is_intermediate_from_interpose _ (lt_iso_is_lt_iso (lt_iso_inv p))).
+      intros a c f g.
+      etrans; [apply pathsinv0, Hp|]; cbn.
+      now rewrite lt_iso_inverse_right, lt_iso_left.
+    - apply lt_iso_lt_iso_inverse_id.
+    - apply lt_iso_inverse_lt_iso_id.
   Qed.
 
   Lemma is_intermediate_idtomor {a b : M} (p : a = b) : is_intermediate (idtomor _ _ p).
@@ -560,5 +937,59 @@ Section isos_facts.
 
   Definition lt_iso_to_iso {a b : M} (p : lt_iso a b) : iso a b
     := make_iso p (is_iso_of_lt_iso p).
+
+  (** If anything is polarized, [lt_iso]s and [lti_iso]s merge. *)
+  Lemma lt_iso_is_intermediate_from_polarized
+    {a b : M}
+    (p : lt_iso a b)
+    (H : is_negative a ∨ is_positive a)
+    : is_intermediate p.
+  Proof.
+    isaprop_goal Hprop; [apply isaprop_is_intermediate|].
+    apply (squash_to_prop H Hprop).
+    clear H; intro H; induction H as [Hnegative | Hpositive].
+    - apply is_intermediate_of_negative, Hnegative.
+    - apply is_intermediate_of_positive.
+      apply (is_positive_of_lt_iso p Hpositive).
+  Qed.
+
+  Lemma transport_polarized_across_lt_iso {a b : M}
+    (p : lt_iso a b)
+    (H : is_negative a ∨ is_positive a)
+    : is_negative b ∨ is_positive b.
+  Proof.
+    revert H; apply hinhfun; intro H.
+    induction H as [Hnegative | Hpositive].
+    - apply ii1, (is_negative_of_lt_iso p Hnegative).
+    - apply ii2, (is_positive_of_lt_iso p Hpositive).
+  Qed.
+
+  Lemma lt_iso_is_intermediate_from_polarized'
+    {a b : M}
+    (p : lt_iso a b)
+    (H : is_negative b ∨ is_positive b)
+    : is_intermediate p.
+  Proof.
+    apply lt_iso_is_intermediate_from_polarized.
+    apply (transport_polarized_across_lt_iso (lt_iso_inv p) H).
+  Qed.
+
+  Lemma isweq_lti_iso_to_lt_iso_from_polarized (a b : M)
+    (H : is_negative a ∨ is_positive a)
+    : isweq (@lti_iso_to_lt_iso M a b).
+  Proof.
+    apply (isweqinclandsurj _ (isincl_lti_iso_to_lt_iso _ _)).
+    intro f; apply hinhpr.
+    use make_hfiber.
+    - apply (lti_iso_from_intermediate_lt_iso f).
+      + apply lt_iso_is_intermediate_from_polarized, H.
+      + apply (lt_iso_is_intermediate_from_polarized' (lt_iso_inv f)), H.
+    - now apply lt_iso_eq.
+  Defined.
+
+  Definition weq_lti_iso_to_lt_iso_from_polarized (a b : M)
+    (H : is_negative a ∨ is_positive a)
+    : lti_iso a b ≃ lt_iso a b
+    := make_weq _ (isweq_lti_iso_to_lt_iso_from_polarized _ _ H).
 
 End isos_facts.
