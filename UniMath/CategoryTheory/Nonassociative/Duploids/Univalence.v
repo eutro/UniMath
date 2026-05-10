@@ -30,6 +30,7 @@ Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Subcategorie
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Functors.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Functors.
+Require Import UniMath.CategoryTheory.Nonassociative.Duploids.TwoSorted.
 
 Local Open Scope cat.
 Local Open Scope unital_magmoid.
@@ -38,7 +39,7 @@ Local Open Scope duploid.
 (** ** 1. Definition of Univalence for Duploids *)
 Section univalence_def.
   Definition is_duploid_univalent (M : unital_magmoid)
-    := ∏ (a b: M), isweq (λ (p : a = b), id_to_lt_iso p).
+    := ∏ (a b : M), isweq (λ (p : a = b), id_to_lt_iso p).
 
   Definition lt_iso_to_id {M : unital_magmoid}
     (ua : is_duploid_univalent M) {a b : M}
@@ -93,6 +94,9 @@ Section univalence_def.
     rewrite <- id_to_lt_iso_postcompose.
     now rewrite id_to_lt_iso_after_lt_iso_to_id.
   Qed.
+
+  Definition is_split_duploid_univalent (D : split_preduploid)
+    := is_univalent D⁺ᶜₜ × is_univalent D⁻ᶜₗ.
 
 End univalence_def.
 

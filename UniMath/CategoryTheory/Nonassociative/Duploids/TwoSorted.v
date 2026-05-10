@@ -118,8 +118,8 @@ Section split_defs.
   Proof.
     use make_polarity_mapping.
     - intro a; induction (mapping a).
-      + exact true.
-      + exact false.
+      + exact ⊕.
+      + exact ⊖.
     - abstract (intro a; induction (mapping a); assumption).
   Defined.
 

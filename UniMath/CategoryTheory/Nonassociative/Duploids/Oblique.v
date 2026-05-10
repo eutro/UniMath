@@ -9,6 +9,7 @@
  1. Definition and proofs of oblique morphisms
  2. Definition of the oblique duploid
  3. Lemmas about the oblique duploid
+ 4. Univalence of the oblique duploid
 
  ********************************************************************************)
 
@@ -20,7 +21,10 @@ Require Import UniMath.CategoryTheory.Core.Categories.
 Require Import UniMath.CategoryTheory.Core.Functors.
 Require Import UniMath.CategoryTheory.Core.Isos.
 Require Import UniMath.CategoryTheory.Core.NaturalTransformations.
+Require Import UniMath.CategoryTheory.Core.Univalence.
 Require Import UniMath.CategoryTheory.Subcategory.Core.
+Require Import UniMath.CategoryTheory.Equivalences.Core.
+Require Import UniMath.CategoryTheory.catiso.
 Require Import UniMath.CategoryTheory.whiskering.
 
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Core.
@@ -467,6 +471,8 @@ Section oblique_defs.
       apply is_negative_oblique_positive_iff_pre_fixed_point, H.
   Qed.
 
+  (** ** Univalence of the oblique duploid *)
+
   Lemma neg_is_univalent_oblique_from_positive_and_negative
     (a : oblique_duploid) (Hpositive : is_positive a) (Hnegative : is_negative a)
     : ¬is_duploid_univalent oblique_duploid.
@@ -501,6 +507,282 @@ Section oblique_defs.
     - exact (oblique_negative n).
     - now apply is_positive_oblique_negative_iff_pre_fixed_point.
     - apply oblique_negative_is_negative.
+  Qed.
+
+  Local Lemma isweq_iscontrweqf {X Y : UU} (w : X ≃ Y) : isweq (iscontrweqf w).
+  Proof.
+    use isweq_iso.
+    - apply (iscontrweqb w).
+    - intro; apply isapropiscontr.
+    - intro; apply isapropiscontr.
+  Defined.
+
+  Local Definition weq_iscontrweqf {X Y : UU} (w : X ≃ Y) : iscontr X ≃ iscontr Y
+    := make_weq _ (isweq_iscontrweqf w).
+
+  (** Positive inclusion *)
+  Definition oblique_chosen_positive_ob_weq
+    : ob P ≃ ob oblique_split_duploid⁺ᶜₜ.
+  Proof.
+    use weq_iso.
+    - intro p.
+      exists (oblique_positive p,, oblique_positive_is_positive p).
+      reflexivity.
+    - intros [[a Ha₀] Ha].
+      induction a as [n | p].
+      1: apply fromempty, nopathsfalsetotrue, Ha.
+      exact p.
+    - easy.
+    - abstract (
+          intros [[a Ha₀] Ha];
+          do 2 apply carrier_eq;
+          induction a as [n | p];
+          [apply fromempty, nopathsfalsetotrue, Ha | reflexivity]).
+  Defined.
+
+  Lemma positive_to_oblique_duploid : P ⟶ oblique_split_duploid⁺ᶜₜ.
+  Proof.
+    use make_functor.
+    1: use make_functor_data.
+    - intro p.
+      exact (oblique_chosen_positive_ob_weq p).
+    - intros p q f.
+      refine ((_,,tt),,tt).
+      use make_thunkable_mor; [use make_oblique_mor_negative|].
+      all: cbn.
+      + exact (#L f).
+      + exact (f · η q).
+      + abstract (
+            rewrite <- (id_right (#L f)), φ_adj_natural_precomp;
+            now rewrite φ_adj_identity).
+      + abstract (
+            apply (is_thunkable_of_delay_wrap (D:=oblique_duploid));
+            apply oblique_mor_negative_path; cbn;
+            rewrite functor_id, !id_right;
+            apply pathsinv0, functor_comp).
+    - abstract (
+          apply make_is_functor;
+          [intros p | intros p q r f g]; cbn;
+          do 3 apply carrier_eq;
+          apply oblique_mor_negative_path;
+          [apply functor_id | apply functor_comp]).
+  Defined.
+
+  Lemma split_essentially_surjective_positive_to_oblique_duploid
+    : split_essentially_surjective positive_to_oblique_duploid.
+  Proof.
+    intro a.
+    exists (invweq oblique_chosen_positive_ob_weq a).
+    apply idtoiso, homotweqinvweq.
+  Defined.
+
+  Lemma isweq_on_objects_positive_to_oblique_duploid
+    : isweq (functor_on_objects positive_to_oblique_duploid).
+  Proof. apply weqproperty. Defined.
+
+  Lemma fully_faithful_iff_positive_equalizing_positive_to_oblique_duploid
+    : is_positive_equalizing θ
+      <-> fully_faithful positive_to_oblique_duploid.
+  Proof.
+    apply weq_to_iff.
+    apply weqonsecfibers; intro p.
+    apply weqonsecfibers; intro q.
+    eapply weqcomp.
+    2: {
+      apply invweq.
+      eapply weqcomp. {
+        unshelve apply (weqonsecbase (X:=thunkable_mor (oblique_positive p) (oblique_positive q))).
+        apply invweq.
+        eapply weqcomp; [apply weqtotalsubtype|].
+        apply weqtotalsubtype.
+      }
+      apply weqsecovertotal2.
+    }
+    eapply weqcomp. {
+      unshelve apply (weqonsecbase (X:=oblique_mor θ p (L q))).
+      apply (make_weq _ (isweq_oblique_mor_positive θ _ _)).
+    }
+    apply (weqonsecfibers (X:=oblique_positive p --> oblique_positive q)); intro f.
+    eapply weqcomp. {
+      unshelve apply (weqonsecbase (X:=ish_thunkable f)).
+      apply invweq, weqiff.
+      - apply (is_thunkable_iff_oblique_unit_postcompose f).
+      - apply homset_property.
+      - apply propproperty.
+    }
+    apply weqonsecfibers; intro Hf.
+    apply weq_iscontrweqf.
+    use weqbandf; [apply idweq|].
+    intro f'; cbn beta.
+    apply invweq.
+    do 2 (eapply weqcomp; [apply subtypeInjectivity; intro; apply isapropunit|]).
+    eapply weqcomp; [apply subtypeInjectivity; intro; apply propproperty|].
+    apply oblique_mor_positive_path_weq.
+  Qed.
+
+  Lemma adj_equiv_of_cats_iff_positive_equalizing_positive_to_oblique_duploid
+    : is_positive_equalizing θ
+        <-> adj_equivalence_of_cats positive_to_oblique_duploid.
+  Proof.
+    split; intro H.
+    - apply rad_equivalence_of_cats'.
+      + apply fully_faithful_iff_positive_equalizing_positive_to_oblique_duploid, H.
+      + apply split_essentially_surjective_positive_to_oblique_duploid.
+    - apply fully_faithful_iff_positive_equalizing_positive_to_oblique_duploid.
+      apply FullyFaithful.fully_faithful_from_equivalence, H.
+  Qed.
+
+  Lemma is_catiso_positive_to_oblique_duploid
+    (Heq : is_positive_equalizing θ)
+    : is_catiso positive_to_oblique_duploid.
+  Proof.
+    split.
+    - apply fully_faithful_iff_positive_equalizing_positive_to_oblique_duploid, Heq.
+    - apply isweq_on_objects_positive_to_oblique_duploid.
+  Defined.
+
+  Definition positive_eq_oblique_duploid_positive_linear
+    (Heq : is_positive_equalizing θ)
+    : P = oblique_split_duploid ⁺ᶜₜ
+    := catiso_to_category_path (_,, is_catiso_positive_to_oblique_duploid Heq).
+
+  (** Negative inclusion *)
+  Definition oblique_chosen_negative_ob_weq
+    : ob N ≃ ob oblique_split_duploid⁻ᶜₗ.
+  Proof.
+    use weq_iso.
+    - intro n.
+      exists (oblique_negative n,, oblique_negative_is_negative n).
+      reflexivity.
+    - intros [[a Ha₀] Ha].
+      induction a as [n | p].
+      2: apply fromempty, nopathstruetofalse, Ha.
+      exact n.
+    - easy.
+    - abstract (
+          intros [[a Ha₀] Ha];
+          do 2 apply carrier_eq;
+          induction a as [n | p];
+          [reflexivity | apply fromempty, nopathstruetofalse, Ha]).
+  Defined.
+
+  Lemma negative_to_oblique_duploid : N ⟶ oblique_split_duploid⁻ᶜₗ.
+  Proof.
+    use make_functor.
+    1: use make_functor_data.
+    - intro n.
+      exact (oblique_chosen_negative_ob_weq n).
+    - intros n m f.
+      refine ((_,,tt),,tt).
+      use make_linear_mor; [use make_oblique_mor_positive|].
+      all: cbn.
+      + exact (ε n · f).
+      + exact (#R f).
+      + abstract (
+            rewrite <- (id_left (#R f)), φ_adj_inv_natural_postcomp;
+            now rewrite φ_adj_inv_identity).
+      + abstract (apply (is_linear_of_force_unwrap (D:=oblique_duploid));
+                  apply oblique_mor_positive_path; cbn;
+                  rewrite functor_id, !id_left;
+                  apply pathsinv0, functor_comp).
+    - abstract (
+          apply make_is_functor;
+          [intros n | intros n m r f g]; cbn;
+          do 3 apply carrier_eq;
+          apply oblique_mor_positive_path;
+          [apply functor_id | apply functor_comp]).
+  Defined.
+
+  Lemma split_essentially_surjective_negative_to_oblique_duploid
+    : split_essentially_surjective negative_to_oblique_duploid.
+  Proof.
+    intro a.
+    exists (invweq oblique_chosen_negative_ob_weq a).
+    apply idtoiso, homotweqinvweq.
+  Defined.
+
+  Lemma isweq_on_objects_negative_to_oblique_duploid
+    : isweq (functor_on_objects negative_to_oblique_duploid).
+  Proof. apply weqproperty. Defined.
+
+  Lemma fully_faithful_iff_negative_equalizing_negative_to_oblique_duploid
+    : is_negative_equalizing θ
+      <-> fully_faithful negative_to_oblique_duploid.
+  Proof.
+    apply weq_to_iff.
+    apply weqonsecfibers; intro n.
+    apply weqonsecfibers; intro m.
+    eapply weqcomp.
+    2: {
+      apply invweq.
+      eapply weqcomp. {
+        unshelve apply (weqonsecbase (X:=linear_mor (oblique_negative n) (oblique_negative m))).
+        apply invweq.
+        eapply weqcomp; [apply weqtotalsubtype|].
+        apply weqtotalsubtype.
+      }
+      apply weqsecovertotal2.
+    }
+    eapply weqcomp. {
+      unshelve apply (weqonsecbase (X:=oblique_mor θ (R n) m)).
+      apply (make_weq _ (isweq_oblique_mor_negative θ _ _)).
+    }
+    apply (weqonsecfibers (X:=oblique_negative n --> oblique_negative m)); intro f.
+    eapply weqcomp. {
+      unshelve apply (weqonsecbase (X:=ish_linear f)).
+      apply invweq, weqiff.
+      - apply (is_linear_iff_oblique_counit_precompose f).
+      - apply homset_property.
+      - apply propproperty.
+    }
+    apply weqonsecfibers; intro Hf.
+    apply weq_iscontrweqf.
+    use weqbandf; [apply idweq|].
+    intro f'; cbn beta.
+    apply invweq.
+    do 2 (eapply weqcomp; [apply subtypeInjectivity; intro; apply isapropunit|]).
+    eapply weqcomp; [apply subtypeInjectivity; intro; apply propproperty|].
+    apply oblique_mor_negative_path_weq.
+  Qed.
+
+  Lemma adj_equiv_of_cats_iff_negative_equalizing_negative_to_oblique_duploid
+    : is_negative_equalizing θ
+        <-> adj_equivalence_of_cats negative_to_oblique_duploid.
+  Proof.
+    split; intro H.
+    - apply rad_equivalence_of_cats'.
+      + apply fully_faithful_iff_negative_equalizing_negative_to_oblique_duploid, H.
+      + apply split_essentially_surjective_negative_to_oblique_duploid.
+    - apply fully_faithful_iff_negative_equalizing_negative_to_oblique_duploid.
+      apply FullyFaithful.fully_faithful_from_equivalence, H.
+  Qed.
+
+  Lemma is_catiso_negative_to_oblique_duploid
+    (Heq : is_negative_equalizing θ)
+    : is_catiso negative_to_oblique_duploid.
+  Proof.
+    split.
+    - apply fully_faithful_iff_negative_equalizing_negative_to_oblique_duploid, Heq.
+    - apply isweq_on_objects_negative_to_oblique_duploid.
+  Defined.
+
+  Definition negative_eq_oblique_duploid_negative_thunkable
+    (Heq : is_negative_equalizing θ)
+    : N = oblique_split_duploid ⁻ᶜₗ
+    := catiso_to_category_path (_,, is_catiso_negative_to_oblique_duploid Heq).
+
+  (** Split univalence *)
+  Lemma is_univalent_split_oblique_duploid
+    (Heq : is_fully_equalizing θ)
+    (Hpositive : is_univalent P)
+    (Hnegative : is_univalent N)
+    : is_split_duploid_univalent oblique_split_duploid.
+  Proof.
+    split; eapply (transportf is_univalent).
+    - apply positive_eq_oblique_duploid_positive_linear, Heq.
+    - assumption.
+    - apply negative_eq_oblique_duploid_negative_thunkable, Heq.
+    - assumption.
   Qed.
 
 End oblique_defs.
