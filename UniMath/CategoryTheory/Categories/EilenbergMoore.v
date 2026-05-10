@@ -16,6 +16,7 @@
  4.1 The cone
  4.2 The universal property for functors
  4.3 The universal property for natural transformations
+ 5. The free–forgetful adjunction
 
  ******************************************************************************)
 Require Import UniMath.Foundations.All.
@@ -29,6 +30,8 @@ Require Import UniMath.CategoryTheory.Categories.Dialgebras.
 Require Import UniMath.CategoryTheory.Subcategory.Core.
 Require Import UniMath.CategoryTheory.Subcategory.Full.
 Require Import UniMath.CategoryTheory.Monads.Monads.
+Require Import UniMath.CategoryTheory.Adjunctions.Core.
+Require Import UniMath.CategoryTheory.whiskering.
 
 Local Open Scope cat.
 
@@ -315,3 +318,64 @@ Proof.
        use eq_mor_eilenberg_moore ; cbn ;
        exact (nat_trans_ax α _ _ f)).
 Defined.
+
+(**
+ 5. The free–forgetful adjunction
+ *)
+Definition eilenberg_moore_free
+  {C : category} (m : Monad C)
+  : C ⟶ eilenberg_moore_cat m
+  := functor_to_eilenberg_moore_cat
+       m m (μ m) Monad_law1 Monad_law3.
+
+Lemma eilenberg_moore_free_and_pr_adjunction_data
+  {C : category} (m : Monad C)
+  : adjunction_data C (eilenberg_moore_cat m).
+Proof.
+  exists (eilenberg_moore_free m).
+  exists (eilenberg_moore_pr m).
+  split.
+  - exact (η m).
+  - use nat_trans_to_eilenberg_moore_cat.
+    + exact (nat_trans_comp _ _ _
+               (pre_whisker (eilenberg_moore_pr m)
+                  (functor_to_eilenberg_moore_cat_pr_nat_z_iso
+                     m m (μ m) Monad_law1 Monad_law3))
+               (eilenberg_moore_nat_trans m)).
+    + abstract (intro x; cbn;
+                rewrite !id_left;
+                exact (eilenberg_moore_ob_mult x)).
+Defined.
+
+Lemma eilenberg_moore_free_and_pr_form_adjunction
+  {C : category} (m : Monad C)
+  : form_adjunction' (eilenberg_moore_free_and_pr_adjunction_data m).
+Proof.
+  split.
+  - intro a; apply eq_mor_eilenberg_moore; cbn.
+    rewrite id_left.
+    apply Monad_law2.
+  - intro x; cbn.
+    rewrite id_left.
+    exact (eilenberg_moore_ob_unit x).
+Qed.
+
+Definition are_adjoints_eilenberg_moore_free_and_pr
+  {C : category} (m : Monad C)
+  : are_adjoints (eilenberg_moore_free m) (eilenberg_moore_pr m)
+  := make_are_adjoints _ _ _ _
+       (eilenberg_moore_free_and_pr_form_adjunction m).
+
+Definition is_right_adjoint_eilenberg_moore_pr
+  {C : category}
+  (m : Monad C)
+  : is_right_adjoint (eilenberg_moore_pr m)
+  := are_adjoints_to_is_right_adjoint _ _
+       (are_adjoints_eilenberg_moore_free_and_pr m).
+
+Definition is_left_adjoint_eilenberg_moore_free
+  {C : category}
+  (m : Monad C)
+  : is_left_adjoint (eilenberg_moore_free m)
+  := are_adjoints_to_is_left_adjoint _ _
+       (are_adjoints_eilenberg_moore_free_and_pr m).
