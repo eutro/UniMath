@@ -31,6 +31,7 @@ Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Functors.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Functors.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.TwoSorted.
+Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Isos.
 
 Local Open Scope cat.
 Local Open Scope unital_magmoid.
@@ -334,6 +335,25 @@ Section characterizations.
   Remark duploid_rxgraph_univalent_eq (D : preduploid)
     : is_duploid_univalent D = is_rxgraph_univalent (duploid_to_rxgraph D).
   Proof. reflexivity. Defined.
+
+  Definition iso_duploid_rxgraph_unital_magmoid_rxgraph (D : preduploid)
+    : rxgraph_iso (unital_magmoid_to_rxgraph D) (duploid_to_rxgraph D).
+  Proof.
+    use make_rxgraph_iso; [use make_pregraph_iso|].
+    - exact (idweq D).
+    - apply weq_lti_iso_to_lt_iso_in_preduploid.
+    - intro a; now apply lt_iso_eq.
+  Defined.
+
+  Corollary unital_magmoid_univalent_iff_duploid_univalent (D : preduploid)
+    : is_unital_magmoid_univalent D <-> is_duploid_univalent D.
+  Proof.
+    change (is_rxgraph_univalent (unital_magmoid_to_rxgraph D)
+            <-> is_rxgraph_univalent (duploid_to_rxgraph D)).
+    split; intro H.
+    - exact (rxgraph_univalent_from_iso_f _ H (iso_duploid_rxgraph_unital_magmoid_rxgraph D)).
+    - exact (rxgraph_univalent_from_iso_b _ H (iso_duploid_rxgraph_unital_magmoid_rxgraph D)).
+  Qed.
 
   Lemma weak_duploid_equivalence_to_split {D D' : preduploid}
     (ua : is_duploid_univalent D)

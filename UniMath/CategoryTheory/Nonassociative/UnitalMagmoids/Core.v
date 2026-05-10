@@ -358,6 +358,94 @@ End polarity_lemmas.
 
 (** ** 5. Bundled linear/thunkable morphisms and polarized objects *)
 
+Section submagmoids.
+  Context {M : unital_premagmoid_data}.
+
+  Definition is_wide_submagmoid (H : ∏ (a b : M), hsubtype (a --> b)) : hProp :=
+    ((∀ (a : M), H _ _ (identity a)) ∧
+       (∀ (a b c : M) (f : a --> b) (g : b --> c),
+           H _ _ f ⇒ H _ _ g ⇒ H _ _ (f · g)))%logic.
+
+  Definition make_is_wide_submagmoid (H : ∏ (a b : M), hsubtype (a --> b))
+    (Hid : ∏ (a : M), H _ _ (identity a))
+    (Hcomp : ∏ (a b c : M) (f : a --> b) (g : b --> c), H _ _ f -> H _ _ g -> H _ _ (f · g))
+    : is_wide_submagmoid H
+    := make_dirprod Hid Hcomp.
+
+  Definition wide_submagmoid := total2 is_wide_submagmoid.
+  Definition wide_submagmoid_to_hsubtype (P : wide_submagmoid)
+    : ∏ (a b : M), hsubtype (a --> b) := pr1 P.
+  Coercion wide_submagmoid_to_hsubtype : wide_submagmoid >-> Funclass.
+  Definition wide_submagmoid_is_wide_submagmoid (P : wide_submagmoid)
+    : is_wide_submagmoid P := pr2 P.
+
+  Definition make_wide_submagmoid
+    (H : ∏ (a b : M), hsubtype (a --> b))
+    (His : is_wide_submagmoid H)
+    : wide_submagmoid
+    := H,, His.
+
+  Definition make_wide_submagmoid'
+    (H : ∏ (a b : M), hsubtype (a --> b))
+    (Hid : ∏ (a : M), H _ _ (identity a))
+    (Hcomp : ∏ (a b c : M) (f : a --> b) (g : b --> c), H _ _ f -> H _ _ g -> H _ _ (f · g))
+    : wide_submagmoid
+    := make_wide_submagmoid H
+         (make_is_wide_submagmoid H Hid Hcomp).
+
+  Definition wide_submagmoid_identity_holds (P : wide_submagmoid) (a : M)
+    : P a a (identity a)
+    := pr1 (wide_submagmoid_is_wide_submagmoid P) a.
+  Definition wide_submagmoid_compose_holds (P : wide_submagmoid)
+    {a b c : M} (f : a --> b) (g : b --> c)
+    (Hf : P a b f) (Hg : P b c g)
+    : P a c (f · g)
+    := pr2 (wide_submagmoid_is_wide_submagmoid P) a b c f g Hf Hg.
+
+  Lemma wide_submagmoid_carrier_isaset' (hs : has_homsets M)
+    (P : wide_submagmoid) (a b : M) : isaset (P a b).
+  Proof.
+    apply isaset_total2.
+    - apply hs.
+    - intro f; apply isasetaprop, propproperty.
+  Qed.
+
+  Definition wide_submagmoid_identity (P : wide_submagmoid) (a : M)
+    : P a a
+    := make_carrier _ _ (wide_submagmoid_identity_holds P a).
+  Definition wide_submagmoid_compose (P : wide_submagmoid)
+    {a b c : M} (f : P a b) (g : P b c)
+    : P a c
+    := make_carrier _ _
+         (wide_submagmoid_compose_holds P (pr1carrier _ f) (pr1carrier _ g)
+            (pr2 f) (pr2 g)).
+
+  Definition is_wide_submagmoid_intersection
+    (P Q : wide_submagmoid)
+    : is_wide_submagmoid (λ a b f, P a b f ∧ Q a b f).
+  Proof.
+    use make_is_wide_submagmoid.
+    - intro a; split; apply wide_submagmoid_identity_holds.
+    - intros a b c f g Hf Hg.
+      induction Hf, Hg.
+      split; now apply wide_submagmoid_compose_holds.
+  Qed.
+
+  Definition wide_submagmoid_intersection
+    (P Q : wide_submagmoid)
+    : wide_submagmoid
+    := make_wide_submagmoid _ (is_wide_submagmoid_intersection P Q).
+
+End submagmoids.
+Arguments wide_submagmoid _ : clear implicits.
+
+Lemma wide_submagmoid_carrier_isaset {M : unital_magmoid}
+  (P : wide_submagmoid M) (a b : M) : isaset (P a b).
+Proof.
+  apply wide_submagmoid_carrier_isaset'.
+  apply unital_magmoid_has_homsets.
+Qed.
+
 Section polarized_subtypes.
   Context {M : unital_magmoid}.
   Let hs : has_homsets M := unital_magmoid_has_homsets M.
@@ -367,48 +455,47 @@ Section polarized_subtypes.
   Proof. apply isaprop_is_linear', hs. Defined.
   Definition ish_linear {a b : M} (f : a --> b) : hProp
     := make_hProp (is_linear f) (isaprop_is_linear f).
+  Definition isw_linear : wide_submagmoid M
+    := make_wide_submagmoid' (@ish_linear) is_linear_identity (@is_linear_compose M).
 
-  Definition linear_mor (a b : M) := ∑ (f : a --> b), ish_linear f.
+  Definition linear_mor (a b : M) : UU := isw_linear a b.
   Definition make_linear_mor {a b : M} (f : a --> b) (H : is_linear f) : linear_mor a b := f,,H.
   Coercion linear_mor_to_mor {a b : M} (f : linear_mor a b) : a --> b := pr1 f.
   Coercion linear_mor_is_linear {a b : M} (f : linear_mor a b) : is_linear f := pr2 f.
-  Definition isaset_linear_mor {a b : M} : isaset (linear_mor a b).
-  Proof.
-    apply isaset_total2.
-    - apply hs.
-    - intro x. apply isasetaprop, propproperty.
-  Qed.
+  Definition isaset_linear_mor {a b : M} : isaset (linear_mor a b)
+    := wide_submagmoid_carrier_isaset _ a b.
   Definition linear_identity (a : M)
-    : linear_mor a a := make_linear_mor (identity a) (is_linear_identity a).
+    : linear_mor a a := wide_submagmoid_identity _ a.
   Definition linear_compose {a b c : M} (f : linear_mor a b) (g : linear_mor b c)
-    : linear_mor a c := make_linear_mor (f · g) (is_linear_compose f g f g).
+    : linear_mor a c := wide_submagmoid_compose _ f g.
 
   (** Thunkable morphisms *)
   Definition isaprop_is_thunkable {a b : M} (f : a --> b) : isaprop (is_thunkable f).
   Proof. apply isaprop_is_thunkable', hs. Defined.
   Definition ish_thunkable {a b : M} (f : a --> b) : hProp
     := make_hProp (is_thunkable f) (isaprop_is_thunkable f).
+  Definition isw_thunkable : wide_submagmoid M
+    := make_wide_submagmoid' (@ish_thunkable) is_thunkable_identity (@is_thunkable_compose M).
 
-  Definition thunkable_mor (a b : M) := ∑ (f : a --> b), ish_thunkable f.
+  Definition thunkable_mor (a b : M) : UU := isw_thunkable a b.
   Definition make_thunkable_mor {a b : M} (f : a --> b) (H : is_thunkable f) : thunkable_mor a b := f,,H.
   Coercion thunkable_mor_to_mor {a b : M} (f : thunkable_mor a b) : a --> b := pr1 f.
   Coercion thunkable_mor_is_thunkable {a b : M} (f : thunkable_mor a b) : is_thunkable f := pr2 f.
-  Definition isaset_thunkable_mor {a b : M} : isaset (thunkable_mor a b).
-  Proof.
-    apply isaset_total2.
-    - apply hs.
-    - intro x. apply isasetaprop, propproperty.
-  Qed.
+  Definition isaset_thunkable_mor {a b : M} : isaset (thunkable_mor a b)
+    := wide_submagmoid_carrier_isaset _ a b.
   Definition thunkable_identity (a : M)
-    : thunkable_mor a a := make_thunkable_mor (identity a) (is_thunkable_identity a).
+    : thunkable_mor a a := wide_submagmoid_identity _ a.
   Definition thunkable_compose {a b c : M} (f : thunkable_mor a b) (g : thunkable_mor b c)
-    : thunkable_mor a c := make_thunkable_mor (f · g) (is_thunkable_compose f g f g).
+    : thunkable_mor a c := wide_submagmoid_compose _ f g.
 
   (** Linear and thunkable morphisms *)
   Definition isaprop_is_linear_and_thunkable {a b : M} (f : a --> b) : isaprop (is_linear_and_thunkable f).
   Proof. apply isaprop_is_linear_and_thunkable', hs. Defined.
   Definition ish_linear_and_thunkable {a b : M} (f : a --> b) : hProp
     := make_hProp (is_linear_and_thunkable f) (isaprop_is_linear_and_thunkable f).
+  Definition isw_linear_and_thunkable : wide_submagmoid M
+    := make_wide_submagmoid' (@ish_linear_and_thunkable)
+         is_linear_and_thunkable_identity (@is_linear_and_thunkable_compose M).
 
   Definition linear_and_thunkable_mor (a b : M) := ∑ (f : a --> b), ish_linear_and_thunkable f.
   Definition make_linear_and_thunkable_mor {a b : M} (f : a --> b) (H : is_linear_and_thunkable f)
@@ -458,6 +545,9 @@ Section polarized_subtypes.
   Proof. apply isaprop_is_intermediate', hs. Qed.
   Definition ish_intermediate {a b : M} (f : a --> b) : hProp
     := make_hProp (is_intermediate f) (isaprop_is_intermediate f).
+  Definition isw_intermediate : wide_submagmoid M
+    := make_wide_submagmoid' (@ish_intermediate)
+         is_intermediate_identity (@is_intermediate_compose M).
 
   (** Positive objects *)
   Definition isaprop_is_positive (a : M) : isaprop (is_positive a).
@@ -484,3 +574,7 @@ Section polarized_subtypes.
 End polarized_subtypes.
 Arguments positive_ob _ : clear implicits.
 Arguments negative_ob _ : clear implicits.
+Arguments isw_linear _ : clear implicits.
+Arguments isw_thunkable _ : clear implicits.
+Arguments isw_linear_and_thunkable _ : clear implicits.
+Arguments isw_intermediate _ : clear implicits.

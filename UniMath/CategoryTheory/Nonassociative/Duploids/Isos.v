@@ -30,21 +30,22 @@ Section isos_facts.
 
   (** Every [lt_iso] is also intermediate in a preduploid *)
   Lemma preduploid_lt_iso_is_intermediate {a b : M} (p : lt_iso a b) : is_intermediate p.
-  Proof.
-    isaprop_goal Hprop; [apply isaprop_is_intermediate|].
-    apply (has_polarity_rec (polarity_of M a) Hprop).
-    1: intro H; apply is_intermediate_of_negative, H.
-    intro Hp; apply is_intermediate_of_positive.
-    apply (is_positive_of_lt_iso p Hp).
-  Qed.
+  Proof. apply lt_iso_is_intermediate_from_polarized, (polarity_of M). Qed.
+
+  Lemma isweq_lti_iso_to_lt_iso_in_preduploid (a b : M)
+    : isweq (@lti_iso_to_lt_iso M a b).
+  Proof. apply isweq_lti_iso_to_lt_iso_from_polarized, (polarity_of M). Qed.
+
+  Definition weq_lti_iso_to_lt_iso_in_preduploid (a b : M)
+    : lti_iso a b ≃ lt_iso a b
+    := weq_lti_iso_to_lt_iso_from_polarized a b (polarity_of M _).
 
   Lemma preduploid_lt_iso_interpose {a b b' c : M}
     (p : lt_iso b b') (f : a --> b) (g : b --> c)
     : (f · p) · (lt_iso_inv p · g) = f · g.
   Proof.
-    apply (intermediate_z_iso_interpose p).
-    - apply preduploid_lt_iso_is_intermediate.
-    - apply (preduploid_lt_iso_is_intermediate (lt_iso_inv p)).
+    pose (p' := invmap (weq_lti_iso_to_lt_iso_in_preduploid _ _) p).
+    apply (i_iso_interpose (lti_iso_to_i_iso p')).
   Qed.
 
   Lemma preduploid_lt_iso_inv_interpose {a b b' c : M}
