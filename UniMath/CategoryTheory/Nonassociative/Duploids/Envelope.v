@@ -621,6 +621,8 @@ Section envelope_defs.
   Definition envelope_duploid : duploid
     := make_duploid _ envelope_has_polarity_shifts.
 
+  Coercion envelope_ob_to_ob (a : envelope_ob) : ob envelope_duploid := a.
+
   (** ** 2. Weak equivalence with the oblique duploid *)
 
   Definition oblique_to_envelope_ob (a : oblique_duploid θ) : envelope_preduploid.
@@ -672,19 +674,19 @@ Section envelope_defs.
   Proof. now induction a as [n | p]. Defined.
 
   Lemma oblique_to_envelope_inverse_of_chosen_negative
-    (b : envelope_duploid) (Hn : envelope_chosen_negative (b : envelope_ob))
+    (b : envelope_ob) (Hn : envelope_chosen_negative b)
     : ∑ (a : oblique_duploid θ), lt_iso (oblique_to_envelope a) b.
   Proof.
-    exists (oblique_negative θ ((b : envelope_ob) ⁻)).
+    exists (oblique_negative θ b⁻).
     apply (lt_iso_upshift_of_negative b).
     abstract (apply is_negative_of_envelope_chosen_negative, Hn).
   Defined.
 
   Lemma oblique_to_envelope_inverse_of_chosen_positive
-    (b : envelope_duploid) (Hn : envelope_chosen_positive (b : envelope_ob))
+    (b : envelope_ob) (Hn : envelope_chosen_positive b)
     : ∑ (a : oblique_duploid θ), lt_iso (oblique_to_envelope a) b.
   Proof.
-    exists (oblique_positive θ ((b : envelope_ob) ⁺)).
+    exists (oblique_positive θ b⁺).
     apply lt_iso_inv, (lt_iso_downshift_of_positive b).
     abstract (apply is_positive_of_envelope_chosen_positive, Hn).
   Defined.
@@ -700,11 +702,11 @@ Section envelope_defs.
   Lemma split_lt_essentially_surjective_oblique_to_envelope_from_LEM
     : LEM -> split_lt_essentially_surjective oblique_to_envelope.
   Proof.
-    intros lem a.
-    set (Hlemn := lem (make_hProp (envelope_chosen_negative (a : envelope_ob)) (isaprop_is_z_isomorphism _))).
+    intros lem a; change envelope_ob in a.
+    set (Hlemn := lem (make_hProp (envelope_chosen_negative a) (isaprop_is_z_isomorphism _))).
     induction Hlemn as [Hn | Hnotn].
     - apply oblique_to_envelope_inverse_of_chosen_negative, Hn.
-    - assert (Hp : envelope_chosen_positive (a : envelope_ob)). {
+    - assert (Hp : envelope_chosen_positive a). {
         envelope_induction' a; intro.
         apply isaprop_is_z_isomorphism.
         all: easy.
@@ -1160,7 +1162,7 @@ Section equalized.
     use make_z_iso.
     - exact (make_linear_mor (lt_iso_mor α) (lt_iso_is_linear_and_thunkable α),,tt).
     - exact (make_linear_mor (lt_iso_inverse α) (lt_iso_inverse α),,tt).
-    - split; do 2 apply carrier_eq; apply lt_iso_is_inverse.
+    - split; do 2 apply carrier_eq; apply (lt_iso_is_inverse α).
   Defined.
 
   Lemma adj_equivalence_negative_category_to_envelope_duploid_iff
@@ -1217,7 +1219,7 @@ Section equalized.
     use make_z_iso.
     - exact (make_thunkable_mor (lt_iso_inverse α) (lt_iso_inverse α),,tt).
     - exact (make_thunkable_mor (lt_iso_mor α) (lt_iso_is_linear_and_thunkable α),,tt).
-    - split; do 2 apply carrier_eq; apply lt_iso_is_inverse.
+    - split; do 2 apply carrier_eq; apply (lt_iso_is_inverse α).
   Defined.
 
   Lemma adj_equivalence_positive_category_to_envelope_duploid_iff
@@ -1313,13 +1315,9 @@ Section equalized.
     - exact (envelope_preob θ).
     - intros a b; exact (envelope_preob_iso a b).
     - intros a; exact (envelope_preob_iso_identity a).
-    - use (rxgraph_univalent_from_iso_f
+    - use (rxgraph_univalent_from_iso_f'
              envelope_preob_rxgraph0 is_univalent_envelope_preob_rxgraph0).
-      abstract (use make_rxgraph_iso;
-                [ apply (make_pregraph_iso (idweq _) (λ a b, idweq _))
-                | intros a;
-                  apply subtypePath'; [|apply isaset_oblique_mor];
-                  reflexivity ]).
+      exact (make_pregraph_iso (idweq _) (λ a b, idweq _)).
   Defined.
 
   Definition envelope_ob_rxgraph : univalent_rxgraph.
@@ -1327,12 +1325,12 @@ Section equalized.
     exact ({ a : envelope_preob_rxgraph ∇ envelope_polarization θ a })%rxgraph_spec.
   Defined.
 
-  Definition z_iso_of_positive_to_positive_iso (a b : envelope_duploid θ)
+  Definition z_iso_of_positive_to_positive_iso (a b : envelope_ob θ)
     (H : lt_iso a b)
     (Ha : is_positive a)
     : z_iso
-        (envelope_positive_ob _ (a : envelope_ob _))
-        (envelope_positive_ob _ (b : envelope_ob _)).
+        (envelope_positive_ob _ a)
+        (envelope_positive_ob _ b).
   Proof.
     apply (iso_from_fully_faithful_reflection
              (pr1 fully_faithful_positive_category_to_envelope_duploid_iff Hpositive_eq)).
@@ -1342,12 +1340,12 @@ Section equalized.
     - apply lt_iso_downshift_of_positive, (is_positive_of_lt_iso H), Ha.
   Defined.
 
-  Definition z_iso_of_negative_to_negative_iso (a b : envelope_duploid θ)
+  Definition z_iso_of_negative_to_negative_iso (a b : envelope_ob θ)
     (H : lt_iso a b)
     (Ha : is_negative a)
     : z_iso
-        (envelope_negative_ob _ (a : envelope_ob _))
-        (envelope_negative_ob _ (b : envelope_ob _)).
+        (envelope_negative_ob _ a)
+        (envelope_negative_ob _ b).
   Proof.
     apply (iso_from_fully_faithful_reflection
              (pr1 fully_faithful_negative_category_to_envelope_duploid_iff Hnegative_eq)).
@@ -1358,7 +1356,7 @@ Section equalized.
   Defined.
 
   Lemma envelope_chosen_negative_of_positive_iff_is_negative (p : P)
-    : is_negative (M:=envelope_duploid θ) (envelope_ob_of_positive θ p)
+    : is_negative (envelope_ob_of_positive θ p)
         <-> envelope_chosen_negative θ (envelope_ob_of_positive θ p).
   Proof.
     eapply logeq_trans;
@@ -1370,7 +1368,7 @@ Section equalized.
   Qed.
 
   Lemma envelope_chosen_positive_of_negative_iff_is_positive (n : N)
-    : is_positive (M:=envelope_duploid θ) (envelope_ob_of_negative θ n)
+    : is_positive (envelope_ob_of_negative θ n)
         <-> envelope_chosen_positive θ (envelope_ob_of_negative θ n).
   Proof.
     eapply logeq_trans;
@@ -1383,30 +1381,28 @@ Section equalized.
 
   (** Positive category is univalent *)
 
-  Lemma envelope_chosen_positive_of_is_positive (a : envelope_duploid θ)
-    (Hp : is_positive a) : envelope_chosen_positive θ (a : envelope_ob θ).
+  Lemma envelope_chosen_positive_of_is_positive (a : envelope_ob θ)
+    (Hp : is_positive a) : envelope_chosen_positive θ a.
   Proof.
-    set (a' := a : envelope_ob _).
-    generalize (a' : envelope_polarization θ a').
-    apply (envelope_polarization_rec' θ (a:=a')).
+    envelope_induction' θ a.
     1: intro; apply isaprop_is_z_isomorphism.
     2: easy.
     intro Hn.
-    eassert (Hupshift : envelope_chosen_positive θ (envelope_upshift θ a')). {
-      apply (pr1 (envelope_chosen_positive_of_negative_iff_is_positive (envelope_negative_ob _ a'))).
+    eassert (Hupshift : envelope_chosen_positive θ (envelope_upshift θ a)). {
+      apply (pr1 (envelope_chosen_positive_of_negative_iff_is_positive (envelope_negative_ob _ a))).
       refine (is_positive_of_lt_iso _ Hp).
       apply lt_iso_inv, (lt_iso_upshift_of_negative a).
       apply is_negative_of_envelope_chosen_negative, Hn.
     }
-    change (is_z_isomorphism (envelope_cross_mor θ a')♭).
+    change (is_z_isomorphism (envelope_cross_mor θ a)♭).
     rewrite <- oblique_mor_positive_transpose; unfold φ_adj_inv.
     apply is_z_isomorphism_comp.
     - apply functor_on_is_z_isomorphism, Hn.
     - apply Hupshift.
   Qed.
 
-  Lemma envelope_chosen_positive_weq_is_positive (a : envelope_duploid θ)
-    : is_positive a ≃ envelope_chosen_positive θ (a : envelope_ob θ).
+  Lemma envelope_chosen_positive_weq_is_positive (a : envelope_ob θ)
+    : is_positive a ≃ envelope_chosen_positive θ a.
   Proof.
     apply weqiff; [split | |].
     - apply envelope_chosen_positive_of_is_positive.
@@ -1431,7 +1427,7 @@ Section equalized.
   Defined.
 
   Lemma envelope_ob_eq_positive (a : envelope_ob θ)
-    (Ha : is_positive (M:=envelope_duploid θ) a)
+    (Ha : is_positive a)
     : a = envelope_downshift _ a.
   Proof.
     apply envelope_chosen_positive_of_is_positive in Ha.
@@ -1484,22 +1480,20 @@ Section equalized.
 
   (** Negative category is univalent *)
 
-  Lemma envelope_chosen_negative_of_is_negative (a : envelope_duploid θ)
-    (Hn : is_negative a) : envelope_chosen_negative θ (a : envelope_ob θ).
+  Lemma envelope_chosen_negative_of_is_negative (a : envelope_ob θ)
+    (Hn : is_negative a) : envelope_chosen_negative θ a.
   Proof.
-    set (a' := a : envelope_ob _).
-    generalize (a' : envelope_polarization θ a').
-    apply (envelope_polarization_rec' θ (a:=a')).
+    envelope_induction' θ a.
     1: intro; apply isaprop_is_z_isomorphism.
     1: easy.
     intro Hp.
-    eassert (Hdownshift : envelope_chosen_negative θ (envelope_downshift θ a')). {
-      apply (pr1 (envelope_chosen_negative_of_positive_iff_is_negative (envelope_positive_ob _ a'))).
+    eassert (Hdownshift : envelope_chosen_negative θ (envelope_downshift θ a)). {
+      apply (pr1 (envelope_chosen_negative_of_positive_iff_is_negative (envelope_positive_ob _ a))).
       refine (is_negative_of_lt_iso _ Hn).
       apply (lt_iso_downshift_of_positive a).
       apply is_positive_of_envelope_chosen_positive, Hp.
     }
-    change (is_z_isomorphism (envelope_cross_mor θ a')♯).
+    change (is_z_isomorphism (envelope_cross_mor θ a)♯).
     rewrite <- oblique_mor_negative_transpose; unfold φ_adj.
     apply is_z_isomorphism_comp.
     - apply Hdownshift.
@@ -1507,8 +1501,8 @@ Section equalized.
       apply functor_on_is_z_isomorphism, Hp.
   Qed.
 
-  Lemma envelope_chosen_negative_weq_is_negative (a : envelope_duploid θ)
-    : is_negative a ≃ envelope_chosen_negative θ (a : envelope_ob θ).
+  Lemma envelope_chosen_negative_weq_is_negative (a : envelope_ob θ)
+    : is_negative a ≃ envelope_chosen_negative θ a.
   Proof.
     apply weqiff; [split | |].
     - apply envelope_chosen_negative_of_is_negative.
@@ -1533,7 +1527,7 @@ Section equalized.
   Defined.
 
   Lemma envelope_ob_eq_negative (a : envelope_ob θ)
-    (Ha : is_negative (M:=envelope_duploid θ) a)
+    (Ha : is_negative a)
     : a = envelope_upshift _ a.
   Proof.
     apply envelope_chosen_negative_of_is_negative in Ha.
