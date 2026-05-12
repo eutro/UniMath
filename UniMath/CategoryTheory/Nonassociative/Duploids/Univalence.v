@@ -439,7 +439,7 @@ Section characterizations.
       apply (weq_ff_functor_on_z_iso
                (fully_faithful_positive_thunkable_category_to_linear_and_thunkable_category D)).
     - intro p.
-      apply subtypePath'; [|apply isaprop_is_z_isomorphism].
+      apply z_iso_eq.
       do 2 apply carrier_eq.
       now induction p.
   Qed.
@@ -458,7 +458,7 @@ Section characterizations.
       apply (weq_ff_functor_on_z_iso
                (fully_faithful_negative_linear_category_to_linear_and_thunkable_category D)).
     - intro p.
-      apply subtypePath'; [|apply isaprop_is_z_isomorphism].
+      apply z_iso_eq.
       do 2 apply carrier_eq.
       now induction p.
   Qed.

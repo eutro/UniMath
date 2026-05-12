@@ -1636,6 +1636,64 @@ Section equalized.
     exact (_,,is_catiso_cokleisli_to_envelope_duploid).
   Defined.
 
+  Definition split_envelope_ob_rxgraph : univalent_rxgraph.
+  Proof.
+    use (@univalent_total_rxgraph envelope_preob_rxgraph).
+    use make_univalent_disp_rxgraph.
+    1: use make_disp_rxgraph'.
+    - apply envelope_polarization_choice.
+    - intros a b f aa bb. cbn in a, b, f, aa, bb.
+      induction aa as [an | ap];
+        induction bb as [bn | bp].
+      + exact unit.
+      + exact empty.
+      + exact empty.
+      + exact unit.
+    - intros a aa.
+      induction aa; exact tt.
+    - intros a.
+      apply is_rxgraph_univalent_from_isaprop_edges_from.
+      intro aa.
+      apply isaproptotal2.
+      + abstract (
+            intro bb; induction aa; induction bb;
+            first [exact isapropunit | exact isapropempty]).
+      + abstract (
+            intro bb; induction aa; induction bb;
+            intros cc p q; induction cc;
+            cbn in *;
+            try (apply fromempty; assumption);
+            apply maponpaths, proofirrelevance;
+            [ apply isaprop_envelope_chosen_negative
+            | apply isaprop_envelope_chosen_positive ]).
+  Defined.
+
+  (** Equivalence of split objects with oblique duploid *)
+  Lemma weq_oblique_ob_to_split_envelope_ob
+    : @oblique_ob N P ≃ split_envelope_ob_rxgraph.
+  Proof.
+    use weq_iso.
+    - intro a; induction a as [n | p].
+      + exists (envelope_preob_of_negative _ n).
+        left; apply envelope_chosen_negative_of_negative.
+      + exists (envelope_preob_of_positive _ p).
+        right; apply envelope_chosen_positive_of_positive.
+    - intro b.
+      induction (pr2 b) as [finv | finv].
+      + left; exact (envelope_negative_ob _ (pr1 b)).
+      + right; exact (envelope_positive_ob _ (pr1 b)).
+    - intro a; now induction a.
+    - intro b.
+      apply edge_to_id; [apply rxgraph_univalence|].
+      induction b as [b finv];
+        induction finv as [finv | finv];
+        refine (_,, tt).
+      + apply id_to_edge; cbn.
+        apply pathsinv0, (base_paths _ _ (envelope_ob_eq_negative' (b,, hinhpr (ii1 finv)) finv)).
+      + apply id_to_edge; cbn.
+        apply pathsinv0, (base_paths _ _ (envelope_ob_eq_positive' (b,, hinhpr (ii2 finv)) finv)).
+  Defined.
+
 End equalized.
 
 (** Restatement with more bundling *)
