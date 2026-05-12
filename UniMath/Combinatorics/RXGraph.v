@@ -76,8 +76,8 @@ Section rxgraph_defs.
     apply isapropisweq.
   Qed.
 
-  Definition edges_from {G : pregraph} (a : vertex G) : UU
-    := ∑ (b : vertex G), a ≈ b.
+  Definition edges_from {G : pregraph} (a : vertex G) : UU := ∑ (b : vertex G), a ≈ b.
+  Definition edges_to {G : pregraph} (a : vertex G) : UU := ∑ (b : vertex G), b ≈ a.
 
   Lemma is_rxgraph_univalent_from_iscontr_edges_from (G : rxgraph)
     (H : ∏ (a : G), iscontr (edges_from a))
@@ -91,6 +91,8 @@ Section rxgraph_defs.
   Defined.
 
   Lemma edges_from_grefl {G : rxgraph} (a : G) : edges_from a.
+  Proof. exists a; apply grefl. Defined.
+  Lemma edges_to_grefl {G : rxgraph} (a : G) : edges_to a.
   Proof. exists a; apply grefl. Defined.
 
   Lemma is_rxgraph_univalent_from_isaprop_edges_from (G : rxgraph)
@@ -122,6 +124,78 @@ Section rxgraph_defs.
     intro a.
     apply iscontraprop1; [|apply edges_from_grefl].
     apply is_rxgraph_univalent_to_isaprop_edges_from, H.
+  Defined.
+
+  Lemma isaprop_edges_to_implies_isaprop_edges_from (G : rxgraph)
+    (H : ∏ (a : G), isaprop (edges_to a))
+    : ∏ (a : G), isaprop (edges_from a).
+  Proof.
+    intro a; apply invproofirrelevance.
+    intros [b₁ e₁] [b₂ e₂].
+    assert (p : edges_to_grefl _ = a,,e₁); [apply H|].
+    apply total2_paths_equiv in p.
+    induction p as [p q]; cbn in *.
+    induction p; cbn in q.
+    induction q.
+    assert (p : edges_to_grefl _ = b₁,,e₂); [apply H|].
+    apply total2_paths_equiv in p.
+    induction p as [p q]; cbn in *.
+    induction p; cbn in q.
+    induction q.
+    reflexivity.
+  Qed.
+
+  Lemma isaprop_edges_from_implies_isaprop_edges_to (G : rxgraph)
+    (H : ∏ (a : G), isaprop (edges_from a))
+    : ∏ (a : G), isaprop (edges_to a).
+  Proof.
+    intro a; apply invproofirrelevance.
+    intros [b₁ e₁] [b₂ e₂].
+    assert (p : edges_from_grefl _ = a,,e₁); [apply H|].
+    apply total2_paths_equiv in p.
+    induction p as [p q]; cbn in *.
+    induction p; cbn in q.
+    induction q.
+    assert (p : edges_from_grefl _ = b₁,,e₂); [apply H|].
+    apply total2_paths_equiv in p.
+    induction p as [p q]; cbn in *.
+    induction p; cbn in q.
+    induction q.
+    reflexivity.
+  Qed.
+
+  Lemma is_rxgraph_univalent_from_isaprop_edges_to (G : rxgraph)
+    (H : ∏ (a : G), isaprop (edges_to a))
+    : is_rxgraph_univalent G.
+  Proof.
+    use is_rxgraph_univalent_from_isaprop_edges_from.
+    exact (isaprop_edges_to_implies_isaprop_edges_from _ H).
+  Defined.
+
+  Lemma is_rxgraph_univalent_from_iscontr_edges_to (G : rxgraph)
+    (H : ∏ (a : G), iscontr (edges_to a))
+    : is_rxgraph_univalent G.
+  Proof.
+    use is_rxgraph_univalent_from_isaprop_edges_to.
+    intro a; apply isapropifcontr, H.
+  Defined.
+
+  Lemma is_rxgraph_univalent_to_isaprop_edges_to (G : rxgraph)
+    (H : is_rxgraph_univalent G)
+    : ∏ (a : G), isaprop (edges_to a).
+  Proof.
+    use isaprop_edges_from_implies_isaprop_edges_to.
+    use is_rxgraph_univalent_to_isaprop_edges_from.
+    exact H.
+  Qed.
+
+  Lemma is_rxgraph_univalent_to_iscontr_edges_to (G : rxgraph)
+    (H : is_rxgraph_univalent G)
+    : ∏ (a : G), iscontr (edges_to a).
+  Proof.
+    intro a; apply iscontraprop1.
+    - apply is_rxgraph_univalent_to_isaprop_edges_to, H.
+    - apply edges_to_grefl.
   Defined.
 
   Definition univalent_rxgraph := total2 is_rxgraph_univalent.
@@ -695,6 +769,33 @@ Section constructions.
 
   Definition dirprod_rxgraph' (A B : univalent_rxgraph) : univalent_rxgraph
     := make_univalent_rxgraph _ (is_univalent_dirprod_rxgraph _ _ A B).
+
+  Definition opp_rxgraph (A : rxgraph) : rxgraph.
+  Proof.
+    use make_rxgraph'.
+    - exact A.
+    - intros a b.
+      exact (b ≈ a).
+    - intro a.
+      exact (grefl a).
+  Defined.
+
+  Lemma opp_opp_rxgraph (A : rxgraph) : opp_rxgraph (opp_rxgraph A) = A.
+  Proof. reflexivity. Defined.
+
+  Lemma is_univalent_opp_rxgraph (A : rxgraph)
+    (HA : is_rxgraph_univalent A)
+    : is_rxgraph_univalent (opp_rxgraph A).
+  Proof.
+    apply is_rxgraph_univalent_from_isaprop_edges_from.
+    change (∏ a : A, isaprop (edges_to a)).
+    apply is_rxgraph_univalent_to_isaprop_edges_to.
+    exact HA.
+  Defined.
+
+  Definition opp_rxgraph' (A : univalent_rxgraph) : univalent_rxgraph
+    := make_univalent_rxgraph _ (is_univalent_opp_rxgraph _ A).
+
 End constructions.
 
 Declare Scope rxgraph_spec.
@@ -732,3 +833,6 @@ Notation "{ x ∇0 G }" :=
   (forgetful_rxgraph _ (λ x, G))
     (x binder) : rxgraph_spec.
 (* type in Emacs using agda-input with { .. \nabla 0 .. } *)
+
+Notation "x '^op'" := (opp_rxgraph' x) : rxgraph_spec.
+Notation "x '^op0'" := (opp_rxgraph x) : rxgraph_spec.
