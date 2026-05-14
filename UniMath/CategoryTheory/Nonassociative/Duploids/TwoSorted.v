@@ -130,19 +130,53 @@ Section split_defs.
     use decide_polarity'; apply mapping.
   Defined.
 
+  (** Polarity mapping from LEM, biased towards negative. *)
   Lemma polarity_mapping_from_LEM (D : preduploid)
     : LEM -> polarity_mapping D.
   Proof.
     intros lem.
     use make_polarity_mapping'.
     intro a.
-    induction (lem (ish_positive a)) as [Hp | Hnotp].
-    - exact (ii1 Hp).
-    - apply ii2.
+    induction (lem (ish_negative a)) as [Hnegative | Hnotnegative].
+    - exact (ii2 Hnegative).
+    - apply ii1.
       apply (has_polarity_rec (polarity_of D a)).
-      1: apply isaprop_is_negative.
+      1: apply isaprop_is_positive.
       all: easy.
+  Defined.
+
+  Lemma polarity_mapping_from_LEM_iff_negative
+    {D : preduploid} (lem : LEM) (a : D)
+    : is_negative a ≃ polarity_mapping_from_LEM D lem a = ⊖.
+  Proof.
+    cbn.
+    induction (lem (ish_negative a)) as [Hnegative' | Hnotnegative]; cbn.
+    - use weqimplimpl.
+      + easy.
+      + easy.
+      + apply isaprop_is_negative.
+      + apply isasetbool.
+    - apply weqempty.
+      + assumption.
+      + exact nopathstruetofalse.
   Qed.
+
+  Lemma polarity_mapping_from_LEM_iff_not_negative
+    {D : preduploid} (lem : LEM) (a : D)
+    : ¬is_negative a ≃ polarity_mapping_from_LEM D lem a = ⊕.
+  Proof.
+    cbn.
+    induction (lem (ish_negative a)) as [Hnegative | Hnotnegative']; cbn.
+    - apply weqempty.
+      + now apply todneg.
+      + exact nopathsfalsetotrue.
+    - use weqimplimpl.
+      + easy.
+      + easy.
+      + apply isapropneg.
+      + apply isasetbool.
+  Qed.
+  #[global] Opaque polarity_mapping_from_LEM.
 
   (** *** Split preduploid *)
   Definition split_preduploid : UU

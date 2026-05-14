@@ -385,12 +385,14 @@ Section shift_lemmas.
   Qed.
 
   Lemma is_thunkable_iff_delay_wrap {a b : D} (f : a --> b)
-    : f · (delay b · wrap (⇑b)) = (f · delay b) · wrap (⇑b) <->
+    : f · (delay b · wrap (⇑b)) = (f · delay b) · wrap (⇑b) ≃
         is_thunkable f.
   Proof.
-    split.
+    apply weqimplimpl.
     - apply is_thunkable_of_delay_wrap.
     - intro H; apply assoc_thunkable, H.
+    - apply unital_magmoid_has_homsets.
+    - apply isaprop_is_thunkable.
   Qed.
 
   Lemma is_linear_of_force_unwrap {a b : D} (f : b --> a)
@@ -414,12 +416,14 @@ Section shift_lemmas.
   Qed.
 
   Lemma is_linear_iff_force_unwrap {a b : D} (f : a <-- b)
-    : (force (⇓b) · unwrap b) · f = force (⇓b) · (unwrap b · f) <->
+    : (force (⇓b) · unwrap b) · f = force (⇓b) · (unwrap b · f) ≃
         is_linear f.
   Proof.
-    split.
+    apply weqimplimpl.
     - apply is_linear_of_force_unwrap.
     - intro H; apply assoc'_linear, H.
+    - apply unital_magmoid_has_homsets.
+    - apply isaprop_is_linear.
   Qed.
 
   (** Characterisation of positive and negative objects *)
@@ -463,11 +467,13 @@ Section shift_lemmas.
     eapply lt_iso_inv, make_lt_iso, is_lt_iso_wrap_of_linear, H.
   Qed.
 
-  Lemma is_positive_iff_linear_wrap (a : D) : is_linear (wrap a) <-> is_positive a.
+  Lemma is_positive_iff_linear_wrap (a : D) : is_linear (wrap a) ≃ is_positive a.
   Proof.
-    split.
+    apply weqimplimpl.
     - apply is_positive_of_linear_wrap.
     - apply is_linear_wrap_of_positive.
+    - apply isaprop_is_linear.
+    - apply isaprop_is_positive.
   Qed.
 
   (** 3 *)
@@ -525,11 +531,13 @@ Section shift_lemmas.
     eapply make_lt_iso, is_lt_iso_force_of_thunkable, H.
   Qed.
 
-  Lemma is_negative_iff_thunkable_force (a : D) : is_thunkable (force a) <-> is_negative a.
+  Lemma is_negative_iff_thunkable_force (a : D) : is_thunkable (force a) ≃ is_negative a.
   Proof.
-    split.
+    apply weqimplimpl.
     - apply is_negative_of_thunkable_force.
     - apply is_thunkable_force_of_negative.
+    - apply isaprop_is_thunkable.
+    - apply isaprop_is_negative.
   Qed.
 
   (** 3 *)

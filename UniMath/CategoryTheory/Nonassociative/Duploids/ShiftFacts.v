@@ -214,11 +214,13 @@ End negative_shifts_up.
 
 Corollary negative_shift_axioms_iff_has_negative_shifts_up
   (M : unital_magmoid) (Dnegative : negative_shift_data M)
-  : negative_shift_axioms Dnegative <-> has_negative_shifts_up Dnegative.
+  : negative_shift_axioms Dnegative ≃ has_negative_shifts_up Dnegative.
 Proof.
-  split.
+  apply weqimplimpl.
   - apply has_negative_shifts_has_up.
   - apply negative_shift_axioms_from_up.
+  - apply isaprop_negative_shift_axioms.
+  - apply isaprop_has_negative_shifts_up.
 Defined.
 
 Section positive_shifts_up.
@@ -395,11 +397,13 @@ End positive_shifts_up.
 
 Corollary positive_shift_axioms_iff_has_positive_shifts_up
   (M : unital_magmoid) (Dpositive : positive_shift_data M)
-  : positive_shift_axioms Dpositive <-> has_positive_shifts_up Dpositive.
+  : positive_shift_axioms Dpositive ≃ has_positive_shifts_up Dpositive.
 Proof.
-  split.
+  apply weqimplimpl.
   - apply has_positive_shifts_has_up.
   - apply positive_shift_axioms_from_up.
+  - apply isaprop_positive_shift_axioms.
+  - apply isaprop_has_positive_shifts_up.
 Defined.
 
 (** ** 2. Derived properties from the universal properties *)
@@ -459,13 +463,15 @@ Section derived_props.
   Qed.
 
   Definition is_linear_iff_negative_lift {a b : D} (f : a --> b)
-    : is_linear f <-> is_linear (negative_lift f).
+    : is_linear f ≃ is_linear (negative_lift f).
   Proof.
-    split.
+    apply weqimplimpl.
     - intro H.
       change (is_linear (f · delay b)).
       apply is_linear_compose; first [exact H | apply (delay _)].
     - apply is_linear_of_negative_lift.
+    - apply isaprop_is_linear.
+    - apply isaprop_is_linear.
   Defined.
 
   (** Accessors for positive lift UP in a duploid *)
@@ -520,13 +526,15 @@ Section derived_props.
   Qed.
 
   Definition is_thunkable_iff_positive_lift {a b : D} (f : a <-- b)
-    : is_thunkable f <-> is_thunkable (positive_lift f).
+    : is_thunkable f ≃ is_thunkable (positive_lift f).
   Proof.
-    split.
+    apply weqimplimpl.
     - intro H.
       change (is_thunkable (f ∘ unwrap b)).
       apply is_thunkable_compose; first [exact H | apply (unwrap _)].
     - apply is_thunkable_of_positive_lift.
+    - apply isaprop_is_thunkable.
+    - apply isaprop_is_thunkable.
   Defined.
 
 End derived_props.

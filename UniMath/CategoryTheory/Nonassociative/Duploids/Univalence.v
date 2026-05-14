@@ -313,17 +313,6 @@ Section equivalences.
 End equivalences.
 
 Section characterizations.
-  Definition category_to_rxgraph (C : category) : rxgraph.
-  Proof.
-    use make_rxgraph'.
-    - exact (ob C).
-    - intros a b; exact (z_iso a b).
-    - intros a; exact (identity_z_iso a).
-  Defined.
-
-  Coercion is_rxgraph_univalent_category {C : category}
-    (H : is_univalent C) : is_rxgraph_univalent (category_to_rxgraph C) := H.
-
   Definition duploid_to_rxgraph (D : preduploid) : rxgraph.
   Proof.
     use make_rxgraph'.
@@ -346,13 +335,15 @@ Section characterizations.
   Defined.
 
   Corollary unital_magmoid_univalent_iff_duploid_univalent (D : preduploid)
-    : is_unital_magmoid_univalent D <-> is_duploid_univalent D.
+    : is_unital_magmoid_univalent D ≃ is_duploid_univalent D.
   Proof.
     change (is_rxgraph_univalent (unital_magmoid_to_rxgraph D)
-            <-> is_rxgraph_univalent (duploid_to_rxgraph D)).
-    split; intro H.
-    - exact (rxgraph_univalent_from_iso_f _ H (iso_duploid_rxgraph_unital_magmoid_rxgraph D)).
-    - exact (rxgraph_univalent_from_iso_b _ H (iso_duploid_rxgraph_unital_magmoid_rxgraph D)).
+            ≃ is_rxgraph_univalent (duploid_to_rxgraph D)).
+    apply weqimplimpl.
+    - exact (λ H, rxgraph_univalent_from_iso_f _ H (iso_duploid_rxgraph_unital_magmoid_rxgraph D)).
+    - exact (λ H, rxgraph_univalent_from_iso_b _ H (iso_duploid_rxgraph_unital_magmoid_rxgraph D)).
+    - apply isaprop_is_rxgraph_univalent.
+    - apply isaprop_is_rxgraph_univalent.
   Qed.
 
   Lemma weak_duploid_equivalence_to_split {D D' : preduploid}
@@ -390,7 +381,7 @@ Section characterizations.
     - now apply weak_duploid_equivalence_to_split.
   Qed.
 
-  Context (D : duploid).
+  Context (D : preduploid).
   (** The following are equivalent:
       1. [D] is a univalent duploid
       2. [linear_and_thunkable_category D] is a univalent category
@@ -479,7 +470,7 @@ Section characterizations.
     1: set (is_p := @is_negative D).             2: set (is_p := @is_positive D).
     all: set (a' := a,,Ha : C).
     all: use (isofhlevelweqb 1 (Y:=edges_from (a' : category_to_rxgraph C)));
-      [|exact (is_rxgraph_univalent_to_isaprop_edges_from _ HC _)].
+      [|exact (is_rxgraph_univalent_to_isaprop_edges_from (category_to_rxgraph C) HC _)].
     all: eapply weqcomp; [|apply weqtotal2asstol].
     all: use weqbandf; [exact (idweq D)|]; intro b; cbn in b |- *.
     all: intermediate_weq (∑ _ : z_iso a b, is_p b).
@@ -507,3 +498,90 @@ Section characterizations.
   Qed.
 
 End characterizations.
+
+Section split_duploids.
+  (** Any univalent preduploid is a univalent split duploid with
+      the polarity mapping from [LEM]. *)
+  Lemma is_duploid_univalent_to_is_split_duploid_univalent_from_LEM (D : preduploid)
+    (H : is_duploid_univalent D)
+    (lem : LEM)
+    : is_split_duploid_univalent (make_split_preduploid D (polarity_mapping_from_LEM D lem)).
+  Proof.
+    set (D':=make_split_preduploid D (polarity_mapping_from_LEM D lem)).
+    apply is_duploid_univalent_to_is_univalent_linear_and_thunkable_category in H.
+    split; rewrite category_rxgraph_univalent_eq;
+      apply is_rxgraph_univalent_from_isaprop_edges_from; intros [a Ha].
+    - pose (H' := is_univalent_linear_and_thunkable_to_is_univalent_positive_thunkable_category D H).
+      rewrite category_rxgraph_univalent_eq in H'.
+      change (positive_ob D) in a; cbn in Ha.
+      refine (isofhlevelweqf 1 _ (is_rxgraph_univalent_to_isaprop_edges_from _ H' a)).
+      intermediate_weq (∑ (b : ∑ (b : D⁺ₜ), z_iso (C:=D⁺ₜ) a b),
+                         polarity_mapping_from_LEM D lem (pr11 b) = ⊕). {
+        apply invweq, total2_contr.
+        intros [b Hb]; cbn in Hb |- *.
+        apply (invweq (weq_z_iso_lt_iso_positive a b)) in Hb.
+        apply iscontraprop1; [apply isasetbool|].
+        apply polarity_mapping_from_LEM_iff_not_negative.
+        apply polarity_mapping_from_LEM_iff_not_negative in Ha.
+        intro Hnegative; apply Ha.
+        exact (is_negative_of_lt_iso (lt_iso_inv Hb) Hnegative).
+      }
+      intermediate_weq (∑ (b : D'⁺ᶜₜ), z_iso (C:=D⁺ₜ) a (pr1 b)). {
+        use weq_iso.
+        - intros [[b i] Hb]; exact ((b,, Hb),, i).
+        - intros [[b Hb] i]; exact ((b,, i),, Hb).
+        - easy.
+        - easy.
+      }
+      apply weqfibtototal; intro b.
+      apply invweq.
+      use weqbandf; [apply weqtotalsubtype|]; intro f.
+      use weqbandf; [apply weqtotalsubtype|]; intro g.
+      use weqdirprodf; apply subtypeInjectivity; intro; apply propproperty.
+    - pose (H' := is_univalent_linear_and_thunkable_to_is_univalent_negative_linear_category D H).
+      rewrite category_rxgraph_univalent_eq in H'.
+      change (negative_ob D) in a; cbn in Ha.
+      refine (isofhlevelweqf 1 _ (is_rxgraph_univalent_to_isaprop_edges_from _ H' a)).
+      intermediate_weq (∑ (b : ∑ (b : D⁻ₗ), z_iso (C:=D⁻ₗ) a b),
+                         polarity_mapping_from_LEM D lem (pr11 b) = ⊖). {
+        apply invweq, total2_contr.
+        intros [b Hb]; cbn in Hb |- *.
+        apply (invweq (weq_z_iso_lt_iso_negative a b)) in Hb.
+        apply iscontraprop1; [apply isasetbool|].
+        apply polarity_mapping_from_LEM_iff_negative.
+        apply polarity_mapping_from_LEM_iff_negative in Ha.
+        exact (is_negative_of_lt_iso Hb Ha).
+      }
+      intermediate_weq (∑ (b : D'⁻ᶜₗ), z_iso (C:=D⁻ₗ) a (pr1 b)). {
+        use weq_iso.
+        - intros [[b i] Hb]; exact ((b,, Hb),, i).
+        - intros [[b Hb] i]; exact ((b,, i),, Hb).
+        - easy.
+        - easy.
+      }
+      apply weqfibtototal; intro b.
+      apply invweq.
+      use weqbandf; [apply weqtotalsubtype|]; intro f.
+      use weqbandf; [apply weqtotalsubtype|]; intro g.
+      use weqdirprodf; apply subtypeInjectivity; intro; apply propproperty.
+  Qed.
+
+  Lemma neg_is_duploid_univalent_if_split (D : split_duploid)
+    (a : D) (Hpositive : is_positive a) (Hnegative : is_negative a)
+    : ¬is_duploid_univalent D.
+  Proof.
+    intro ua.
+    enough (Heq : (⇑a : D) = ⇓a). {
+      apply (maponpaths (@chosen_polarity_of D)) in Heq.
+      apply nopathsfalsetotrue.
+      refine (_ @ Heq @ _).
+      - apply pathsinv0, chosen_polarity_of_upshift.
+      - apply chosen_polarity_of_downshift.
+    }
+    use (lt_iso_to_id ua).
+    apply (lt_iso_compose (b:=a)).
+    - apply (lt_iso_upshift_of_negative a Hnegative).
+    - apply (lt_iso_downshift_of_positive a Hpositive).
+  Qed.
+
+End split_duploids.

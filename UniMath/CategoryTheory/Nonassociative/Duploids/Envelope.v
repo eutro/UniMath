@@ -42,15 +42,16 @@ Require Import UniMath.CategoryTheory.Subcategory.Full.
 Require Import UniMath.CategoryTheory.catiso.
 
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Core.
-Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Oblique.
-Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Functors.
-Require Import UniMath.CategoryTheory.Nonassociative.Duploids.ShiftFunctors.
-Require Import UniMath.CategoryTheory.Nonassociative.Duploids.ShiftFacts.
-Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Univalence.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.EqualizingRequirement.
+Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Functors.
+Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Oblique.
+Require Import UniMath.CategoryTheory.Nonassociative.Duploids.ShiftFacts.
+Require Import UniMath.CategoryTheory.Nonassociative.Duploids.ShiftFunctors.
+Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Univalence.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Isos.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Subcategories.
+Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Univalence.
 
 Local Open Scope cat.
 Local Open Scope unital_magmoid.
@@ -714,6 +715,20 @@ Section envelope_defs.
       apply oblique_to_envelope_inverse_of_chosen_positive, Hp.
   Qed.
 
+  Lemma split_lt_essentially_surjective_oblique_to_envelope_from_isaprop_polarization_choice
+    (H : ∏ a, isaprop (envelope_polarization_choice a))
+    : split_lt_essentially_surjective oblique_to_envelope.
+  Proof.
+    intro a; cbn in a.
+    assert (Ha : iscontr (envelope_polarization_choice a)). {
+      apply (squash_to_prop (a : envelope_polarization a) (isapropiscontr _)).
+      apply iscontraprop1, H.
+    }
+    induction (iscontrpr1 Ha) as [Hn | Hp].
+    - apply oblique_to_envelope_inverse_of_chosen_negative, Hn.
+    - apply oblique_to_envelope_inverse_of_chosen_positive, Hp.
+  Defined.
+
   Lemma preserves_linearity_and_thunkability_oblique_to_envelope
     : preserves_linearity_and_thunkability oblique_to_envelope.
   Proof.
@@ -744,6 +759,16 @@ Section envelope_defs.
     - exact (split_lt_essentially_surjective_oblique_to_envelope_from_LEM lem).
   Defined.
 
+  Definition equiv_oblique_to_envelope_duploid_from_isaprop_polarization_choice
+    (H : ∏ a, isaprop (envelope_polarization_choice a))
+    : duploid_equivalence (oblique_duploid θ) envelope_duploid.
+  Proof.
+    use (make_duploid_equivalence oblique_to_envelope_duploid).
+    use make_is_duploid_equivalence.
+    - exact fully_faithful_oblique_to_envelope.
+    - exact (split_lt_essentially_surjective_oblique_to_envelope_from_isaprop_polarization_choice H).
+  Defined.
+
   (** ** 3. Lemmas about the envelope duploid *)
   Lemma envelope_positive_lift {a b : envelope_ob}
     (f : envelope_duploid⟦a, b⟧)
@@ -766,27 +791,30 @@ Section envelope_defs.
 
   Lemma is_linear_from_upshift_iff_envelope_counit_precompose {a : N} {b : envelope_ob}
     (f : envelope_duploid⟦envelope_ob_of_negative a, b⟧)
-    : #(R ∙ L) (ε a) · f♭ = ε ((R ∙ L) a) · f♭ <->
-        is_linear f.
+    : is_negative_oblique_mor_linear θ f ≃ is_linear f.
   Proof.
-    eapply logeq_trans;
-      [|apply (is_linear_iff_force_unwrap (D:=envelope_duploid))].
-    eapply logeq_trans;
-      [|apply issymm_logeq, (weq_to_iff (oblique_mor_negative_path_weq θ _ _))].
+    eapply weqcomp; [|apply (is_linear_iff_force_unwrap (D:=envelope_duploid))].
+    eapply weqcomp; [|apply invweq, (oblique_mor_negative_path_weq θ _ _)].
     cbn.
-    now rewrite !id_left, !functor_id, !id_left, !id_right.
+    rewrite !id_left, !functor_id, !id_left, !id_right.
+    exact (idweq _).
   Qed.
 
-  Lemma is_positive_envelope_upshift_iff_pre_fixed_point (a : N)
-    : # (R ∙ L) (ε a) = ε ((R ∙ L) a)
-      <-> is_positive (M:=envelope_duploid) (envelope_ob_of_negative a).
+  Lemma weq_envelope_linear_mor_oblique_linear_mor (n : N) (a : envelope_ob)
+    : oblique_linear_mor θ n a⁻ ≃ linear_mor (envelope_ob_of_negative n) a.
   Proof.
-    eapply logeq_trans;
-      [|apply (is_positive_iff_linear_wrap (D:=envelope_duploid))].
-    eapply logeq_trans;
-      [|apply is_linear_from_upshift_iff_envelope_counit_precompose].
+    apply weqfibtototal; intro f.
+    apply is_linear_from_upshift_iff_envelope_counit_precompose.
+  Defined.
+
+  Lemma is_positive_envelope_upshift_iff_pre_fixed_point (a : N)
+    : is_negative_pre_fixed_point θ a ≃ is_positive (envelope_ob_of_negative a).
+  Proof.
+    eapply weqcomp; [|apply (is_positive_iff_linear_wrap (D:=envelope_duploid))].
+    eapply weqcomp; [|apply is_linear_from_upshift_iff_envelope_counit_precompose].
     cbn.
-    now rewrite !id_right.
+    rewrite !id_right.
+    exact (idweq _).
   Qed.
 
   Lemma envelope_negative_lift {a b : envelope_ob}
@@ -810,27 +838,30 @@ Section envelope_defs.
 
   Lemma is_thunkable_from_downshift_iff_envelope_unit_postcompose {a : envelope_ob} {b : P}
     (f : envelope_duploid⟦a, envelope_ob_of_positive b⟧)
-    : f♯ · #(L ∙ R) (η b) = f♯ · η ((L ∙ R) b) <->
-        is_thunkable f.
+    : is_positive_oblique_mor_thunkable θ f ≃ is_thunkable f.
   Proof.
-    eapply logeq_trans;
-      [|apply (is_thunkable_iff_delay_wrap (D:=envelope_duploid))].
-    eapply logeq_trans;
-      [|apply issymm_logeq, (weq_to_iff (oblique_mor_positive_path_weq θ _ _))].
-    cbn.
-    now rewrite !id_right, !functor_id, !id_right, !id_left.
+    eapply weqcomp; [|apply (is_thunkable_iff_delay_wrap (D:=envelope_duploid))].
+    eapply weqcomp; [|apply invweq, (oblique_mor_positive_path_weq θ _ _)].
+    cbn. fold R L η.
+    rewrite !id_right, !functor_id, !id_right, !id_left.
+    exact (idweq _).
   Qed.
 
-  Lemma is_negative_envelope_downshift_iff_pre_fixed_point (a : P)
-    : # (L ∙ R) (η a) = η ((L ∙ R) a)
-      <-> is_negative (M:=envelope_duploid) (envelope_ob_of_positive a).
+  Lemma weq_envelope_thunkable_mor_oblique_thunkable_mor (a : envelope_ob) (p : P)
+    : oblique_thunkable_mor θ a⁺ p ≃ thunkable_mor a (envelope_ob_of_positive p).
   Proof.
-    eapply logeq_trans;
-      [|apply (is_negative_iff_thunkable_force (D:=envelope_duploid))].
-    eapply logeq_trans;
-      [|apply is_thunkable_from_downshift_iff_envelope_unit_postcompose].
+    apply weqfibtototal; intro f.
+    apply is_thunkable_from_downshift_iff_envelope_unit_postcompose.
+  Defined.
+
+  Lemma is_negative_envelope_downshift_iff_pre_fixed_point (a : P)
+    : is_positive_pre_fixed_point θ a ≃ is_negative (envelope_ob_of_positive a).
+  Proof.
+    eapply weqcomp; [|apply (is_negative_iff_thunkable_force (D:=envelope_duploid))].
+    eapply weqcomp; [|apply is_thunkable_from_downshift_iff_envelope_unit_postcompose].
     cbn.
-    now rewrite !id_left.
+    rewrite !id_left.
+    exact (idweq _).
   Qed.
 
   Lemma envelope_mor_from_negative_mor {a b : N}
@@ -839,26 +870,10 @@ Section envelope_defs.
         (envelope_ob_of_negative a)
         (envelope_ob_of_negative b).
   Proof.
-    transparent assert (f' :
-        (envelope_duploid⟦
-             envelope_ob_of_negative a,
-             envelope_ob_of_negative b⟧)). {
-      use make_oblique_mor_positive.
-      + exact (ε a · f).
-      + exact (#R f).
-      + abstract (
-            rewrite <- (id_left (#R f)), φ_adj_inv_natural_postcomp;
-            now rewrite φ_adj_inv_identity).
-    }
-    exists f'.
-    apply make_is_linear_and_thunkable.
-    - abstract (apply is_linear_of_force_unwrap;
-                apply oblique_mor_positive_path; cbn;
-                rewrite !id_left, functor_id, id_left, !id_right;
-                apply pathsinv0, functor_comp).
-    - abstract (apply is_thunkable_of_delay_wrap;
-                apply oblique_mor_positive_path; cbn;
-                now rewrite !id_left, !id_right).
+    use make_linear_and_thunkable_mor_from_linear.
+    - use weq_envelope_linear_mor_oblique_linear_mor.
+      exact (oblique_lift_negative' θ f).
+    - apply is_thunkable_of_negative, is_negative_envelope_ob_of_negative.
   Defined.
 
   Lemma envelope_mor_from_positive_mor {a b : P}
@@ -867,26 +882,10 @@ Section envelope_defs.
         (envelope_ob_of_positive a)
         (envelope_ob_of_positive b).
   Proof.
-    transparent assert (f' :
-        (envelope_duploid⟦
-             envelope_ob_of_positive a,
-             envelope_ob_of_positive b⟧)). {
-      use make_oblique_mor_negative.
-      + exact (#L f).
-      + exact (f · η b).
-      + abstract (
-            rewrite <- (id_right (#L f)), φ_adj_natural_precomp;
-            now rewrite φ_adj_identity).
-    }
-    exists f'.
-    apply make_is_linear_and_thunkable.
-    - abstract (apply is_linear_of_force_unwrap;
-                apply oblique_mor_negative_path; cbn;
-                now rewrite !id_right, !id_left).
-    - abstract (apply is_thunkable_of_delay_wrap;
-                apply oblique_mor_negative_path; cbn;
-                rewrite !id_right, functor_id, id_left, !id_right;
-                apply pathsinv0, functor_comp).
+    use make_linear_and_thunkable_mor_from_thunkable.
+    - use weq_envelope_thunkable_mor_oblique_thunkable_mor.
+      exact (oblique_lift_positive' θ f).
+    - apply is_linear_of_positive, is_positive_envelope_ob_of_positive.
   Defined.
 
   Definition negative_category_to_envelope_duploid_data
@@ -1123,34 +1122,24 @@ Section equalized.
   Let ε : R ∙ L ⟹ functor_identity N := adjcounit θ.
 
   Definition fully_faithful_negative_category_to_envelope_duploid_iff
-    : is_negative_equalizing θ <-> fully_faithful (negative_category_to_envelope_duploid θ).
+    : is_negative_equalizing θ ≃ fully_faithful (negative_category_to_envelope_duploid θ).
   Proof.
-    assert (Hweq : ∏ n m (f : negative_category_to_envelope_duploid θ n --> negative_category_to_envelope_duploid θ m),
-             hfiber # (negative_category_to_envelope_duploid θ) f ≃ (∑ f' : N ⟦ n, m ⟧, ε n · f' = (pr11 f) ♭)). {
-      intros n m f.
-      apply (weqtotal2 (idweq _)); intro f'.
-      eapply weqcomp (* paths over ∑ _, tt *).
-      1: apply (weqonpathsincl pr1), isinclpr1; intro; apply isapropifcontr, iscontrunit.
-      eapply weqcomp (* paths over ∑ f, ish_linear f *).
-      1: apply (weqonpathsincl pr1), isinclpr1; intro; apply propproperty.
-      (* paths over oblique_mor θ n m *)
-      apply (weqonpathsincl (λ f, f♭)), isinclweq; intro; apply isweq_oblique_mor_negative.
+    apply invweq.
+    eapply weqcomp; [|apply is_negative_equalizing_weq_isweq_oblique_lift_negative].
+    apply weqonsecfibers; intro n.
+    apply weqonsecfibers; intro m.
+    eapply weqcomp. {
+      unshelve apply (weqonsecbase (X:=oblique_linear_mor θ n m)).
+      eapply weqcomp; [|apply invweq, weqtotalsubtype].
+      apply (weq_envelope_linear_mor_oblique_linear_mor θ n (envelope_ob_of_negative θ m)).
     }
-    split.
-    - intros Hnegative_eq n m f.
-      apply (iscontrweqb (Hweq n m f)).
-      apply Hnegative_eq.
-      induction f as [f Hf0], f as [f Hf]; cbn; clear Hf0.
-      apply (is_linear_from_upshift_iff_envelope_counit_precompose θ f).
-      exact Hf.
-    - intros Hff n m f Hf.
-      apply (is_linear_from_upshift_iff_envelope_counit_precompose θ
-               (a:=n)
-               (b:=envelope_ob_of_negative _ m)
-               (oblique_mor_from_negative θ f))
-        in Hf.
-      apply (iscontrweqf (Hweq n m (((oblique_mor_from_negative θ f),,Hf),,tt))).
-      apply Hff.
+    apply weqonsecfibers; intro f.
+    apply weq_iscontrweqf.
+    apply weqfibtototal; intro f'.
+    eapply weqcomp; [apply subtypeInjectivity; intro; apply isapropunit|].
+    eapply weqcomp; [apply subtypeInjectivity; intro; apply propproperty|].
+    eapply weqcomp; [|apply invweq, subtypeInjectivity; intro; apply propproperty].
+    exact (idweq _).
   Defined.
 
   Lemma split_essentially_surjective_negative_category_to_envelope_duploid
@@ -1158,11 +1147,8 @@ Section equalized.
   Proof.
     intro a; cbn in a.
     exists (envelope_negative_ob θ (pr1 a : envelope_ob θ)).
-    set (α := lt_iso_upshift_of_negative (D:=envelope_duploid θ) (pr1 a) (pr2 a)).
-    use make_z_iso.
-    - exact (make_linear_mor (lt_iso_mor α) (lt_iso_is_linear_and_thunkable α),,tt).
-    - exact (make_linear_mor (lt_iso_inverse α) (lt_iso_inverse α),,tt).
-    - split; do 2 apply carrier_eq; apply (lt_iso_is_inverse α).
+    use weq_z_iso_lt_iso_negative.
+    apply (lt_iso_upshift_of_negative (D:=envelope_duploid θ) (pr1 a) (pr2 a)).
   Defined.
 
   Lemma adj_equivalence_negative_category_to_envelope_duploid_iff
@@ -1180,34 +1166,24 @@ Section equalized.
   Defined.
 
   Definition fully_faithful_positive_category_to_envelope_duploid_iff
-    : is_positive_equalizing θ <-> fully_faithful (positive_category_to_envelope_duploid θ).
+    : is_positive_equalizing θ ≃ fully_faithful (positive_category_to_envelope_duploid θ).
   Proof.
-    assert (Hweq : ∏ p q (f : positive_category_to_envelope_duploid θ p --> positive_category_to_envelope_duploid θ q),
-             hfiber # (positive_category_to_envelope_duploid θ) f ≃ (∑ f' : P ⟦ p, q ⟧, f' · η q = (pr11 f) ♯)). {
-      intros p q f.
-      apply (weqtotal2 (idweq _)); intro f'.
-      eapply weqcomp (* paths over ∑ _, tt *).
-      1: apply (weqonpathsincl pr1), isinclpr1; intro; apply isapropifcontr, iscontrunit.
-      eapply weqcomp (* paths over ∑ f, ish_thunkable f *).
-      1: apply (weqonpathsincl pr1), isinclpr1; intro; apply propproperty.
-      (* paths over oblique_mor θ p q *)
-      apply (weqonpathsincl (λ f, f♯)), isinclweq; intro; apply isweq_oblique_mor_positive.
+    apply invweq.
+    eapply weqcomp; [|apply is_positive_equalizing_weq_isweq_oblique_lift_positive].
+    apply weqonsecfibers; intro p.
+    apply weqonsecfibers; intro q.
+    eapply weqcomp. {
+      unshelve apply (weqonsecbase (X:=oblique_thunkable_mor θ p q)).
+      eapply weqcomp; [|apply invweq, weqtotalsubtype].
+      apply (weq_envelope_thunkable_mor_oblique_thunkable_mor θ (envelope_ob_of_positive θ p) q).
     }
-    split.
-    - intros Hpositive_eq p q f.
-      apply (iscontrweqb (Hweq p q f)).
-      apply Hpositive_eq.
-      induction f as [f Hf0], f as [f Hf]; cbn; clear Hf0.
-      apply (is_thunkable_from_downshift_iff_envelope_unit_postcompose θ f).
-      exact Hf.
-    - intros Hff p q f Hf.
-      apply (is_thunkable_from_downshift_iff_envelope_unit_postcompose θ
-               (b:=q)
-               (a:=envelope_ob_of_positive _ p)
-               (oblique_mor_from_positive θ f))
-        in Hf.
-      apply (iscontrweqf (Hweq p q (((oblique_mor_from_positive θ f),,Hf),,tt))).
-      apply Hff.
+    apply weqonsecfibers; intro f.
+    apply weq_iscontrweqf.
+    apply weqfibtototal; intro f'.
+    eapply weqcomp; [apply subtypeInjectivity; intro; apply isapropunit|].
+    eapply weqcomp; [apply subtypeInjectivity; intro; apply propproperty|].
+    eapply weqcomp; [|apply invweq, subtypeInjectivity; intro; apply propproperty].
+    exact (idweq _).
   Defined.
 
   Lemma split_essentially_surjective_positive_category_to_envelope_duploid
@@ -1215,11 +1191,8 @@ Section equalized.
   Proof.
     intro a; cbn in a.
     exists (envelope_positive_ob θ (pr1 a : envelope_ob θ)).
-    set (α := lt_iso_downshift_of_positive (D:=envelope_duploid θ) (pr1 a) (pr2 a)).
-    use make_z_iso.
-    - exact (make_thunkable_mor (lt_iso_inverse α) (lt_iso_inverse α),,tt).
-    - exact (make_thunkable_mor (lt_iso_mor α) (lt_iso_is_linear_and_thunkable α),,tt).
-    - split; do 2 apply carrier_eq; apply (lt_iso_is_inverse α).
+    use weq_z_iso_lt_iso_positive.
+    apply lt_iso_inv, (lt_iso_downshift_of_positive (D:=envelope_duploid θ) (pr1 a) (pr2 a)).
   Defined.
 
   Lemma adj_equivalence_positive_category_to_envelope_duploid_iff
@@ -1271,7 +1244,7 @@ Section equalized.
     intro f. cbn in f.
     apply (isofhlevelweqb 1 (Y:=paths_from f)).
     2: apply isapropifcontr, iscontr_paths_from.
-    use weqbandf; [apply idweq|]; cbn.
+    apply weqfibtototal.
     intro g.
     apply weqiff; [split | |].
     - intro H.
@@ -1333,7 +1306,7 @@ Section equalized.
         (envelope_positive_ob _ b).
   Proof.
     apply (iso_from_fully_faithful_reflection
-             (pr1 fully_faithful_positive_category_to_envelope_duploid_iff Hpositive_eq)).
+             (fully_faithful_positive_category_to_envelope_duploid_iff Hpositive_eq)).
     refine (weq_z_iso_lt_iso_positive _ _ (_ : lt_iso (⇓a) (⇓b))).
     refine (lt_iso_compose _ (lt_iso_compose H _)).
     - apply lt_iso_inv, lt_iso_downshift_of_positive, Ha.
@@ -1348,7 +1321,7 @@ Section equalized.
         (envelope_negative_ob _ b).
   Proof.
     apply (iso_from_fully_faithful_reflection
-             (pr1 fully_faithful_negative_category_to_envelope_duploid_iff Hnegative_eq)).
+             (fully_faithful_negative_category_to_envelope_duploid_iff Hnegative_eq)).
     refine (weq_z_iso_lt_iso_negative _ _ (_ : lt_iso (⇑a) (⇑b))).
     refine (lt_iso_compose _ (lt_iso_compose H _)).
     - apply lt_iso_upshift_of_negative, Ha.
@@ -1356,27 +1329,21 @@ Section equalized.
   Defined.
 
   Lemma envelope_chosen_negative_of_positive_iff_is_negative (p : P)
-    : is_negative (envelope_ob_of_positive θ p)
-        <-> envelope_chosen_negative θ (envelope_ob_of_positive θ p).
+    : is_negative (envelope_ob_of_positive θ p) ≃ envelope_chosen_negative θ (envelope_ob_of_positive θ p).
   Proof.
-    eapply logeq_trans;
-      [apply issymm_logeq, (is_negative_envelope_downshift_iff_pre_fixed_point θ p)|].
-    eapply logeq_trans;
-      [|apply weq_to_iff, invweq,
-        (is_positive_fixed_point_weq_pre_fixed_point θ Hpositive_eq)].
-    apply isrefl_logeq.
+    apply invweq.
+    intermediate_weq (is_positive_pre_fixed_point θ p).
+    - apply (is_positive_fixed_point_iff_pre_fixed_point θ Hpositive_eq).
+    - apply (is_negative_envelope_downshift_iff_pre_fixed_point θ p).
   Qed.
 
   Lemma envelope_chosen_positive_of_negative_iff_is_positive (n : N)
-    : is_positive (envelope_ob_of_negative θ n)
-        <-> envelope_chosen_positive θ (envelope_ob_of_negative θ n).
+    : is_positive (envelope_ob_of_negative θ n) ≃ envelope_chosen_positive θ (envelope_ob_of_negative θ n).
   Proof.
-    eapply logeq_trans;
-      [apply issymm_logeq, (is_positive_envelope_upshift_iff_pre_fixed_point θ n)|].
-    eapply logeq_trans;
-      [|apply weq_to_iff, invweq,
-        (is_negative_fixed_point_weq_pre_fixed_point θ Hnegative_eq)].
-    apply isrefl_logeq.
+    apply invweq.
+    intermediate_weq (is_negative_pre_fixed_point θ n).
+    - apply (is_negative_fixed_point_iff_pre_fixed_point θ Hnegative_eq).
+    - apply (is_positive_envelope_upshift_iff_pre_fixed_point θ n).
   Qed.
 
   (** Positive category is univalent *)
@@ -1389,7 +1356,7 @@ Section equalized.
     2: easy.
     intro Hn.
     eassert (Hupshift : envelope_chosen_positive θ (envelope_upshift θ a)). {
-      apply (pr1 (envelope_chosen_positive_of_negative_iff_is_positive (envelope_negative_ob _ a))).
+      use (envelope_chosen_positive_of_negative_iff_is_positive (envelope_negative_ob _ a)).
       refine (is_positive_of_lt_iso _ Hp).
       apply lt_iso_inv, (lt_iso_upshift_of_negative a).
       apply is_negative_of_envelope_chosen_negative, Hn.
@@ -1488,7 +1455,7 @@ Section equalized.
     1: easy.
     intro Hp.
     eassert (Hdownshift : envelope_chosen_negative θ (envelope_downshift θ a)). {
-      apply (pr1 (envelope_chosen_negative_of_positive_iff_is_negative (envelope_positive_ob _ a))).
+      use (envelope_chosen_negative_of_positive_iff_is_negative (envelope_positive_ob _ a)).
       refine (is_negative_of_lt_iso _ Hn).
       apply (lt_iso_downshift_of_positive a).
       apply is_positive_of_envelope_chosen_positive, Hp.
@@ -1692,6 +1659,35 @@ Section equalized.
         apply pathsinv0, (base_paths _ _ (envelope_ob_eq_negative' (b,, hinhpr (ii1 finv)) finv)).
       + apply id_to_edge; cbn.
         apply pathsinv0, (base_paths _ _ (envelope_ob_eq_positive' (b,, hinhpr (ii2 finv)) finv)).
+  Defined.
+
+  Lemma isweq_on_objects_oblique_to_envelope_from_isaprop_polarization_choice
+    (H : ∏ a, isaprop (envelope_polarization_choice θ a))
+    : isweq (functor_on_objects (oblique_to_envelope θ)).
+  Proof.
+    use weqhomot.
+    - intermediate_weq split_envelope_ob_rxgraph;
+        [exact weq_oblique_ob_to_split_envelope_ob|].
+      apply weqfibtototal.
+      cbn -[ishinh]; intro a.
+      apply weqiff. {
+        split.
+        - apply hinhpr.
+        - apply factor_through_squash; [apply H|easy].
+      }
+      + apply H.
+      + apply propproperty.
+    - intro a.
+      now induction a; apply carrier_eq.
+  Defined.
+
+  Corollary is_catiso_oblique_to_envelope_from_isaprop_polarization_choice
+    (H : ∏ a, isaprop (envelope_polarization_choice θ a))
+    : is_catiso (oblique_to_envelope θ).
+  Proof.
+    split.
+    - apply fully_faithful_oblique_to_envelope.
+    - apply isweq_on_objects_oblique_to_envelope_from_isaprop_polarization_choice, H.
   Defined.
 
 End equalized.

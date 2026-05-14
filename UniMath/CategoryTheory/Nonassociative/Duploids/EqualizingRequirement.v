@@ -105,7 +105,7 @@ Section oblique_mor_defs.
     (g : P⟦p, R n⟧) : oblique_mor p n
     := make_oblique_mor_positive _ g (idpath _).
 
-  Lemma isaset_oblique_mor {p n} : isaset (oblique_mor p n).
+  Lemma isaset_oblique_mor (p : P) (n : N) : isaset (oblique_mor p n).
   Proof.
     apply isaset_total2.
     1: apply homset_property.
@@ -116,71 +116,104 @@ Section oblique_mor_defs.
     apply isasetaprop, homset_property.
   Qed.
 
-  Definition oblique_mor_negative_path {p : P} {n : N}
-    (f g : oblique_mor p n) (H : f♭ = g♭) : f = g.
+  (** Negative injectivity/equivalence. *)
+  Lemma isincl_oblique_mor_negative (p : P) (n : N)
+    : isincl (@oblique_mor_negative p n).
   Proof.
+    apply (isinclbetweensets _
+             (isaset_oblique_mor _ _)
+             (homset_property _ _ _)).
+    intros f g H.
     induction f as [fb fs], g as [gb gs],
           fs as [fs Hf], gs as [gs Hg].
     cbn in H; induction H.
-    set (Hfg := !Hf @ Hg).
+    assert (Hfg := !Hf @ Hg).
     induction Hfg.
-    assert (Hfgeq : Hf = Hg); [apply proofirrelevance, homset_property|].
+    assert (Hfgeq : Hf = Hg); [apply uip, homset_property|].
     induction Hfgeq.
     reflexivity.
   Qed.
-
+  Lemma issurjective_oblique_mor_negative (p : P) (n : N)
+    : issurjective (@oblique_mor_negative p n).
+  Proof.
+    intro f; apply hinhpr.
+    refine (make_hfiber _ (oblique_mor_from_negative f) _).
+    reflexivity.
+  Defined.
   Lemma isweq_oblique_mor_negative (p : P) (n : N) : isweq (@oblique_mor_negative p n).
   Proof.
-    use isweq_iso.
-    - exact oblique_mor_from_negative.
-    - intro f; now apply oblique_mor_negative_path.
-    - easy.
+    apply isweqinclandsurj.
+    - apply isincl_oblique_mor_negative.
+    - apply issurjective_oblique_mor_negative.
   Defined.
 
-  Lemma isweq_oblique_mor_from_negative (p : P) (n : N) : isweq (@oblique_mor_from_negative p n).
-  Proof.
-    exact (weqproperty (invweq (make_weq _ (isweq_oblique_mor_negative p n)))).
-  Defined.
+  Definition weq_oblique_mor_negative (p : P) (n : N) : oblique_mor p n ≃ N⟦L p, n⟧
+    := make_weq _ (isweq_oblique_mor_negative p n).
+  Definition weq_oblique_mor_from_negative (p : P) (n : N) : N⟦L p, n⟧ ≃ oblique_mor p n
+    := invweq (weq_oblique_mor_negative p n).
+  Definition isweq_oblique_mor_from_negative (p : P) (n : N) : isweq (@oblique_mor_from_negative p n)
+    := weqproperty (weq_oblique_mor_from_negative p n).
 
   Definition oblique_mor_negative_path_weq {p : P} {n : N}
     (f g : oblique_mor p n) : f = g ≃ f♭ = g♭.
   Proof.
     apply weqonpathsincl, isinclweq, isweq_oblique_mor_negative.
   Defined.
-
-  Definition oblique_mor_positive_path {p : P} {n : N}
-    (f g : oblique_mor p n) (H : f♯ = g♯) : f = g.
+  Definition oblique_mor_negative_path {p : P} {n : N}
+    (f g : oblique_mor p n) (H : f♭ = g♭) : f = g.
   Proof.
-    set (Hf := oblique_mor_positive_transpose f).
-    set (Hg := oblique_mor_positive_transpose g).
+    now apply (invmap (oblique_mor_negative_path_weq f g)).
+  Defined.
+
+  (** Positive injectivity/equivalence. *)
+  Lemma isincl_oblique_mor_positive (p : P) (n : N)
+    : isincl (@oblique_mor_positive p n).
+  Proof.
+    apply (isinclbetweensets _
+             (isaset_oblique_mor _ _)
+             (homset_property _ _ _)).
+    intros f g H.
+    assert (Hf := oblique_mor_positive_transpose f).
+    assert (Hg := oblique_mor_positive_transpose g).
     induction f as [fb fs], g as [gb gs],
           fs as [fs Hf'], gs as [gs Hg'].
-    cbn in H; induction H.
-    cbn in Hf, Hg.
-    set (Hfg := !Hf @ Hg).
+    cbn in H, Hf, Hg; induction H.
+    assert (Hfg := !Hf @ Hg); clear Hf Hg.
     induction Hfg.
-    assert (Hfgeq : Hf' = Hg'); [apply proofirrelevance, homset_property|].
+    assert (Hfgeq : Hf' = Hg'); [apply uip, homset_property|].
     induction Hfgeq.
     reflexivity.
   Qed.
-
+  Lemma issurjective_oblique_mor_positive (p : P) (n : N)
+    : issurjective (@oblique_mor_positive p n).
+  Proof.
+    intro f; apply hinhpr.
+    refine (make_hfiber _ (oblique_mor_from_positive f) _).
+    reflexivity.
+  Defined.
   Lemma isweq_oblique_mor_positive (p : P) (n : N) : isweq (@oblique_mor_positive p n).
   Proof.
-    use isweq_iso.
-    - exact oblique_mor_from_positive.
-    - intro f; now apply oblique_mor_positive_path.
-    - easy.
+    apply isweqinclandsurj.
+    - apply isincl_oblique_mor_positive.
+    - apply issurjective_oblique_mor_positive.
   Defined.
 
-  Lemma isweq_oblique_mor_from_positive (p : P) (n : N) : isweq (@oblique_mor_from_positive p n).
-  Proof.
-    exact (weqproperty (invweq (make_weq _ (isweq_oblique_mor_positive p n)))).
-  Defined.
+  Definition weq_oblique_mor_positive (p : P) (n : N) : oblique_mor p n ≃ P⟦p, R n⟧
+    := make_weq _ (isweq_oblique_mor_positive p n).
+  Definition weq_oblique_mor_from_positive (p : P) (n : N) : P⟦p, R n⟧ ≃ oblique_mor p n
+    := invweq (weq_oblique_mor_positive p n).
+  Definition isweq_oblique_mor_from_positive (p : P) (n : N) : isweq (@oblique_mor_from_positive p n)
+    := weqproperty (weq_oblique_mor_from_positive p n).
 
   Definition oblique_mor_positive_path_weq {p : P} {n : N}
     (f g : oblique_mor p n) : f = g ≃ f♯ = g♯.
   Proof.
     apply weqonpathsincl, isinclweq, isweq_oblique_mor_positive.
+  Defined.
+  Definition oblique_mor_positive_path {p : P} {n : N}
+    (f g : oblique_mor p n) (H : f♯ = g♯) : f = g.
+  Proof.
+    now apply (invmap (oblique_mor_positive_path_weq f g)).
   Defined.
 
   (** Constructors and compositions *)
@@ -252,6 +285,46 @@ Section oblique_mor_defs.
       apply oblique_mor_positive_transpose.
   Defined.
 
+  (** Characterizations of polarities of oblique morphisms *)
+
+  Definition is_negative_oblique_mor_linear
+    {n m : N} (f : oblique_mor (R n) m) : UU
+    := #(R ∙ L) (ε n) · f♭ = ε ((R ∙ L) n) · f♭.
+  Lemma isaprop_is_negative_oblique_mor_linear
+    {n m : N} (f : oblique_mor (R n) m)
+    : isaprop (is_negative_oblique_mor_linear f).
+  Proof. apply homset_property. Qed.
+
+  Definition oblique_linear_mor' (n m : N)
+    : hsubtype (oblique_mor (R n) m)
+    := λ f, make_hProp
+              (is_negative_oblique_mor_linear f)
+              (isaprop_is_negative_oblique_mor_linear f).
+  Definition oblique_linear_mor (n m : N) := carrier (oblique_linear_mor' n m).
+  Coercion oblique_linear_mor_mor {n m : N} (f : oblique_linear_mor n m)
+    : oblique_mor (R n) m := pr1carrier _ f.
+  Coercion oblique_linear_mor_property {n m : N} (f : oblique_linear_mor n m)
+    : is_negative_oblique_mor_linear f := pr2 f.
+
+  Definition is_positive_oblique_mor_thunkable
+    {p q : P} (f : oblique_mor p (L q)) : UU
+    := f♯ · #(L ∙ R) (η q) = f♯ · η ((L ∙ R) q).
+  Lemma isaprop_is_positive_oblique_mor_thunkable
+    {p q : P} (f : oblique_mor p (L q))
+    : isaprop (is_positive_oblique_mor_thunkable f).
+  Proof. apply homset_property. Qed.
+
+  Definition oblique_thunkable_mor' (p q : P)
+    : hsubtype (oblique_mor p (L q))
+    := λ f, make_hProp
+              (is_positive_oblique_mor_thunkable f)
+              (isaprop_is_positive_oblique_mor_thunkable f).
+  Definition oblique_thunkable_mor (p q : P) := carrier (oblique_thunkable_mor' p q).
+  Coercion oblique_thunkable_mor_mor {p q : P} (f : oblique_thunkable_mor p q)
+    : oblique_mor p (L q) := pr1carrier _ f.
+  Coercion oblique_thunkable_mor_property {p q : P} (f : oblique_thunkable_mor p q)
+    : is_positive_oblique_mor_thunkable f := pr2 f.
+
   (** Embed a negative morphism *)
   Definition oblique_lift_negative {n m : N}
     (f : n --> m) : oblique_mor (R n) m.
@@ -265,10 +338,23 @@ Section oblique_mor_defs.
       apply φ_adj_inv_identity.
   Defined.
 
+  Lemma is_linear_oblique_lift_negative {n m : N}
+    (f : n --> m)
+    : is_negative_oblique_mor_linear (oblique_lift_negative f).
+  Proof.
+    red; cbn.
+    rewrite !assoc.
+    apply cancel_postcomposition, (nat_trans_ax ε).
+  Qed.
+
   Definition oblique_lift_negative_is_positive_iso_of_iso {n m : N}
     (f : n --> m) (H : is_z_isomorphism f)
     : oblique_is_positive_iso (oblique_lift_negative f).
   Proof. apply functor_on_is_z_isomorphism, H. Defined.
+
+  Definition oblique_lift_negative' {n m : N}
+    (f : n --> m) : oblique_linear_mor n m
+    := _,, is_linear_oblique_lift_negative f.
 
   (** Embed a positive morphism *)
   Definition oblique_lift_positive {p q : P}
@@ -283,30 +369,27 @@ Section oblique_mor_defs.
       apply φ_adj_identity.
   Defined.
 
+  Lemma is_thunkable_oblique_lift_positive {p q : P}
+    (f : p --> q)
+    : is_positive_oblique_mor_thunkable (oblique_lift_positive f).
+  Proof.
+    red; cbn.
+    rewrite !assoc'.
+    apply cancel_precomposition, pathsinv0, (nat_trans_ax η).
+  Qed.
+
   Definition oblique_lift_positive_is_negative_iso_of_iso {p q : P}
     (f : p --> q) (H : is_z_isomorphism f)
     : oblique_is_negative_iso (oblique_lift_positive f).
   Proof. apply functor_on_is_z_isomorphism, H. Defined.
 
-  (** Characterizations of polarities of oblique morphisms *)
-
-  Definition is_negative_oblique_mor_linear
-    {n m : N} (f : oblique_mor (R n) m) : UU
-    := #(R ∙ L) (ε n) · f♭ = ε ((R ∙ L) n) · f♭.
-  Lemma isaprop_is_negative_oblique_mor_linear
-    {n m : N} (f : oblique_mor (R n) m)
-    : isaprop (is_negative_oblique_mor_linear f).
-  Proof. apply homset_property. Qed.
-
-  Definition is_positive_oblique_mor_thunkable
-    {p q : P} (f : oblique_mor p (L q)) : UU
-    := f♯ · #(L ∙ R) (η q) = f♯ · η ((L ∙ R) q).
-  Lemma isaprop_is_positive_oblique_mor_thunkable
-    {p q : P} (f : oblique_mor p (L q))
-    : isaprop (is_positive_oblique_mor_thunkable f).
-  Proof. apply homset_property. Qed.
+  Definition oblique_lift_positive' {p q : P}
+    (f : p --> q) : oblique_thunkable_mor p q
+    := _,, is_thunkable_oblique_lift_positive f.
 
 End oblique_mor_defs.
+Arguments is_negative_oblique_mor_linear / _.
+Arguments is_positive_oblique_mor_thunkable / _.
 
 Notation "f '♭'" := (oblique_mor_negative _ f) : oblique_mor.
 Notation "f '♯'" := (oblique_mor_positive _ f) : oblique_mor.
@@ -351,7 +434,36 @@ Section equalized.
   Coercion is_fully_equalizing_to_is_positive_equalizing
     (H : is_fully_equalizing) : is_positive_equalizing := pr2 H.
 
+  Lemma isweq_iscontrweqf {X Y : UU} (w : X ≃ Y) : isweq (iscontrweqf w).
+  Proof.
+    use isweq_iso.
+    - apply (iscontrweqb w).
+    - intro; apply isapropiscontr.
+    - intro; apply isapropiscontr.
+  Defined.
+
+  Definition weq_iscontrweqf {X Y : UU} (w : X ≃ Y) : iscontr X ≃ iscontr Y
+    := make_weq _ (isweq_iscontrweqf w).
+
   (** Characterizations of the equalizing requirements *)
+  Lemma is_negative_equalizing_weq_isweq_oblique_lift_negative
+    : (∏ (n m : N), isweq (λ (f : n --> m), oblique_lift_negative' θ f))
+        ≃ is_negative_equalizing.
+  Proof.
+    apply weqonsecfibers; intro n.
+    apply weqonsecfibers; intro m.
+    eapply weqcomp; [apply weqsecovertotal2|].
+    eapply weqcomp; [apply (weqonsecbase (X:=N⟦L (R n), m⟧) _
+                              (weq_oblique_mor_from_negative θ _ _))|].
+    apply weqonsecfibers; intro f.
+    apply weqonsecfibers; intro Hf.
+    apply weq_iscontrweqf.
+    apply (weqbandf (idweq _)).
+    intro f'.
+    eapply weqcomp; [apply subtypeInjectivity; intro; apply propproperty|].
+    apply oblique_mor_negative_path_weq.
+  Defined.
+
   Lemma is_negative_equalizing_from_is_epi_and_equation
     (Hepi : ∏ (n : N), is_epi (ε n))
     (Himage : ∏ (n m : N) (f : oblique_mor θ (R n) m) (H : is_negative_oblique_mor_linear θ f),
@@ -385,6 +497,24 @@ Section equalized.
     change ((oblique_lift_negative θ g)♭ = f♭).
     apply (maponpaths (oblique_mor_negative θ)), oblique_mor_positive_path.
     exact Hg.
+  Defined.
+
+  Lemma is_positive_equalizing_weq_isweq_oblique_lift_positive
+    : (∏ (p q : P), isweq (λ (f : p --> q), oblique_lift_positive' θ f))
+        ≃ is_positive_equalizing.
+  Proof.
+    apply weqonsecfibers; intro p.
+    apply weqonsecfibers; intro q.
+    eapply weqcomp; [apply weqsecovertotal2|].
+    eapply weqcomp; [apply (weqonsecbase (X:=P⟦p, R (L q)⟧) _
+                              (weq_oblique_mor_from_positive θ _ _))|].
+    apply weqonsecfibers; intro f.
+    apply weqonsecfibers; intro Hf.
+    apply weq_iscontrweqf.
+    apply (weqbandf (idweq _)).
+    intro f'.
+    eapply weqcomp; [apply subtypeInjectivity; intro; apply propproperty|].
+    apply oblique_mor_positive_path_weq.
   Defined.
 
   Lemma is_positive_equalizing_from_is_monic_and_equation
@@ -486,25 +616,17 @@ Section equalized.
         apply (is_inverse_in_precat1 Hn).
     Qed.
 
-    Lemma is_negative_fixed_point_iff_pre_fixed_point
-      (Hnegative_eq : is_negative_equalizing) (n : N)
-      : is_negative_fixed_point n <-> is_negative_pre_fixed_point n.
-    Proof.
-      split.
-      - apply is_negative_fixed_point_to_pre_fixed_point.
-      - apply (is_negative_fixed_point_from_pre_fixed_point Hnegative_eq).
-    Defined.
-
     (** The negative equalizing requirement makes the negative pre-fixed and
         fixed points coincide *)
-    Lemma is_negative_fixed_point_weq_pre_fixed_point
+    Lemma is_negative_fixed_point_iff_pre_fixed_point
       (Hnegative_eq : is_negative_equalizing) (n : N)
       : is_negative_fixed_point n ≃ is_negative_pre_fixed_point n.
     Proof.
-      apply weqiff.
-      - exact (is_negative_fixed_point_iff_pre_fixed_point Hnegative_eq n).
-      - apply isaprop_is_z_isomorphism.
-      - apply homset_property.
+      apply weqimplimpl.
+      - apply is_negative_fixed_point_to_pre_fixed_point.
+      - apply (is_negative_fixed_point_from_pre_fixed_point Hnegative_eq).
+      - apply isaprop_is_negative_fixed_point.
+      - apply isaprop_is_negative_pre_fixed_point.
     Defined.
   End negative_fixed_point.
 
@@ -573,29 +695,23 @@ Section equalized.
         apply pathsinv0, (is_inverse_in_precat2 Hp).
     Qed.
 
-    Lemma is_positive_fixed_point_iff_pre_fixed_point
-      (Hpositive_eq : is_positive_equalizing) (p : P)
-      : is_positive_fixed_point p <-> is_positive_pre_fixed_point p.
-    Proof.
-      split.
-      - apply is_positive_fixed_point_to_pre_fixed_point.
-      - apply (is_positive_fixed_point_from_pre_fixed_point Hpositive_eq).
-    Defined.
-
     (** The positive equalizing requirement makes the positive pre-fixed and
         fixed points coincide *)
-    Lemma is_positive_fixed_point_weq_pre_fixed_point
+    Lemma is_positive_fixed_point_iff_pre_fixed_point
       (Hpositive_eq : is_positive_equalizing) (p : P)
       : is_positive_fixed_point p ≃ is_positive_pre_fixed_point p.
     Proof.
-      apply weqiff.
-      - exact (is_positive_fixed_point_iff_pre_fixed_point Hpositive_eq p).
-      - apply isaprop_is_z_isomorphism.
-      - apply homset_property.
+      apply weqimplimpl.
+      - apply is_positive_fixed_point_to_pre_fixed_point.
+      - apply (is_positive_fixed_point_from_pre_fixed_point Hpositive_eq).
+      - apply isaprop_is_positive_fixed_point.
+      - apply isaprop_is_positive_pre_fixed_point.
     Defined.
   End positive_fixed_point.
 
 End equalized.
+Arguments is_negative_pre_fixed_point / _.
+Arguments is_positive_pre_fixed_point / _.
 
 (** ** 3. The shift adjunction of a duploid is fully equalizing *)
 

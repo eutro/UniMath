@@ -38,6 +38,7 @@ Require Import UniMath.CategoryTheory.catiso.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Isos.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Subcategories.
+Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Univalence.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Isos.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Envelope.
@@ -68,8 +69,8 @@ Section duploids_from_monads.
   Definition weq_eilenberg_moore_duploid_mor
     {C : category} (T : Monad C) {a b : C}
     : C⟦a, T b⟧ ≃ eilenberg_moore_duploid T⟦envelope_ob_of_positive _ a, envelope_ob_of_positive _ b⟧
-    := make_weq _ (isweq_oblique_mor_from_positive (eilenberg_moore_adjunction T)
-                     a (eilenberg_moore_free T b)).
+    := weq_oblique_mor_from_positive (eilenberg_moore_adjunction T)
+         a (eilenberg_moore_free T b).
 
   Definition eilenberg_moore_duploid_incl
     {C : category} (T : Monad C)
@@ -169,7 +170,7 @@ Section duploids_from_monads.
   Definition weq_kleisli_duploid_mor
     {C : category} (T : Monad C) {a b : C}
     : C⟦a, T b⟧ ≃ kleisli_duploid T⟦envelope_ob_of_positive _ a, envelope_ob_of_positive _ b⟧
-    := make_weq _ (isweq_oblique_mor_from_positive (kleisli_adjunction T) a (kleisli_incl T b)).
+    := weq_oblique_mor_from_positive (kleisli_adjunction T) a (kleisli_incl T b).
 
   Definition kleisli_duploid_incl
     {C : category} (T : Monad C)
