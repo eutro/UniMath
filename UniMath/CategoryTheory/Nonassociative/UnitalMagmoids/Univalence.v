@@ -23,6 +23,8 @@ Require Import UniMath.Combinatorics.RXGraph.
 
 Require Import UniMath.CategoryTheory.Core.Categories.
 Require Import UniMath.CategoryTheory.Core.Functors.
+Require Import UniMath.CategoryTheory.Core.Isos.
+Require Import UniMath.CategoryTheory.Core.Univalence.
 Require Import UniMath.CategoryTheory.catiso.
 
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
@@ -221,6 +223,18 @@ Section unital_magmoid_rxgraph.
         * easy.
       + intros a b; exact (idweq _).
   Defined.
+
+  Definition category_to_rxgraph (C : category) : rxgraph.
+  Proof.
+    use make_rxgraph'.
+    - exact (ob C).
+    - intros a b; exact (z_iso a b).
+    - intros a; exact (identity_z_iso a).
+  Defined.
+
+  Remark category_rxgraph_univalent_eq (C : category)
+    : is_univalent C = is_rxgraph_univalent (category_to_rxgraph C).
+  Proof. reflexivity. Defined.
 End unital_magmoid_rxgraph.
 
 (** * 2. Definition of univalence for unital magmoids *)
@@ -241,5 +255,17 @@ Section unital_magmoid_univalence.
   Remark unital_magmoid_rxgraph_univalent_eq (M : unital_magmoid)
     : is_unital_magmoid_univalent M = is_rxgraph_univalent (unital_magmoid_to_rxgraph M).
   Proof. reflexivity. Defined.
+
+  Lemma isweq_isofhlevelweqf (n : nat) {X Y : UU} (w : X ≃ Y) : isweq (isofhlevelweqf n w).
+  Proof.
+    use isweq_iso.
+    - apply (isofhlevelweqb n w).
+    - intro; apply isapropisofhlevel.
+    - intro; apply isapropisofhlevel.
+  Defined.
+
+  Definition weq_isofhlevelweqf (n : nat) {X Y : UU} (w : X ≃ Y)
+    : isofhlevel n X ≃ isofhlevel n Y
+    := make_weq _ (isweq_isofhlevelweqf n w).
 
 End unital_magmoid_univalence.

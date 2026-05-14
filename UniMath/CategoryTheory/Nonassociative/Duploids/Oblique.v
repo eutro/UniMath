@@ -337,36 +337,36 @@ Section oblique_defs.
   (** The characterisation [is_linear_of_force_unwrap] can be expressed in terms of the counit *)
   Lemma is_linear_iff_oblique_counit_precompose {n : N} {a : oblique_duploid}
     (f : oblique_negative n --> a)
-    : #(R ∙ L) (ε n) · f♭ = ε ((R ∙ L) n) · f♭  <->
-        is_linear f.
+    : is_negative_oblique_mor_linear θ f ≃ is_linear f.
   Proof.
-    eapply logeq_trans;
-      [|apply (is_linear_iff_force_unwrap (D:=oblique_duploid))].
-    eapply logeq_trans;
-      [|apply issymm_logeq, (weq_to_iff (oblique_mor_negative_path_weq θ _ _))].
-    cbn.
+    eapply weqcomp; [|apply (is_linear_iff_force_unwrap (D:=oblique_duploid))].
+    eapply weqcomp; [|apply invweq, (oblique_mor_negative_path_weq θ _ _)].
+    cbn. (* fold L R ε η. *)
     rewrite functor_id, !id_left.
-    apply isrefl_logeq.
+    apply idweq.
   Qed.
+
+  Lemma weq_linear_mor_oblique_linear_mor (n : N) (a : oblique_duploid)
+    : oblique_linear_mor θ n a⁻ ≃ linear_mor (oblique_negative n) a.
+  Proof.
+    apply weqfibtototal; intro f.
+    apply is_linear_iff_oblique_counit_precompose.
+  Defined.
 
   Lemma is_linear_of_oblique_counit_precompose {n : N} {a : oblique_duploid}
     (f : oblique_negative n --> a)
-    : #(R ∙ L) (ε n) · f♭ = ε ((R ∙ L) n) · f♭ ->
-      is_linear f.
+    : is_negative_oblique_mor_linear θ f -> is_linear f.
   Proof. apply is_linear_iff_oblique_counit_precompose. Qed.
 
   (** An object [n] is positive in the oblique duploid if [n] is a fixed point. *)
   Lemma is_positive_oblique_negative_iff_pre_fixed_point (n : N)
-    : # (R ∙ L) (ε n) = ε ((R ∙ L) n)
-      <-> is_positive (oblique_negative n).
+    : is_negative_pre_fixed_point θ n ≃ is_positive (oblique_negative n).
   Proof.
-    eapply logeq_trans;
-      [|apply (is_positive_iff_linear_wrap (D:=oblique_duploid))].
-    eapply logeq_trans;
-      [|apply is_linear_iff_oblique_counit_precompose].
+    eapply weqcomp; [|apply (is_positive_iff_linear_wrap (D:=oblique_duploid))].
+    eapply weqcomp; [|apply is_linear_iff_oblique_counit_precompose].
     cbn.
     rewrite !id_right.
-    apply isrefl_logeq.
+    apply idweq.
   Qed.
 
   Lemma is_positive_oblique_negative_of_fixed_point (n : N)
@@ -390,30 +390,31 @@ Section oblique_defs.
   (** The characterisation [is_thunkable_of_delay_wrap] can be expressed in terms of the counit *)
   Lemma is_thunkable_iff_oblique_unit_postcompose {a : oblique_duploid} {p : P}
     (f : a --> oblique_positive p)
-    : f♯ · #(L ∙ R) (η p) = f♯ · η ((L ∙ R) p)
-      <-> is_thunkable f.
+    : is_positive_oblique_mor_thunkable θ f ≃ is_thunkable f.
   Proof.
-    eapply logeq_trans;
-      [|apply (is_thunkable_iff_delay_wrap (D:=oblique_duploid))].
-    eapply logeq_trans;
-      [|apply issymm_logeq, (weq_to_iff (oblique_mor_positive_path_weq θ _ _))].
+    eapply weqcomp; [|apply (is_thunkable_iff_delay_wrap (D:=oblique_duploid))].
+    eapply weqcomp; [|apply invweq, (oblique_mor_positive_path_weq θ _ _)].
     cbn.
     rewrite functor_id, !id_right.
-    apply isrefl_logeq.
+    apply idweq.
   Qed.
+
+  Lemma weq_thunkable_mor_oblique_thunkable_mor (a : oblique_duploid) (p : P)
+    : oblique_thunkable_mor θ a⁺ p ≃ thunkable_mor a (oblique_positive p).
+  Proof.
+    apply weqfibtototal; intro f.
+    apply is_thunkable_iff_oblique_unit_postcompose.
+  Defined.
 
   (** An object [p] is negative in the oblique duploid if [p] is a fixed point. *)
   Lemma is_negative_oblique_positive_iff_pre_fixed_point (p : P)
-    : # (L ∙ R) (η p) = η ((L ∙ R) p)
-      <-> is_negative (oblique_positive p).
+    : is_positive_pre_fixed_point θ p ≃ is_negative (oblique_positive p).
   Proof.
-    eapply logeq_trans;
-      [|apply (is_negative_iff_thunkable_force (D:=oblique_duploid))].
-    eapply logeq_trans;
-      [|apply is_thunkable_iff_oblique_unit_postcompose].
+    eapply weqcomp; [|apply (is_negative_iff_thunkable_force (D:=oblique_duploid))].
+    eapply weqcomp; [|apply is_thunkable_iff_oblique_unit_postcompose].
     cbn.
     rewrite !id_left.
-    apply isrefl_logeq.
+    apply idweq.
   Qed.
 
   Lemma is_negative_oblique_positive_of_fixed_point (p : P)
@@ -477,16 +478,7 @@ Section oblique_defs.
     (a : oblique_duploid) (Hpositive : is_positive a) (Hnegative : is_negative a)
     : ¬is_duploid_univalent oblique_duploid.
   Proof.
-    intro ua.
-    enough (Heq : (⇑a : oblique_duploid) = ⇓a). {
-      apply nopathstruetofalse.
-      apply (maponpaths coprodtobool) in Heq.
-      induction a; exact Heq.
-    }
-    use (lt_iso_to_id ua).
-    induction a as [n | p].
-    - now use (lt_iso_downshift_of_positive (oblique_negative n : oblique_duploid)).
-    - now use (lt_iso_upshift_of_negative (oblique_positive p : oblique_duploid)).
+    now apply (neg_is_duploid_univalent_if_split oblique_split_duploid a).
   Qed.
 
   Lemma neg_is_univalent_oblique_from_positive_pre_fixed_point
@@ -508,17 +500,6 @@ Section oblique_defs.
     - now apply is_positive_oblique_negative_iff_pre_fixed_point.
     - apply oblique_negative_is_negative.
   Qed.
-
-  Local Lemma isweq_iscontrweqf {X Y : UU} (w : X ≃ Y) : isweq (iscontrweqf w).
-  Proof.
-    use isweq_iso.
-    - apply (iscontrweqb w).
-    - intro; apply isapropiscontr.
-    - intro; apply isapropiscontr.
-  Defined.
-
-  Local Definition weq_iscontrweqf {X Y : UU} (w : X ≃ Y) : iscontr X ≃ iscontr Y
-    := make_weq _ (isweq_iscontrweqf w).
 
   (** Positive inclusion *)
   Definition oblique_chosen_positive_ob_weq
@@ -548,18 +529,8 @@ Section oblique_defs.
       exact (oblique_chosen_positive_ob_weq p).
     - intros p q f.
       refine ((_,,tt),,tt).
-      use make_thunkable_mor; [use make_oblique_mor_negative|].
-      all: cbn.
-      + exact (#L f).
-      + exact (f · η q).
-      + abstract (
-            rewrite <- (id_right (#L f)), φ_adj_natural_precomp;
-            now rewrite φ_adj_identity).
-      + abstract (
-            apply (is_thunkable_of_delay_wrap (D:=oblique_duploid));
-            apply oblique_mor_negative_path; cbn;
-            rewrite functor_id, !id_right;
-            apply pathsinv0, functor_comp).
+      refine (weq_thunkable_mor_oblique_thunkable_mor _ _ _).
+      exact (oblique_lift_positive' θ f).
     - abstract (
           apply make_is_functor;
           [intros p | intros p q r f g]; cbn;
@@ -581,43 +552,24 @@ Section oblique_defs.
   Proof. apply weqproperty. Defined.
 
   Lemma fully_faithful_iff_positive_equalizing_positive_to_oblique_duploid
-    : is_positive_equalizing θ
-      <-> fully_faithful positive_to_oblique_duploid.
+    : is_positive_equalizing θ ≃ fully_faithful positive_to_oblique_duploid.
   Proof.
-    apply weq_to_iff.
+    apply invweq.
+    eapply weqcomp; [|apply is_positive_equalizing_weq_isweq_oblique_lift_positive].
     apply weqonsecfibers; intro p.
     apply weqonsecfibers; intro q.
-    eapply weqcomp.
-    2: {
-      apply invweq.
-      eapply weqcomp. {
-        unshelve apply (weqonsecbase (X:=thunkable_mor (oblique_positive p) (oblique_positive q))).
-        apply invweq.
-        eapply weqcomp; [apply weqtotalsubtype|].
-        apply weqtotalsubtype.
-      }
-      apply weqsecovertotal2.
-    }
     eapply weqcomp. {
-      unshelve apply (weqonsecbase (X:=oblique_mor θ p (L q))).
-      apply (make_weq _ (isweq_oblique_mor_positive θ _ _)).
+      unshelve apply (weqonsecbase (X:=oblique_thunkable_mor θ p q)).
+      do 2 (eapply weqcomp; [|apply invweq, weqtotalsubtype]).
+      apply (weq_thunkable_mor_oblique_thunkable_mor (oblique_positive p) q).
     }
-    apply (weqonsecfibers (X:=oblique_positive p --> oblique_positive q)); intro f.
-    eapply weqcomp. {
-      unshelve apply (weqonsecbase (X:=ish_thunkable f)).
-      apply invweq, weqiff.
-      - apply (is_thunkable_iff_oblique_unit_postcompose f).
-      - apply homset_property.
-      - apply propproperty.
-    }
-    apply weqonsecfibers; intro Hf.
+    apply weqonsecfibers; intro f.
     apply weq_iscontrweqf.
-    use weqbandf; [apply idweq|].
-    intro f'; cbn beta.
-    apply invweq.
+    apply weqfibtototal; intro f'.
     do 2 (eapply weqcomp; [apply subtypeInjectivity; intro; apply isapropunit|]).
     eapply weqcomp; [apply subtypeInjectivity; intro; apply propproperty|].
-    apply oblique_mor_positive_path_weq.
+    eapply weqcomp; [|apply invweq, subtypeInjectivity; intro; apply propproperty].
+    exact (idweq _).
   Qed.
 
   Lemma adj_equiv_of_cats_iff_positive_equalizing_positive_to_oblique_duploid
@@ -674,17 +626,8 @@ Section oblique_defs.
       exact (oblique_chosen_negative_ob_weq n).
     - intros n m f.
       refine ((_,,tt),,tt).
-      use make_linear_mor; [use make_oblique_mor_positive|].
-      all: cbn.
-      + exact (ε n · f).
-      + exact (#R f).
-      + abstract (
-            rewrite <- (id_left (#R f)), φ_adj_inv_natural_postcomp;
-            now rewrite φ_adj_inv_identity).
-      + abstract (apply (is_linear_of_force_unwrap (D:=oblique_duploid));
-                  apply oblique_mor_positive_path; cbn;
-                  rewrite functor_id, !id_left;
-                  apply pathsinv0, functor_comp).
+      refine (weq_linear_mor_oblique_linear_mor _ _ _).
+      exact (oblique_lift_negative' θ f).
     - abstract (
           apply make_is_functor;
           [intros n | intros n m r f g]; cbn;
@@ -706,43 +649,24 @@ Section oblique_defs.
   Proof. apply weqproperty. Defined.
 
   Lemma fully_faithful_iff_negative_equalizing_negative_to_oblique_duploid
-    : is_negative_equalizing θ
-      <-> fully_faithful negative_to_oblique_duploid.
+    : is_negative_equalizing θ ≃ fully_faithful negative_to_oblique_duploid.
   Proof.
-    apply weq_to_iff.
+    apply invweq.
+    eapply weqcomp; [|apply is_negative_equalizing_weq_isweq_oblique_lift_negative].
     apply weqonsecfibers; intro n.
     apply weqonsecfibers; intro m.
-    eapply weqcomp.
-    2: {
-      apply invweq.
-      eapply weqcomp. {
-        unshelve apply (weqonsecbase (X:=linear_mor (oblique_negative n) (oblique_negative m))).
-        apply invweq.
-        eapply weqcomp; [apply weqtotalsubtype|].
-        apply weqtotalsubtype.
-      }
-      apply weqsecovertotal2.
-    }
     eapply weqcomp. {
-      unshelve apply (weqonsecbase (X:=oblique_mor θ (R n) m)).
-      apply (make_weq _ (isweq_oblique_mor_negative θ _ _)).
+      unshelve apply (weqonsecbase (X:=oblique_linear_mor θ n m)).
+      do 2 (eapply weqcomp; [|apply invweq, weqtotalsubtype]).
+      apply (weq_linear_mor_oblique_linear_mor n (oblique_negative m)).
     }
-    apply (weqonsecfibers (X:=oblique_negative n --> oblique_negative m)); intro f.
-    eapply weqcomp. {
-      unshelve apply (weqonsecbase (X:=ish_linear f)).
-      apply invweq, weqiff.
-      - apply (is_linear_iff_oblique_counit_precompose f).
-      - apply homset_property.
-      - apply propproperty.
-    }
-    apply weqonsecfibers; intro Hf.
+    apply weqonsecfibers; intro f.
     apply weq_iscontrweqf.
-    use weqbandf; [apply idweq|].
-    intro f'; cbn beta.
-    apply invweq.
+    apply weqfibtototal; intro f'.
     do 2 (eapply weqcomp; [apply subtypeInjectivity; intro; apply isapropunit|]).
     eapply weqcomp; [apply subtypeInjectivity; intro; apply propproperty|].
-    apply oblique_mor_negative_path_weq.
+    eapply weqcomp; [|apply invweq, subtypeInjectivity; intro; apply propproperty].
+    exact (idweq _).
   Qed.
 
   Lemma adj_equiv_of_cats_iff_negative_equalizing_negative_to_oblique_duploid
@@ -779,6 +703,19 @@ Section oblique_defs.
     : is_split_duploid_univalent oblique_split_duploid.
   Proof.
     split; eapply (transportf is_univalent).
+    - apply positive_eq_oblique_duploid_positive_linear, Heq.
+    - assumption.
+    - apply negative_eq_oblique_duploid_negative_thunkable, Heq.
+    - assumption.
+  Qed.
+
+  Lemma is_univalent_split_oblique_duploid_inv
+    (Heq : is_fully_equalizing θ)
+    (Hunivalent : is_split_duploid_univalent oblique_split_duploid)
+    : is_univalent P × is_univalent N.
+  Proof.
+    induction Hunivalent as [Hpos Hneg].
+    split; eapply (transportb is_univalent).
     - apply positive_eq_oblique_duploid_positive_linear, Heq.
     - assumption.
     - apply negative_eq_oblique_duploid_negative_thunkable, Heq.
