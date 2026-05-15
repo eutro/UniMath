@@ -35,6 +35,7 @@ Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Univalence.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Isos.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Subcategories.
+Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Univalence.
 
 Local Open Scope cat.
 Local Open Scope unital_magmoid.
@@ -702,10 +703,10 @@ Section oblique_defs.
     (Hnegative : is_univalent N)
     : is_split_duploid_univalent oblique_split_duploid.
   Proof.
-    split; eapply (transportf is_univalent).
-    - apply positive_eq_oblique_duploid_positive_linear, Heq.
+    split; eapply transportf_is_univalent_over_catiso.
+    - exact (_,, is_catiso_positive_to_oblique_duploid Heq).
     - assumption.
-    - apply negative_eq_oblique_duploid_negative_thunkable, Heq.
+    - exact (_,, is_catiso_negative_to_oblique_duploid Heq).
     - assumption.
   Qed.
 
@@ -715,10 +716,10 @@ Section oblique_defs.
     : is_univalent P × is_univalent N.
   Proof.
     induction Hunivalent as [Hpos Hneg].
-    split; eapply (transportb is_univalent).
-    - apply positive_eq_oblique_duploid_positive_linear, Heq.
+    split; eapply transportb_is_univalent_over_catiso.
+    - exact (_,, is_catiso_positive_to_oblique_duploid Heq).
     - assumption.
-    - apply negative_eq_oblique_duploid_negative_thunkable, Heq.
+    - exact (_,, is_catiso_negative_to_oblique_duploid Heq).
     - assumption.
   Qed.
 

@@ -1430,19 +1430,17 @@ Section equalized.
     - apply isweq_on_objects_positive_category_to_envelope_duploid.
   Qed.
 
-  Lemma eq_positive_category_envelope_duploid_positive_thunkable
-    : P = (envelope_duploid θ)⁺ₜ.
-  Proof.
-    apply catiso_to_category_path.
-    exact (_,,is_catiso_positive_category_to_envelope_duploid).
-  Defined.
+  Definition catiso_positive_category_envelope_duploid_positive_thunkable : catiso P (envelope_duploid θ)⁺ₜ
+    := positive_category_to_envelope_duploid θ,, is_catiso_positive_category_to_envelope_duploid.
 
-  Lemma is_univalent_envelope_positive_thunkable_category
-    : is_univalent (envelope_duploid θ)⁺ₜ.
+  Definition eq_positive_category_envelope_duploid_positive_thunkable : P = (envelope_duploid θ)⁺ₜ
+    := catiso_to_category_path catiso_positive_category_envelope_duploid_positive_thunkable.
+
+  Lemma is_univalent_envelope_positive_thunkable_category : is_univalent (envelope_duploid θ)⁺ₜ.
   Proof.
-    exact (transportf _
-             eq_positive_category_envelope_duploid_positive_thunkable
-             Hpositive_univalent).
+    eapply (transportf_is_univalent_over_catiso P).
+    - exact catiso_positive_category_envelope_duploid_positive_thunkable.
+    - assumption.
   Qed.
 
   (** Negative category is univalent *)
@@ -1530,19 +1528,17 @@ Section equalized.
     - apply isweq_on_objects_negative_category_to_envelope_duploid.
   Qed.
 
-  Lemma eq_negative_category_envelope_duploid_negative_linear
-    : N = (envelope_duploid θ)⁻ₗ.
-  Proof.
-    apply catiso_to_category_path.
-    exact (_,,is_catiso_negative_category_to_envelope_duploid).
-  Defined.
+  Definition catiso_negative_category_envelope_duploid_negative_linear : catiso N (envelope_duploid θ)⁻ₗ
+    := negative_category_to_envelope_duploid θ,, is_catiso_negative_category_to_envelope_duploid.
 
-  Lemma is_univalent_envelope_negative_linear_category
-    : is_univalent (envelope_duploid θ)⁻ₗ.
+  Definition eq_negative_category_envelope_duploid_negative_linear : N = (envelope_duploid θ)⁻ₗ
+    := catiso_to_category_path catiso_negative_category_envelope_duploid_negative_linear.
+
+  Lemma is_univalent_envelope_negative_linear_category : is_univalent (envelope_duploid θ)⁻ₗ.
   Proof.
-    exact (transportf _
-             eq_negative_category_envelope_duploid_negative_linear
-             Hnegative_univalent).
+    eapply (transportf_is_univalent_over_catiso N).
+    - exact catiso_negative_category_envelope_duploid_negative_linear.
+    - assumption.
   Qed.
 
   Theorem is_univalent_envelope_duploid'

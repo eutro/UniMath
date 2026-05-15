@@ -235,6 +235,46 @@ Section unital_magmoid_rxgraph.
   Remark category_rxgraph_univalent_eq (C : category)
     : is_univalent C = is_rxgraph_univalent (category_to_rxgraph C).
   Proof. reflexivity. Defined.
+
+  Lemma transportf_is_univalent_over_catiso
+    (C D : category) (F : catiso C D) (ua : is_univalent C)
+    : is_univalent D.
+  Proof.
+    (* We could use the univalence axiom, but we don't need it. *)
+    Succeed exact (transportf is_univalent (catiso_to_category_path F) ua).
+    rewrite category_rxgraph_univalent_eq in ua |- *.
+    apply (rxgraph_univalent_from_iso_f' _ ua).
+    use make_pregraph_iso.
+    - exact (catiso_ob_weq F).
+    - cbn; intros a b.
+      apply weq_ff_functor_on_z_iso.
+      exact (pr12 F).
+  Qed.
+
+  Lemma transportb_is_univalent_over_catiso
+    (C D : category) (F : catiso C D) (ua : is_univalent D)
+    : is_univalent C.
+  Proof.
+    rewrite category_rxgraph_univalent_eq in ua |- *.
+    apply (rxgraph_univalent_from_iso_b' _ ua).
+    use make_pregraph_iso.
+    - exact (catiso_ob_weq F).
+    - cbn; intros a b.
+      apply weq_ff_functor_on_z_iso.
+      exact (pr12 F).
+  Qed.
+
+  Lemma weq_is_univalent_over_catiso
+    (C D : category) (F : catiso C D)
+    : is_univalent C ≃ is_univalent D.
+  Proof.
+    use weqimplimpl.
+    - apply transportf_is_univalent_over_catiso, F.
+    - apply transportb_is_univalent_over_catiso, F.
+    - apply isaprop_is_univalent.
+    - apply isaprop_is_univalent.
+  Qed.
+
 End unital_magmoid_rxgraph.
 
 (** * 2. Definition of univalence for unital magmoids *)
