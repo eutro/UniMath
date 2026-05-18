@@ -257,6 +257,20 @@ Section functor_facts.
     - apply (is_thunkable_from_fully_faithful_functor_image f Hlt).
   Qed.
 
+  Lemma is_intermediate_from_fully_faithful_functor_image {a b : M} (f : F a --> F b)
+    (Hintermediate : is_intermediate f) : is_intermediate (fully_faithful_inv_hom Hff _ _ f).
+  Proof.
+    intros c d g h.
+    apply (Injectivity (#F)).
+    1: apply isweqonpathsincl, fully_faithful_implies_full_and_faithful, Hff.
+    rewrite !functor_comp.
+    etrans; [apply cancel_precomposition, cancel_postcomposition,
+        (homotweqinvweq (weq_from_fully_faithful Hff a b) f)|].
+    etrans; [|apply cancel_postcomposition, cancel_precomposition,
+              (!homotweqinvweq (weq_from_fully_faithful Hff a b) f)].
+    apply assoc_intermediate, Hintermediate.
+  Qed.
+
 End functor_facts.
 
 Section functor_facts.
@@ -279,4 +293,15 @@ Section functor_facts.
     eapply make_lt_iso, is_lt_iso_from_fully_faithful_functor_image.
     exact (lt_iso_is_lt_iso f).
   Defined.
+
+  Lemma lti_iso_from_fully_faithful_functor_image {a b : M}
+    (f : lti_iso (F a) (F b)) : lti_iso a b.
+  Proof.
+    pose (finv := lt_iso_from_fully_faithful_functor_image f).
+    apply (lti_iso_from_intermediate_lt_iso finv);
+      apply is_intermediate_from_fully_faithful_functor_image.
+    - exact (pr2 (submm_iso_property _ f)).
+    - exact (pr2 (submm_inverse_property _ f)).
+  Defined.
+
 End functor_facts.

@@ -238,6 +238,33 @@ Section wide_submagmoid_inverses.
     - exact (is_submm_iso_identity a).
   Defined.
 
+  Definition submm_iso_compose {a b c : M}
+    (f : submm_iso a b) (g : submm_iso b c)
+    (Hassoc : ∏ (a b c d : M) (f : P a b) (g : P b c) (h : P c d),
+                pr1carrier _ f · (pr1carrier _ g · pr1carrier _ h)
+                = (pr1carrier _ f · pr1carrier _ g) · pr1carrier _ h)
+    : submm_iso a c.
+  Proof.
+    pose (p := wide_submagmoid_compose _ (submm_iso_to_submagmoid f) (submm_iso_to_submagmoid g)).
+    pose (q := wide_submagmoid_compose _ (submm_inverse_to_submm g) (submm_inverse_to_submm f)).
+    exists p, q.
+    split.
+    - abstract (
+          etrans; [apply (Hassoc _ _ _ _ p)|];
+          etrans; [apply cancel_postcomposition, pathsinv0, Hassoc|];
+          etrans; [refine (maponpaths (λ f, _ · f · _) _);
+                   apply (is_inverse_in_precat1 g)|];
+          rewrite magmoid_id_right;
+          apply (is_inverse_in_precat1 f)).
+    - abstract (
+          etrans; [apply (Hassoc _ _ _ _ q)|];
+          etrans; [apply cancel_postcomposition, pathsinv0, Hassoc|];
+          etrans; [refine (maponpaths (λ f, _ · f · _) _);
+                   apply (is_inverse_in_precat2 f)|];
+          rewrite magmoid_id_right;
+          apply (is_inverse_in_precat2 g)).
+  Defined.
+
   Definition submm_iso'_identity (a : M)
     : submm_iso' a a
     := weq_submm_iso _ _ (submm_iso_identity a).
@@ -697,6 +724,16 @@ Section isos.
     - apply (make_linear_and_thunkable_mor (submm_inverse_mor _ f)).
       abstract exact (pr1 (submm_inverse_property _ f)).
     - exact f.
+  Defined.
+
+  Definition lti_iso_compose {a b c : M}
+    (f : lti_iso a b) (g : lti_iso b c)
+    : lti_iso a c.
+  Proof.
+    apply (submm_iso_compose _ f g).
+    clear a b c f g.
+    abstract (intros a b c d f g h;
+              apply assoc_intermediate, (pr2 g)).
   Defined.
 
   Definition lti_iso_to_i_iso {a b : M} (f : lti_iso a b) : i_iso a b.
