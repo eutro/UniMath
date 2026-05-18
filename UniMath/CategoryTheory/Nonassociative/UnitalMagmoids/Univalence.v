@@ -29,6 +29,7 @@ Require Import UniMath.CategoryTheory.catiso.
 
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Isos.
+Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Functors.
 
 Local Open Scope cat.
 Local Open Scope rxgraph.
@@ -296,16 +297,99 @@ Section unital_magmoid_univalence.
     : is_unital_magmoid_univalent M = is_rxgraph_univalent (unital_magmoid_to_rxgraph M).
   Proof. reflexivity. Defined.
 
-  Lemma isweq_isofhlevelweqf (n : nat) {X Y : UU} (w : X ≃ Y) : isweq (isofhlevelweqf n w).
+  Definition isaprop_lti_iso_fiber_from_fully_faithful {M M' : unital_magmoid}
+    (F : M ⟶ M') (Hff : fully_faithful F)
+    (ua : is_unital_magmoid_univalent M)
+    (a : M')
+    : isaprop (∑ b, lti_iso (F b) a).
   Proof.
-    use isweq_iso.
-    - apply (isofhlevelweqb n w).
-    - intro; apply isapropisofhlevel.
-    - intro; apply isapropisofhlevel.
+    use invproofirrelevance.
+    intros H₁ H₂; induction H₁ as [b₁ e₁], H₂ as [b₂ e₂].
+    pose (e := lti_iso_compose e₁ (submm_iso_inv _ e₂)).
+    pose (e' := lti_iso_from_fully_faithful_functor_image F Hff e).
+    assert (H := iscontr_uniqueness
+                   (is_rxgraph_univalent_to_iscontr_edges_from
+                      (unital_magmoid_to_rxgraph M) ua b₁)
+                   (b₂,, e')).
+    apply total2_paths_equiv in H;
+      induction H as [H₁ H₂]; cbn in H₁, H₂.
+    induction H₁; cbn in H₂.
+    apply pair_path_in2.
+    assert (He : e = submm_iso_identity _ _). {
+      apply lti_iso_eq.
+      refine (_ @ functor_id F b₂).
+      do 2 apply base_paths in H₂; cbn in H₂.
+      refine (_ @ maponpaths #F H₂).
+      apply pathsinv0, (homotweqinvweq (weq_from_fully_faithful Hff _ _)).
+    }
+    clear e' H₂; subst e.
+    do 2 apply base_paths in He.
+    change (submm_iso_mor _ e₁ · submm_inverse_mor _ e₂ = identity _) in He.
+    apply lti_iso_eq.
+    rewrite <- (magmoid_id_right e₁), <- (magmoid_id_left e₂).
+    rewrite <- (is_inverse_in_precat2 e₂).
+    etrans; [apply assoc_thunkable; exact e₁|].
+    apply cancel_postcomposition.
+    exact He.
+  Qed.
+
+  Definition isincl_um_from_fully_faithful {M M' : unital_magmoid}
+    (F : M ⟶ M')
+    (Hff : fully_faithful F)
+    (ua₁ : is_unital_magmoid_univalent M)
+    (ua₂ : is_unital_magmoid_univalent M')
+    : isincl (functor_on_objects F).
+  Proof.
+    intro a.
+    apply (isofhlevelweqf 1 (X:=∑ b, lti_iso (F b) a)).
+    - apply weqfibtototal; intro b.
+      apply invweq, (_,, ua₂ (F b) a).
+    - apply (isaprop_lti_iso_fiber_from_fully_faithful _ Hff ua₁).
+  Qed.
+
+  Definition is_lti_essentially_surjective {M M' : unital_magmoid}
+    (F : functor_data M M') : hProp
+    := ∀ (a : M'), ∃ (b : M), lti_iso (F b) a.
+
+  Definition issurjective_from_lti_eso {M M' : unital_magmoid}
+    (F : M ⟶ M')
+    (Heso : is_lti_essentially_surjective F)
+    (ua : is_unital_magmoid_univalent M')
+    : issurjective (functor_on_objects F).
+  Proof.
+    intro a.
+    refine (hinhfun _ (Heso a)).
+    intro H; induction H as [b e].
+    exists b.
+    exact (invmap (_,, ua (F b) a) e).
   Defined.
 
-  Definition weq_isofhlevelweqf (n : nat) {X Y : UU} (w : X ≃ Y)
-    : isofhlevel n X ≃ isofhlevel n Y
-    := make_weq _ (isweq_isofhlevelweqf n w).
+  Definition isweq_on_objects_from_weak_um_equiv
+    {M M' : unital_magmoid}
+    (F : M ⟶ M')
+    (Hff : fully_faithful F)
+    (Heso : is_lti_essentially_surjective F)
+    (ua₁ : is_unital_magmoid_univalent M)
+    (ua₂ : is_unital_magmoid_univalent M')
+    : isweq (functor_on_objects F).
+  Proof.
+    apply isweqinclandsurj.
+    - exact (isincl_um_from_fully_faithful _ Hff ua₁ ua₂).
+    - exact (issurjective_from_lti_eso _ Heso ua₂).
+  Defined.
+
+  Definition is_catiso_from_weak_um_equiv
+    {M M' : unital_magmoid}
+    (F : M ⟶ M')
+    (Hff : fully_faithful F)
+    (Heso : is_lti_essentially_surjective F)
+    (ua₁ : is_unital_magmoid_univalent M)
+    (ua₂ : is_unital_magmoid_univalent M')
+    : is_catiso F.
+  Proof.
+    split.
+    - exact Hff.
+    - now apply isweq_on_objects_from_weak_um_equiv.
+  Defined.
 
 End unital_magmoid_univalence.
