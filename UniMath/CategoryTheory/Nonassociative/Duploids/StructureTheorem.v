@@ -244,6 +244,48 @@ Section envelope_equiv.
     - abstract (intros f; apply oblique_mor_negative_path; now do 2 apply carrier_eq).
   Defined.
 
+  Definition negative_duploid_to_envelope_on_shifts_preimage
+    (b : envelope_ob θ) (Hn : is_negative b)
+    : ∑ a : D, lt_iso (duploid_to_envelope_on_shifts a) b.
+  Proof.
+    set (a := envelope_negative_ob θ b); cbn in a.
+    exists a.
+    refine (lt_iso_compose (b:=⇑(duploid_to_envelope_on_shifts a)) _ _). {
+      apply lt_iso_inv, lt_iso_upshift_of_negative.
+      apply is_negative_of_envelope_chosen_negative.
+      apply envelope_on_shifts_chosen_negative_of_is_negative.
+      apply a.
+    }
+    refine (lt_iso_compose (b:=⇑b) _ _). {
+      apply envelope_lt_iso_from_negative_iso.
+      use weq_z_iso_lt_iso_negative.
+      change (lt_iso (⇑(a : D)) a).
+      apply lt_iso_upshift_of_negative, a.
+    }
+    apply lt_iso_upshift_of_negative, Hn.
+  Defined.
+
+  Definition positive_duploid_to_envelope_on_shifts_preimage
+    (b : envelope_ob θ) (Hp : is_positive b)
+    : ∑ a : D, lt_iso (duploid_to_envelope_on_shifts a) b.
+  Proof.
+    set (a := envelope_positive_ob θ b); cbn in a.
+    exists a.
+    refine (lt_iso_compose (b:=⇓(duploid_to_envelope_on_shifts a)) _ _). {
+      apply lt_iso_downshift_of_positive.
+      apply is_positive_of_envelope_chosen_positive.
+      apply envelope_on_shifts_chosen_positive_of_is_positive.
+      apply a.
+    }
+    refine (lt_iso_compose (b:=⇓b) _ _). {
+      apply envelope_lt_iso_from_positive_iso.
+      use weq_z_iso_lt_iso_positive.
+      change (lt_iso (⇓(a : D)) a).
+      apply lt_iso_inv, lt_iso_downshift_of_positive, a.
+    }
+    apply lt_iso_inv, lt_iso_downshift_of_positive, Hp.
+  Defined.
+
   Lemma lt_essentially_surjective_duploid_to_envelope_on_shifts
     : lt_essentially_surjective duploid_to_envelope_on_shifts.
   Proof.
@@ -251,58 +293,22 @@ Section envelope_equiv.
     apply (has_polarity_rec (polarity_of D' a)).
     - apply isapropishinh.
     - intro Hn; apply hinhpr.
-      set (a' := envelope_negative_ob θ a); cbn in a'.
-      exists a'.
-      refine (lt_iso_compose (b:=⇑(duploid_to_envelope_on_shifts a')) _ _). {
-        apply lt_iso_inv, lt_iso_upshift_of_negative.
-        apply is_negative_of_envelope_chosen_negative.
-        apply envelope_on_shifts_chosen_negative_of_is_negative.
-        apply a'.
+      apply negative_duploid_to_envelope_on_shifts_preimage, Hn.
+    - intro Hp; apply hinhpr.
+      apply positive_duploid_to_envelope_on_shifts_preimage, Hp.
+  Qed.
+
+  Lemma split_lt_essentially_surjective_duploid_to_envelope_on_shifts_from_LEM
+    : LEM -> split_lt_essentially_surjective duploid_to_envelope_on_shifts.
+  Proof.
+    intros lem a; cbn in a.
+    set (Hlemn := lem (ish_negative a)).
+    induction Hlemn as [Hn | Hnotn].
+    - apply negative_duploid_to_envelope_on_shifts_preimage, Hn.
+    - assert (Hp : is_positive a). {
+        now apply (has_polarity_rec (polarity_of D' a) (isaprop_is_positive a)).
       }
-      refine (lt_iso_compose (b:=⇑(a : D')) _ _). {
-        apply envelope_lt_iso_from_negative_iso.
-        cbn.
-        enough (H : lt_iso (⇑(a' : D)) a'). {
-          use make_z_iso.
-          - refine (_,,tt).
-            exists (lt_iso_mor H).
-            apply lt_iso_is_linear_and_thunkable.
-          - refine (_,,tt).
-            exists (lt_iso_inverse H).
-            apply linear_and_thunkable_mor_is_linear_and_thunkable.
-          - split; do 2 apply carrier_eq; cbn.
-            + exact (is_inverse_in_precat1 (lt_iso_is_inverse H)).
-            + exact (is_inverse_in_precat2 (lt_iso_is_inverse H)).
-        }
-        apply lt_iso_upshift_of_negative, a'.
-      }
-      apply lt_iso_upshift_of_negative, Hn.
-    - intro Hn; apply hinhpr.
-      set (a' := envelope_positive_ob θ a); cbn in a'.
-      exists a'.
-      refine (lt_iso_compose (b:=⇓(duploid_to_envelope_on_shifts a')) _ _). {
-        apply lt_iso_downshift_of_positive.
-        apply is_positive_of_envelope_chosen_positive.
-        apply envelope_on_shifts_chosen_positive_of_is_positive, a'.
-      }
-      refine (lt_iso_compose (b:=⇓(a : D')) _ _). {
-        apply envelope_lt_iso_from_positive_iso.
-        cbn.
-        enough (H : lt_iso (⇓(a' : D)) a'). {
-          use make_z_iso.
-          - refine (_,,tt).
-            exists (lt_iso_mor H).
-            apply lt_iso_is_linear_and_thunkable.
-          - refine (_,,tt).
-            exists (lt_iso_inverse H).
-            apply linear_and_thunkable_mor_is_linear_and_thunkable.
-          - split; do 2 apply carrier_eq; cbn.
-            + exact (is_inverse_in_precat1 (lt_iso_is_inverse H)).
-            + exact (is_inverse_in_precat2 (lt_iso_is_inverse H)).
-        }
-        apply lt_iso_inv, lt_iso_downshift_of_positive, a'.
-      }
-      apply lt_iso_inv, lt_iso_downshift_of_positive, Hn.
+      apply positive_duploid_to_envelope_on_shifts_preimage, Hp.
   Qed.
 
   Lemma is_weak_dupoid_equivalence_duploid_to_envelope_on_shifts
@@ -311,6 +317,15 @@ Section envelope_equiv.
     use make_is_weak_duploid_equivalence.
     - exact fully_faithful_duploid_to_envelope_on_shifts.
     - exact lt_essentially_surjective_duploid_to_envelope_on_shifts.
+  Defined.
+
+  Lemma dupoid_equivalence_duploid_to_envelope_on_shifts_from_LEM
+    : LEM -> is_duploid_equivalence duploid_to_envelope_on_shifts.
+  Proof.
+    intro lem.
+    use make_is_duploid_equivalence.
+    - exact fully_faithful_duploid_to_envelope_on_shifts.
+    - exact (split_lt_essentially_surjective_duploid_to_envelope_on_shifts_from_LEM lem).
   Defined.
 
   Theorem weak_dupoid_equivalence_duploid_to_envelope_on_shifts
