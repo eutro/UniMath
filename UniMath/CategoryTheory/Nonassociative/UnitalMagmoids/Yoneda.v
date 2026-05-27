@@ -674,7 +674,7 @@ Section yoneda.
          um_yoneda_linear_fully_faithful _ _ α).
 
   (** A linear isomorphism [a ≅ₗ b] is equivalently a natural isomorphism [M⟦-, a⟧ ≅ M⟦-, b⟧]. *)
-  Definition weq_um_yoneda_linear_isos' {a b : M}
+  Definition weq_um_yoneda_linear_isos {a b : M}
     : z_iso (C:=linear_category M) a b
         ≃ z_iso (um_yoneda_linear a) (um_yoneda_linear b).
   Proof.
