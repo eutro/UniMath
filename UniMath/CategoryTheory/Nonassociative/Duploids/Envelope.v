@@ -1567,12 +1567,13 @@ Section equalized.
     - apply isweq_on_objects_kleisli_to_envelope_duploid.
   Defined.
 
-  Lemma eq_kleisli_subcategory_envelope_duploid_positive
-    : Kleisli_cat_monad (Monad_from_adjunction θ) = (envelope_duploid θ)⁺.
-  Proof.
-    use catiso_to_category_path.
-    exact (_,,is_catiso_kleisli_to_envelope_duploid).
-  Defined.
+  Definition catiso_kleisli_to_envelope_duploid
+    : catiso (Kleisli_cat_monad (Monad_from_adjunction θ)) (envelope_duploid θ)⁺
+    := _,, is_catiso_kleisli_to_envelope_duploid.
+
+  Definition eq_kleisli_subcategory_envelope_duploid_positive
+    : Kleisli_cat_monad (Monad_from_adjunction θ) = (envelope_duploid θ)⁺
+    := catiso_to_category_path catiso_kleisli_to_envelope_duploid.
 
   (** The negative subcategory is the Kleisli category. *)
   Lemma isweq_on_objects_cokleisli_to_envelope_duploid
@@ -1592,12 +1593,13 @@ Section equalized.
     - apply isweq_on_objects_cokleisli_to_envelope_duploid.
   Defined.
 
-  Lemma eq_cokleisli_subcategory_envelope_duploid_negative
-    : Cokleisli_cat_monad (Comonad_from_adjunction θ) = (envelope_duploid θ)⁻.
-  Proof.
-    use catiso_to_category_path.
-    exact (_,,is_catiso_cokleisli_to_envelope_duploid).
-  Defined.
+  Definition catiso_cokleisli_to_envelope_duploid
+    : catiso (Cokleisli_cat_monad (Comonad_from_adjunction θ)) (envelope_duploid θ)⁻
+    := _,, is_catiso_cokleisli_to_envelope_duploid.
+
+  Definition eq_cokleisli_subcategory_envelope_duploid_negative
+    : Cokleisli_cat_monad (Comonad_from_adjunction θ) = (envelope_duploid θ)⁻
+    := catiso_to_category_path catiso_cokleisli_to_envelope_duploid.
 
   Definition split_envelope_ob_rxgraph : univalent_rxgraph.
   Proof.

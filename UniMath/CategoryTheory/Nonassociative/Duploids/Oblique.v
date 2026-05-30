@@ -10,6 +10,7 @@
  2. Definition of the oblique duploid
  3. Lemmas about the oblique duploid
  4. Univalence of the oblique duploid
+ 5. The Kleisli and CoKleisli categories as subcategories
 
  ********************************************************************************)
 
@@ -26,6 +27,10 @@ Require Import UniMath.CategoryTheory.Subcategory.Core.
 Require Import UniMath.CategoryTheory.Equivalences.Core.
 Require Import UniMath.CategoryTheory.catiso.
 Require Import UniMath.CategoryTheory.whiskering.
+Require Import UniMath.CategoryTheory.Monads.CoKleisliCategory.
+Require Import UniMath.CategoryTheory.Monads.Comonads.
+Require Import UniMath.CategoryTheory.Monads.KleisliCategory.
+Require Import UniMath.CategoryTheory.Monads.Monads.
 
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.Core.
 Require Import UniMath.CategoryTheory.Nonassociative.Duploids.TwoSorted.
@@ -722,5 +727,137 @@ Section oblique_defs.
     - exact (_,, is_catiso_negative_to_oblique_duploid Heq).
     - assumption.
   Qed.
+
+  (** ** The Kleisli and CoKleisli categories as subcategories *)
+
+  (** Kleisli *)
+  Definition kleisli_to_oblique_duploid_data
+    : functor_data (Kleisli_cat_monad (Monad_from_adjunction θ)) oblique_split_duploid⁺ᶜ.
+  Proof.
+    use make_functor_data.
+    - intro p.
+      exists (oblique_positive p,, oblique_positive_is_positive p).
+      reflexivity.
+    - intros p q.
+      refine (pr1weq _).
+      eapply weqcomp; [|apply invweq, weqtotalsubtype].
+      eapply weqcomp; [|apply weq_mor_to_positive_category].
+      apply weq_oblique_mor_from_positive.
+  Defined.
+
+  Lemma is_functor_kleisli_to_oblique_duploid
+    : is_functor kleisli_to_oblique_duploid_data.
+  Proof.
+    use make_is_functor.
+    - intro p.
+      do 3 apply carrier_eq.
+      now apply oblique_mor_positive_path.
+    - intros p q r f g.
+      do 3 apply carrier_eq.
+      apply oblique_mor_positive_path.
+      etrans; [|apply cancel_precomposition, pathsinv0, functor_comp].
+      reflexivity.
+  Qed.
+
+  Definition kleisli_to_oblique_duploid
+    : functor (Kleisli_cat_monad (Monad_from_adjunction θ)) oblique_split_duploid⁺ᶜ
+    := make_functor _ is_functor_kleisli_to_oblique_duploid.
+
+  Definition fully_faithful_kleisli_to_oblique_duploid
+    : fully_faithful kleisli_to_oblique_duploid.
+  Proof. intros p q; apply weqproperty. Defined.
+
+  Definition isweq_on_objects_kleisli_to_oblique_duploid
+    : isweq (functor_on_objects kleisli_to_oblique_duploid).
+  Proof.
+    use isweq_iso.
+    - intros [[a Ha₀] Ha].
+      induction a as [n | p].
+      1: apply fromempty, nopathsfalsetotrue, Ha.
+      exact p.
+    - easy.
+    - abstract (
+          intros [[a Ha₀] Ha];
+          do 2 apply carrier_eq;
+          induction a as [n | p];
+          [apply fromempty, nopathsfalsetotrue, Ha | reflexivity]).
+  Defined.
+
+  Definition is_catiso_kleisli_to_oblique_duploid
+    : is_catiso kleisli_to_oblique_duploid.
+  Proof.
+    split.
+    - exact fully_faithful_kleisli_to_oblique_duploid.
+    - exact isweq_on_objects_kleisli_to_oblique_duploid.
+  Defined.
+
+  Definition catiso_kleisli_to_oblique_duploid
+    : catiso (Kleisli_cat_monad (Monad_from_adjunction θ)) oblique_split_duploid⁺ᶜ
+    := _,, is_catiso_kleisli_to_oblique_duploid.
+
+  (** CoKleisli *)
+  Definition cokleisli_to_oblique_duploid_data
+    : functor_data (Cokleisli_cat_monad (Comonad_from_adjunction θ)) oblique_split_duploid⁻ᶜ.
+  Proof.
+    use make_functor_data.
+    - intro n.
+      exists (oblique_negative n,, oblique_negative_is_negative n).
+      reflexivity.
+    - intros n m.
+      refine (pr1weq _).
+      eapply weqcomp; [|apply invweq, weqtotalsubtype].
+      eapply weqcomp; [|apply weq_mor_to_negative_category].
+      apply weq_oblique_mor_from_negative.
+  Defined.
+
+  Lemma is_functor_cokleisli_to_oblique_duploid
+    : is_functor cokleisli_to_oblique_duploid_data.
+  Proof.
+    use make_is_functor.
+    - intro n.
+      do 3 apply carrier_eq.
+      now apply oblique_mor_negative_path.
+    - intros n m r f g.
+      do 3 apply carrier_eq.
+      apply oblique_mor_negative_path.
+      etrans; [|apply cancel_postcomposition, pathsinv0, functor_comp].
+      reflexivity.
+  Qed.
+
+  Definition cokleisli_to_oblique_duploid
+    : functor (Cokleisli_cat_monad (Comonad_from_adjunction θ)) oblique_split_duploid⁻ᶜ
+    := make_functor _ is_functor_cokleisli_to_oblique_duploid.
+
+  Definition fully_faithful_cokleisli_to_oblique_duploid
+    : fully_faithful cokleisli_to_oblique_duploid.
+  Proof. intros p q; apply weqproperty. Defined.
+
+  Definition isweq_on_objects_cokleisli_to_oblique_duploid
+    : isweq (functor_on_objects cokleisli_to_oblique_duploid).
+  Proof.
+    use isweq_iso.
+    - intros [[a Ha₀] Ha].
+      induction a as [n | p].
+      2: apply fromempty, nopathstruetofalse, Ha.
+      exact n.
+    - easy.
+    - abstract (
+          intros [[a Ha₀] Ha];
+          do 2 apply carrier_eq;
+          induction a as [n | p];
+          [reflexivity | apply fromempty, nopathstruetofalse, Ha]).
+  Defined.
+
+  Definition is_catiso_cokleisli_to_oblique_duploid
+    : is_catiso cokleisli_to_oblique_duploid.
+  Proof.
+    split.
+    - exact fully_faithful_cokleisli_to_oblique_duploid.
+    - exact isweq_on_objects_cokleisli_to_oblique_duploid.
+  Defined.
+
+  Definition catiso_cokleisli_to_oblique_duploid
+    : catiso (Cokleisli_cat_monad (Comonad_from_adjunction θ)) oblique_split_duploid⁻ᶜ
+    := _,, is_catiso_cokleisli_to_oblique_duploid.
 
 End oblique_defs.
