@@ -296,6 +296,22 @@ Section polarity_lemmas.
     now rewrite <- Hg, !Hf, Hg.
   Qed.
 
+  Lemma is_negative_of_all_intermediate (a : M)
+    (H : ∏ (b : M) (f : a --> b), is_intermediate f)
+    : is_negative a.
+  Proof.
+    intros b f c d g h.
+    apply assoc_intermediate, H.
+  Qed.
+
+  Lemma is_positive_of_all_intermediate (a : M)
+    (H : ∏ (b : M) (f : a <-- b), is_intermediate f)
+    : is_positive a.
+  Proof.
+    intros b f c d g h.
+    apply assoc'_intermediate, H.
+  Qed.
+
 End polarity_lemmas.
 
 Section polarity_lemmas.
