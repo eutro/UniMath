@@ -6,7 +6,9 @@
  January 2026
 
  Contents:
- TODO
+ 1. Category as a (pre)duploid
+ 2. Polarized subcategories
+ 3. Envelope duploid inclusions
 
  ********************************************************************************)
 
@@ -43,6 +45,8 @@ Local Open Scope oblique_mor.
 Section from_category_def.
   Context (C : category).
 
+  (** ** 1. Category as a (pre)duploid *)
+
   Definition category_has_polarities : has_polarities C.
   Proof.
     intro a.
@@ -73,6 +77,8 @@ Section from_category_def.
 
   Definition category_as_duploid : duploid
     := make_duploid category_as_preduploid category_has_polarity_shifts.
+
+  (** ** 2. Polarized subcategories *)
 
   Definition catiso_category_as_duploid_positive_category
     : catiso C⁺ C.
@@ -161,6 +167,7 @@ Section from_category_def.
   Qed.
 End from_category_def.
 
+(** ** 3. Envelope duploid inclusions *)
 Section envelope_duploid.
   Context {N P : category} (θ : adjunction P N).
 

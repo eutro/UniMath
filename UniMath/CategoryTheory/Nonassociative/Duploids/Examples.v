@@ -2,12 +2,12 @@
 
  Examples of Duploids
 
+ Author: B. Szilvasy
+ April 2026
+
  Contents:
  1. Duploids from monads.
  2. Thunk-force categories.
-
- Author: B. Szilvasy
- April 2026
 
  ********************************************************************************)
 

@@ -326,11 +326,6 @@ End shift_functors.
   which moreover form adjoint equivalences, I ⊣ ⇓ : Dₜ ≃ D⁺ₜ and I ⊣ ⇑ : Dₗ ≃
   D⁻ₗ.
 
-  TODO: would it be better to define all the [wrap]/[unwrap]/[force]/[delay]
-  natural transformations?  Them being included in the data would be helpful,
-  but it would be terribly frustrating proving their naturality over and over
-  again...
-
 *)
 Local Notation "F '⟸' G" := (nat_trans G F) (at level 39).
   (* type in Emacs using agda-input with \l * *)

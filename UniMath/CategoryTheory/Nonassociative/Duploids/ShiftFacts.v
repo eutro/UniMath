@@ -19,7 +19,14 @@
    there is a unique thunkable map [f† : a --> ⇑b] with [f† · force a = f].
 
  Contents:
- TODO
+ 1. Universal properties of shifts
+ 1.1. Universal property of negative shifts
+ 1.2. [has_negative_shifts] has the universal property
+ 1.3. [has_negative_shifts] from UP
+ 1.4. Universal property of positive shifts
+ 1.5. [has_positive_shifts] has the universal property
+ 1.6. [has_positive_shifts] from UP
+ 2. Derived properties from the universal properties
 
  ********************************************************************************)
 
@@ -45,7 +52,7 @@ Section negative_shifts_up.
 
   Context (Dnegative : negative_shift_data M).
 
-  (** Universal property of negative shifts *)
+  (** *** 1.1. Universal property of negative shifts *)
   Definition has_negative_shifts_up : UU
     := (∏ (a : M), is_linear (force' Dnegative a)) ×
          (∏ (a : M), is_monic (force' Dnegative a)) ×
@@ -94,7 +101,7 @@ Section negative_shifts_up.
       + apply Hlift_thunkable.
   Defined.
 
-  (** [has_negative_shifts] has the universal property *)
+  (** *** 1.2. [has_negative_shifts] has the universal property *)
 
   Hypothesis (Hnegative : negative_shift_axioms Dnegative).
 
@@ -136,7 +143,7 @@ Section negative_shifts_up.
     - exact @negative_lift_factors'.
   Defined.
 
-  (** [has_negative_shifts] from UP *)
+  (** *** 1.3. [has_negative_shifts] from UP *)
 
   Context (Hnegative_up : has_negative_shifts_up).
 
@@ -228,7 +235,7 @@ Section positive_shifts_up.
 
   Context (Dpositive : positive_shift_data M).
 
-  (** Universal property of positive shifts *)
+  (** *** 1.4. Universal property of positive shifts *)
   Definition has_positive_shifts_up : UU
     := (∏ (a : M), is_thunkable (wrap' Dpositive a)) ×
          (∏ (a : M), is_epi (wrap' Dpositive a)) ×
@@ -277,7 +284,7 @@ Section positive_shifts_up.
       + apply Hlift_linear.
   Defined.
 
-  (** [has_positive_shifts] has the universal property *)
+  (** *** 1.5. [has_positive_shifts] has the universal property *)
 
   Hypothesis (Hpositive : positive_shift_axioms Dpositive).
 
@@ -319,7 +326,7 @@ Section positive_shifts_up.
     - exact @positive_lift_factors'.
   Defined.
 
-  (** [has_positive_shifts] from UP *)
+  (** *** 1.6. [has_positive_shifts] from UP *)
 
   Context (Hpositive_up : has_positive_shifts_up).
 

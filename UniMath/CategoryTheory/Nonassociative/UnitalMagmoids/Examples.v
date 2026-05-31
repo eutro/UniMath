@@ -2,12 +2,12 @@
 
  Examples of Unital Magmoids
 
+ Author: B. Szilvasy
+ April 2026
+
  Contents:
  1. A unital magmoid with a non-intermediate [lt_iso]
  2. A unital magmoid with a non-propositional [is_z_isomorphism].
-
- Author: B. Szilvasy
- April 2026
 
  ********************************************************************************)
 
