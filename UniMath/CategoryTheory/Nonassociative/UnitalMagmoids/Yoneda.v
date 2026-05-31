@@ -5,8 +5,20 @@
  Author: B. Szilvasy
  January 2026
 
+ Yoneda's lemma fails at almost every step for unital magmoids.  We find one
+ weakening useful: the Yoneda functor (suitably weakened) is functorial when
+ restricted to linear morphisms and fully-faithful when also co-restricted to
+ natural transformations.
+
  Contents:
- TODO
+ 1. Unital magmoid of [rxfunctor]s and unnatural transformations
+ 2. Category of (category-valued) [rxfunctor]s and natural transformations
+ 3. Weakened Yoneda's lemma
+ 3.1. Object part
+ 3.2. Morphism part
+ 3.3. Full [rxfunctor]
+ 3.4. The not-quite isomorphism [[Mᵒᵖ, HSET]⟦um_yoneda a, F⟧ ≃ F a]
+ 3.5. Fully-faithful Yoneda functor on linear morphisms
 
  ********************************************************************************)
 
@@ -30,8 +42,9 @@ Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Functors.
 Local Open Scope cat.
 Local Open Scope unital_magmoid.
 
+(** ** 1. Unital magmoid of [rxfunctor]s and unnatural transformations *)
 Section rxfunctor_magmoid.
-  (* Not-quite-functors do not preserve composition, so their morphisms do not either. *)
+
   Definition rxfunctor_magmoid_ob_mor (M M' : unital_premagmoid_data) : precategory_ob_mor.
   Proof.
     use make_precategory_ob_mor.
@@ -91,8 +104,11 @@ Section rxfunctor_magmoid.
 
 End rxfunctor_magmoid.
 
+(** ** 2. Category of (category-valued) [rxfunctor]s and natural transformations
+
+This is the subcategory of [rxfunctor_magmoid] with morphisms natural. *)
 Section rxfunctor_magmoid.
-  (* Subcategory of [rxfunctor_magmoid] with morphisms natural. *)
+
   Definition natrxfunctor_magmoid_ob_mor (M M' : unital_premagmoid_data) : precategory_ob_mor.
   Proof.
     use make_precategory_ob_mor.
@@ -190,13 +206,16 @@ Section rxfunctor_magmoid.
 
 End rxfunctor_magmoid.
 
+(** ** 3. Weakened Yoneda's lemma *)
 Section yoneda.
   Context [M : unital_magmoid].
 
   Notation Mᵒᵖ := (opp_precat_data M).
   Notation Mₜᵒᵖ := (opp_precat_data (M ₜ)).
 
-  (* [um_yoneda_ob a] is the postcomposition not-quite-functor [M⟦a, -⟧]. *)
+  (** *** 3.1. Object part *)
+
+  (* [um_yoneda_ob a] is the postcomposition [rxfunctor]: [M⟦a, -⟧]. *)
   Definition um_yoneda_objects_ob (a b : M) : hSet
     := make_hSet (M⟦b, a⟧) (unital_magmoid_has_homsets M b a).
 
@@ -256,6 +275,8 @@ Section yoneda.
                   cbn in f, g;
                   apply (um_yoneda_objects_comp_thunkable a f g g) ]).
   Defined.
+
+  (** *** 3.2. Morphism part *)
 
   (** [um_yoneda_morphisms f] is the precomposition unnatural transformation [M⟦f, -⟧] *)
   Definition um_yoneda_morphisms {a a' : M} (f : a --> a')
@@ -350,7 +371,9 @@ Section yoneda.
     - apply is_nat_trans_um_yoneda_morphisms_thunkable.
   Defined.
 
-  (** [um_yoneda] is the not-quite-functor M ⟶ [Mᵒᵖ, HSET] mapping objects to their not-quite-functor *)
+  (** *** Full [rxfunctor] *)
+
+  (** [um_yoneda] is the [rxfunctor] M ⟶ [Mᵒᵖ, HSET] mapping objects to their not-quite-functor *)
   Definition um_yoneda_functor_data
     : functor_data M (rxfunctor_unital_magmoid Mᵒᵖ HSET).
   Proof.
@@ -431,6 +454,8 @@ Section yoneda.
                   apply subtypePath'; [|apply isaprop_is_nat_trans, homset_property];
                   apply um_yoneda_functor_comp_linear, g ]).
   Defined.
+
+  (** *** 3.4. The not-quite isomorphism [[Mᵒᵖ, HSET]⟦um_yoneda a, F⟧ ≃ F a] *)
 
   (** The first yoneda map [[Mᵒᵖ, HSET]⟦um_yoneda a, F⟧ -> F a] *)
   Definition um_yoneda_map_1 {a : M} {F : functor_data Mᵒᵖ HSET}
@@ -616,8 +641,10 @@ Section yoneda.
     - use full_um_yoneda.
   Defined.
 
+  (** *** 3.5. Fully-faithful Yoneda functor on linear morphisms *)
+
   (** [um_yoneda] preserves linear-and-thunkable isomorphisms *)
-  Definition um_yoneda_on_lt_iso {a b : M} (f : lt_iso a b)
+  Theorem um_yoneda_on_lt_iso {a b : M} (f : lt_iso a b)
     : is_z_isomorphism (#um_yoneda f).
   Proof.
     use make_is_z_isomorphism.
@@ -628,7 +655,7 @@ Section yoneda.
   Defined.
 
   (** [um_yoneda_map_1] is linear if the transformation is natural *)
-  Definition is_linear_um_yoneda_map_1_from_is_nat_trans {a b : M}
+  Theorem is_linear_um_yoneda_map_1_from_is_nat_trans {a b : M}
     (α : um_yoneda a --> um_yoneda b)
     (Hα : is_nat_trans _ _ α)
     : is_linear (um_yoneda_map_1 α).
@@ -642,7 +669,7 @@ Section yoneda.
     now rewrite !magmoid_id_right.
   Qed.
 
-  Lemma um_yoneda_linear_fully_faithful : fully_faithful um_yoneda_linear.
+  Theorem um_yoneda_linear_fully_faithful : fully_faithful um_yoneda_linear.
   Proof.
     intros a b.
     use isweq_iso.

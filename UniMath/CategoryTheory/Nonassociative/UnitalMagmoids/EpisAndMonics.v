@@ -9,7 +9,8 @@
  associativity constraints as much as possible.
 
  Contents:
- TODO
+ 1. Epis and Monics
+ 2. Lemmas about Epis and Monics
 
  ********************************************************************************)
 
@@ -25,6 +26,7 @@ Require Import UniMath.CategoryTheory.Nonassociative.UnitalMagmoids.Opposite.
 Local Open Scope cat.
 Local Open Scope unital_magmoid.
 
+(** ** 1. Epis and Monics *)
 Section epis_monics_defs.
   Context {M : precategory_data}.
   Hypothesis hs : has_homsets M.
@@ -59,6 +61,7 @@ Section epis_monics_defs.
 
 End epis_monics_defs.
 
+(** ** 2. Lemmas about Epis and Monics *)
 Section epis_monics_lemmas.
   (** *** Epi Lemmas *)
 

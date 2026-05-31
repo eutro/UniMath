@@ -5,8 +5,18 @@
  Author: B. Szilvasy
  January 2026
 
+ We define what it means for a duploid to be univalent both as a single-sorted
+ duploid ([is_duploid_univalent]), and as a split duploid
+ ([is_split_duploid_univalent]). We show that the former makes shifts a
+ property, and show that identifications of unital magmoids correspond to weak
+ equivalences.
+
  Contents:
- TODO
+ 1. Definition of univalence for Duploids
+ 2. Consequences of univalence
+ 3. External univalence
+ 4. Characterizations of univalence
+ 5. Split duploids and univalence
 
  ********************************************************************************)
 
@@ -37,7 +47,7 @@ Local Open Scope cat.
 Local Open Scope unital_magmoid.
 Local Open Scope duploid.
 
-(** ** 1. Definition of Univalence for Duploids *)
+(** ** 1. Definition of univalence for Duploids *)
 Section univalence_def.
   Definition is_duploid_univalent (M : unital_magmoid)
     := ∏ (a b : M), isweq (λ (p : a = b), id_to_lt_iso p).
@@ -101,6 +111,7 @@ Section univalence_def.
 
 End univalence_def.
 
+(** ** 2. Consequences of univalence *)
 Section univalence_consequences.
   Lemma isaprop_is_duploid_univalent (M : unital_magmoid)
     : isaprop (is_duploid_univalent M).
@@ -147,6 +158,7 @@ Section univalence_consequences.
   Qed.
 End univalence_consequences.
 
+(** ** 3. External univalence *)
 Section equivalences.
   Lemma preduploid_rxgraph : univalent_rxgraph.
   Proof.
@@ -312,6 +324,7 @@ Section equivalences.
 
 End equivalences.
 
+(** ** 4. Characterizations of univalence *)
 Section characterizations.
   Definition duploid_to_rxgraph (D : preduploid) : rxgraph.
   Proof.
@@ -499,6 +512,7 @@ Section characterizations.
 
 End characterizations.
 
+(** *** 5. Split duploids and univalence *)
 Section split_duploids.
   (** Any univalent preduploid is a univalent split duploid with
       the polarity mapping from [LEM]. *)
