@@ -6,7 +6,17 @@
  February 2026
 
  Contents:
- TODO
+ 1. Definition of a reflexive graph
+ 1.1. Data
+ 1.2. Univalence
+ 1.2. Fundamental Theorem of Identity Types
+ 2. Definition of a displayed reflexive graph
+ 2.1. Displayed and total graphs
+ 2.2. Displayed and total reflexive graphs
+ 2.3. Univalence
+ 3. Uses of univalence
+ 4. Examples of univalent reflexive graphs
+ 5. Reflexive graph syntax with [G%rxgraph_spec]
 
  ********************************************************************************)
 
@@ -14,7 +24,6 @@ Require Import UniMath.Foundations.All.
 Require Import UniMath.MoreFoundations.All.
 
 Require Import UniMath.Combinatorics.Graph.
-Require Import UniMath.Combinatorics.FLists.
 
 Declare Scope rxgraph.
 Delimit Scope rxgraph with rxgraph.
@@ -22,7 +31,11 @@ Local Open Scope rxgraph.
 
 Notation "a '≈' b" := (edge _ a b) (at level 50) : rxgraph.
 
+(** ** Definition of a Reflexive Graph *)
+
 Section rxgraph_defs.
+  (** *** Data *)
+
   Definition has_refl (G : pregraph) : UU
     := ∏ a : vertex G, a ≈ a.
 
@@ -42,6 +55,8 @@ Section rxgraph_defs.
 
   Definition id_to_edge (G : rxgraph) (a b : G) (p : a = b) : a ≈ b.
   Proof. induction p. apply grefl. Defined.
+
+  (** *** Univalence *)
 
   Definition is_rxgraph_univalent (G : rxgraph) : UU
     := ∏ a b, isweq (id_to_edge G a b).
@@ -76,9 +91,34 @@ Section rxgraph_defs.
     apply isapropisweq.
   Qed.
 
+  Definition univalent_rxgraph := total2 is_rxgraph_univalent.
+  Definition make_univalent_rxgraph
+    (G : rxgraph) (H : is_rxgraph_univalent G)
+    : univalent_rxgraph := G,,H.
+  Coercion univalent_rxgraph_to_rxgraph (G : univalent_rxgraph) : rxgraph := pr1 G.
+  Coercion rxgraph_univalence (G : univalent_rxgraph) : is_rxgraph_univalent G := pr2 G.
+
   Definition edges_from {G : pregraph} (a : vertex G) : UU := ∑ (b : vertex G), a ≈ b.
   Definition edges_to {G : pregraph} (a : vertex G) : UU := ∑ (b : vertex G), b ≈ a.
 
+  Lemma edges_from_grefl {G : rxgraph} (a : G) : edges_from a.
+  Proof. exists a; apply grefl. Defined.
+  Lemma edges_to_grefl {G : rxgraph} (a : G) : edges_to a.
+  Proof. exists a; apply grefl. Defined.
+
+  (** *** Fundamental Theorem of Identity Types
+
+This is a variant of that from Egbert Rijke's "Introduction to Homotopy Type
+Theory", (DOI:10.1017/9781108933568, arXiv:2212.11082).
+
+Let [G] be a reflexive graph. The following are equivalent.
+1. [G] is univalent.
+2. Every [edges_from a] (or [edges_to a]) for [a : G] is a proposition.
+3. Every [edges_from a] (or [edges_to a]) for [a : G] is contractible with centre
+   [edges_*_grefl a].
+   *)
+
+  (** 3 -> 1 *)
   Lemma is_rxgraph_univalent_from_iscontr_edges_from (G : rxgraph)
     (H : ∏ (a : G), iscontr (edges_from a))
     : is_rxgraph_univalent G.
@@ -90,11 +130,7 @@ Section rxgraph_defs.
     - apply H.
   Defined.
 
-  Lemma edges_from_grefl {G : rxgraph} (a : G) : edges_from a.
-  Proof. exists a; apply grefl. Defined.
-  Lemma edges_to_grefl {G : rxgraph} (a : G) : edges_to a.
-  Proof. exists a; apply grefl. Defined.
-
+  (** 2 -> 1 *)
   Lemma is_rxgraph_univalent_from_isaprop_edges_from (G : rxgraph)
     (H : ∏ (a : G), isaprop (edges_from a))
     : is_rxgraph_univalent G.
@@ -105,6 +141,7 @@ Section rxgraph_defs.
     apply H.
   Defined.
 
+  (** 1 -> 2 *)
   Lemma is_rxgraph_univalent_to_isaprop_edges_from (G : rxgraph)
     (H : is_rxgraph_univalent G)
     : ∏ (a : G), isaprop (edges_from a).
@@ -117,6 +154,7 @@ Section rxgraph_defs.
     - apply isapropifcontr, iscontr_paths_from.
   Qed. (* [isaprop] should not be used transparently *)
 
+  (** 1 -> 3 *)
   Lemma is_rxgraph_univalent_to_iscontr_edges_from (G : rxgraph)
     (H : is_rxgraph_univalent G)
     : ∏ (a : G), iscontr (edges_from a).
@@ -126,6 +164,7 @@ Section rxgraph_defs.
     apply is_rxgraph_univalent_to_isaprop_edges_from, H.
   Defined.
 
+  (** 3 ([edges_to]) -> 3 ([edges_from]) *)
   Lemma isaprop_edges_to_implies_isaprop_edges_from (G : rxgraph)
     (H : ∏ (a : G), isaprop (edges_to a))
     : ∏ (a : G), isaprop (edges_from a).
@@ -145,6 +184,7 @@ Section rxgraph_defs.
     reflexivity.
   Qed.
 
+  (** 3 ([edges_from]) -> 3 ([edges_to]) *)
   Lemma isaprop_edges_from_implies_isaprop_edges_to (G : rxgraph)
     (H : ∏ (a : G), isaprop (edges_from a))
     : ∏ (a : G), isaprop (edges_to a).
@@ -164,6 +204,7 @@ Section rxgraph_defs.
     reflexivity.
   Qed.
 
+  (** 2 -> 1 *)
   Lemma is_rxgraph_univalent_from_isaprop_edges_to (G : rxgraph)
     (H : ∏ (a : G), isaprop (edges_to a))
     : is_rxgraph_univalent G.
@@ -172,6 +213,7 @@ Section rxgraph_defs.
     exact (isaprop_edges_to_implies_isaprop_edges_from _ H).
   Defined.
 
+  (** 3 -> 1 *)
   Lemma is_rxgraph_univalent_from_iscontr_edges_to (G : rxgraph)
     (H : ∏ (a : G), iscontr (edges_to a))
     : is_rxgraph_univalent G.
@@ -180,6 +222,7 @@ Section rxgraph_defs.
     intro a; apply isapropifcontr, H.
   Defined.
 
+  (** 1 -> 2 *)
   Lemma is_rxgraph_univalent_to_isaprop_edges_to (G : rxgraph)
     (H : is_rxgraph_univalent G)
     : ∏ (a : G), isaprop (edges_to a).
@@ -189,6 +232,7 @@ Section rxgraph_defs.
     exact H.
   Qed.
 
+  (** 1 -> 3 *)
   Lemma is_rxgraph_univalent_to_iscontr_edges_to (G : rxgraph)
     (H : is_rxgraph_univalent G)
     : ∏ (a : G), iscontr (edges_to a).
@@ -198,16 +242,13 @@ Section rxgraph_defs.
     - apply edges_to_grefl.
   Defined.
 
-  Definition univalent_rxgraph := total2 is_rxgraph_univalent.
-  Definition make_univalent_rxgraph
-    (G : rxgraph) (H : is_rxgraph_univalent G)
-    : univalent_rxgraph := G,,H.
-  Coercion univalent_rxgraph_to_rxgraph (G : univalent_rxgraph) : rxgraph := pr1 G.
-  Coercion rxgraph_univalence (G : univalent_rxgraph) : is_rxgraph_univalent G := pr2 G.
-
 End rxgraph_defs.
 
+(** ** Definition of a displayed reflexive graph *)
+
 Section disprxgraph_defs.
+  (** *** Displayed and total graphs *)
+
   Definition disp_pregraph (B : pregraph) : UU
     := ∑ (E : vertex B -> UU),
       ∏ (a b : vertex B) (e : edge B a b),
@@ -237,6 +278,8 @@ Section disprxgraph_defs.
     - intros [x aa] [y bb].
       exact (∑ (e : x ≈ y), aa ≈[e] bb).
   Defined.
+
+  (** *** Displayed and total reflexive graphs *)
 
   Context {B : rxgraph}.
 
@@ -286,6 +329,8 @@ Section disprxgraph_defs.
     exact (disp_grefl x aa).
   Defined.
 
+  (** *** Univalence *)
+
   Definition is_disp_rxgraph_univalent (E : disp_rxgraph) : UU
     := ∏ (a : B), is_rxgraph_univalent (disp_rxgraph_fib E a).
 
@@ -315,7 +360,11 @@ Arguments univalent_disp_rxgraph : clear implicits.
 
 Notation "aa '≈[' e ']' bb" := (disp_edge _ e aa bb) (at level 50, bb at next level) : rxgraph.
 
-Section univalence_lemmas.
+(** ** Uses of univalence *)
+
+Section univalence_uses.
+
+  (** Biased induction on [a ≈ b] handling [grefl a : a ≈ a]. *)
 
   Definition edges_from_eq_grefl {G : rxgraph}
     (H : is_rxgraph_univalent G)
@@ -389,6 +438,8 @@ Section univalence_lemmas.
         (b : G) (p : a ≈ b), P b p
     := rxgraph_edge_rect G.
 
+  (** *** Inverting edges *)
+
   Definition rxgraph_edge_inv {G : rxgraph} (H : is_rxgraph_univalent G) {a b : G}
     (e : a ≈ b) : b ≈ a.
   Proof.
@@ -409,9 +460,14 @@ Section univalence_lemmas.
     apply rxgraph_edge_inv_refl.
   Defined.
 
-End univalence_lemmas.
+End univalence_uses.
+
+(** ** Examples of univalent reflexive graphs *)
 
 Section constructions.
+  (** The total reflexive graph of a univalent displayed reflexive graph over a
+  univalent base is univalent. *)
+
   Theorem is_univalent_total_rxgraph {B : rxgraph} (E : disp_rxgraph B)
     (HB : is_rxgraph_univalent B)
     (HE : is_disp_rxgraph_univalent E)
@@ -435,6 +491,9 @@ Section constructions.
     : univalent_rxgraph
     := make_univalent_rxgraph _ (is_univalent_total_rxgraph E B E).
 
+  (** Every type [A] has a univalent reflexive graph [ΔA] whose edges are
+  identifications. *)
+
   Definition discrete_rxgraph0 (A : UU) : rxgraph.
   Proof.
     use make_rxgraph'.
@@ -457,6 +516,9 @@ Section constructions.
 
   Definition discrete_rxgraph (A : UU) : univalent_rxgraph
     := make_univalent_rxgraph _ (is_univalent_discrete_rxgraph A).
+
+  (** A family of reflexive graphs [x : B ⊢ E[x]] gives rise to a univalent
+  reflexive graph whose vertices are [∏ x, E[x]]. *)
 
   Definition product_rxgraph {B : UU} (E : B -> rxgraph) : rxgraph.
   Proof.
@@ -502,6 +564,9 @@ Section constructions.
   Definition product_rxgraph' {B : UU} (E : B -> univalent_rxgraph) : univalent_rxgraph
     := make_univalent_rxgraph _ (is_univalent_product_rxgraph E (λ x, E x)).
 
+  (** Every type [A] gives rise to a reflexive graph whose vertices are [A] and
+  edges are the unit. This is univalent iff [A] is a proposition. *)
+
   Definition codiscrete_rxgraph (A : UU) : rxgraph.
   Proof.
     use make_rxgraph'.
@@ -523,11 +588,24 @@ Section constructions.
     - apply isweqcontrtounit, H.
   Qed.
 
+  Lemma isaprop_from_is_univalent_codiscrete_rxgraph (A : UU)
+    (H : is_rxgraph_univalent (codiscrete_rxgraph A))
+    : isaprop A.
+  Proof.
+    apply invproofirrelevance.
+    intros a b.
+    exact (edge_to_id H a b tt).
+  Qed.
+
   Definition codiscrete_rxgraph' (A : UU) (H : isaprop A) : univalent_rxgraph
     := make_univalent_rxgraph _ (is_univalent_codiscrete_rxgraph A H).
 
   Definition prop_rxgraph (A : hProp) : univalent_rxgraph
     := codiscrete_rxgraph' A (propproperty A).
+
+  (** Given a predicate [x : B ⊢ P[x]] over the vertices of a reflexive graph [B], the
+   forgetful reflexive graph [{ x : B ∇ P x }] has the vertices of [B] satisfying [P],
+   and the same edges as [B]. *)
 
   Definition forgetful_rxgraph0 (B : rxgraph) (P : B -> UU) : rxgraph.
   Proof.
@@ -581,6 +659,9 @@ Section constructions.
     - intro x; apply propproperty.
   Defined.
 
+  (** The reflexive graph [UU_rxgraph] has types as vertices, and edges
+  [weq]s. Univalence of [UU_rxgraph] is the univalence axiom. *)
+
   Definition UU_rxgraph0 : rxgraph.
   Proof.
     use make_rxgraph'.
@@ -613,6 +694,8 @@ Section constructions.
                             UU_rxgraph)))).
   Defined.
 
+  (** The reflexive graph of graphs. *)
+
   Definition pregraph_iso (G G' : pregraph)
     := (* edge pregraph_rxgraph G G' *)
     ∑ (e : vertex G ≃ vertex G'), ∏ a b, edge G a b ≃ edge G' (e a) (e b).
@@ -626,6 +709,8 @@ Section constructions.
     (f : vertex G ≃ vertex G')
     (e : ∏ (a b : vertex G), edge G a b ≃ edge G' (f a) (f b))
     : pregraph_iso G G' := f,,e.
+
+  (** The reflexive graph of reflexive graphs. *)
 
   Definition has_refl_rxgraph : univalent_disp_rxgraph pregraph_rxgraph.
   Proof.
@@ -645,6 +730,8 @@ Section constructions.
 
   Definition rxgraph_rxgraph : univalent_rxgraph
     := univalent_total_rxgraph has_refl_rxgraph.
+
+  (** Univalence of isomorphic reflexive graphs *)
 
   Definition rxgraph_iso (G G' : rxgraph)
     := (* edge rxgraph_rxgraph G G' *)
@@ -743,6 +830,8 @@ Section constructions.
     exact (rxgraph_univalent_from_iso_f' G H e).
   Defined.
 
+  (** Direct product reflexive graph [A × B]. *)
+
   Definition dirprod_rxgraph (A B : rxgraph) : rxgraph.
   Proof.
     use make_rxgraph'.
@@ -769,6 +858,8 @@ Section constructions.
 
   Definition dirprod_rxgraph' (A B : univalent_rxgraph) : univalent_rxgraph
     := make_univalent_rxgraph _ (is_univalent_dirprod_rxgraph _ _ A B).
+
+  (** Opposite reflexive graph [G^opp]. *)
 
   Definition opp_rxgraph (A : rxgraph) : rxgraph.
   Proof.
@@ -797,6 +888,8 @@ Section constructions.
     := make_univalent_rxgraph _ (is_univalent_opp_rxgraph _ A).
 
 End constructions.
+
+(** Reflexive graph syntax with [G%rxgraph_spec] *)
 
 Declare Scope rxgraph_spec.
 Delimit Scope rxgraph_spec with rxgraph_spec.
