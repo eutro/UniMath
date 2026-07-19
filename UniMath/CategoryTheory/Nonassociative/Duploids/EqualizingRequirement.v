@@ -23,6 +23,8 @@ Require Import UniMath.CategoryTheory.Core.Categories.
 Require Import UniMath.CategoryTheory.Core.Functors.
 Require Import UniMath.CategoryTheory.Core.Isos.
 Require Import UniMath.CategoryTheory.Core.NaturalTransformations.
+Require Import UniMath.CategoryTheory.Categories.EilenbergMoore.
+Require Import UniMath.CategoryTheory.Categories.CoEilenbergMoore.
 Require Import UniMath.CategoryTheory.Subcategory.Core.
 Require Import UniMath.CategoryTheory.Subcategory.Full.
 Require Import UniMath.CategoryTheory.whiskering.
@@ -445,6 +447,14 @@ Section equalized.
   Definition weq_iscontrweqf {X Y : UU} (w : X ≃ Y) : iscontr X ≃ iscontr Y
     := make_weq _ (isweq_iscontrweqf w).
 
+  Local Lemma isInjective_φ_adj {a b} : isInjective (φ_adj (A:=a) (B:=b) θ).
+  Proof. apply isweqonpathsincl, isinclweq, adjunction_hom_weq. Qed.
+  Local Lemma isInjective_φ_adj_inv {a b} : isInjective (φ_adj_inv (A:=a) (B:=b) θ).
+  Proof. apply isweqonpathsincl, isinclweq, (invweq (adjunction_hom_weq _ _ _)). Qed.
+
+  Ltac cancel_φ_adj := apply (Injectivity (φ_adj θ) isInjective_φ_adj).
+  Ltac cancel_φ_adj_inv := apply (Injectivity (φ_adj_inv θ) isInjective_φ_adj_inv).
+
   (** Characterizations of the equalizing requirements *)
   Lemma is_negative_equalizing_weq_isweq_oblique_lift_negative
     : (∏ (n m : N), isweq (λ (f : n --> m), oblique_lift_negative' θ f))
@@ -499,6 +509,78 @@ Section equalized.
     exact Hg.
   Defined.
 
+  Lemma is_negative_equalizing_from_fully_faithful_comparison_functor
+    (Hff : fully_faithful (comparison_functor θ))
+    : is_negative_equalizing.
+  Proof.
+    apply is_negative_equalizing_from_is_epi_and_equation.
+    - intros n m f g Hfg.
+      apply (Injectivity #(comparison_functor θ)).
+      { apply isweqonpathsincl, isinclweq, Hff. }
+      apply eq_mor_eilenberg_moore.
+      cancel_φ_adj_inv.
+      exact (nat_trans_ax ε _ _ _ @ Hfg @ !nat_trans_ax ε _ _ _).
+    - intros n m f Hf; apply hinhpr.
+      assert (Hf' : #R (ε n) · f♯ = #R f♭). {
+        cancel_φ_adj_inv.
+        intermediate_path (ε (L (R n)) · f♭).
+        + rewrite φ_adj_inv_natural_precomp, oblique_mor_positive_transpose.
+          exact Hf.
+        + rewrite <- (id_left (#R f♭)), φ_adj_inv_natural_postcomp.
+          now rewrite φ_adj_inv_identity.
+      }
+      use make_hfiber. {
+        apply (fully_faithful_inv_hom Hff).
+        use make_mor_eilenberg_moore; [exact f♯|].
+        change (#R(ε n) · f♯ = #R(#L f♯) · #R(ε m)).
+        refine (Hf' @ maponpaths #R _ @ functor_comp R _ _).
+        apply pathsinv0, oblique_mor_positive_transpose.
+      }
+      apply (Injectivity #(comparison_functor θ)).
+      { apply isweqonpathsincl, isinclweq, Hff. }
+      refine (functor_comp (comparison_functor θ) _ _ @
+                maponpaths (λ f, _ · f) (functor_on_fully_faithful_inv_hom _ Hff _) @
+                _).
+      apply eq_mor_eilenberg_moore.
+      exact Hf'.
+  Qed.
+
+  Lemma is_negative_equalizing_to_fully_faithful_comparison_functor
+    (Hnq : is_negative_equalizing)
+    : fully_faithful (comparison_functor θ).
+  Proof.
+    intros n m f.
+    assert (c : ∃! f' : n --> m, ε _ · f' = φ_adj_inv θ (pr11 f)). {
+      assert (Hf := pr21 f : #R(ε n) · pr11 f = #R(#L (pr11 f)) · #R(ε m)).
+      apply Hnq.
+      refine (!φ_adj_inv_natural_precomp θ _ _ _ _ _ @ _).
+      cancel_φ_adj.
+      refine (_ @ !φ_adj_natural_postcomp θ _ _ _ _ _).
+      refine (_ @ maponpaths (λ f, φ_adj θ f · _) (φ_adj_inv_identity θ _)).
+      rewrite !φ_adj_after_φ_adj_inv, id_left.
+      refine (_ @ !functor_comp R _ _).
+      exact Hf.
+    }
+    use unique_exists.
+    - exact (pr1 (iscontrpr1 c)).
+    - apply eq_mor_eilenberg_moore; cbn; fold R.
+      cancel_φ_adj_inv.
+      rewrite <- (id_left (#R _)), φ_adj_inv_natural_postcomp.
+      rewrite φ_adj_inv_identity.
+      exact (pr2 (iscontrpr1 c)).
+    - intro f'; apply homset_property.
+    - intros f' Hf'.
+      do 2 apply base_paths in Hf'.
+      cbn in Hf'; fold R in Hf'.
+      enough (Hf'' : ε n · f' = φ_adj_inv θ (pr11 f)). {
+        assert (h := iscontr_uniqueness c (f',, Hf'')).
+        exact (base_paths _ _ h).
+      }
+      refine (_ @ maponpaths (φ_adj_inv θ) Hf').
+      rewrite <- (id_left (#R f')), φ_adj_inv_natural_postcomp.
+      now rewrite φ_adj_inv_identity.
+  Qed.
+
   Lemma is_positive_equalizing_weq_isweq_oblique_lift_positive
     : (∏ (p q : P), isweq (λ (f : p --> q), oblique_lift_positive' θ f))
         ≃ is_positive_equalizing.
@@ -550,6 +632,78 @@ Section equalized.
     change ((oblique_lift_positive θ g)♯ = f♯).
     apply (maponpaths (oblique_mor_positive θ)), oblique_mor_negative_path.
     exact Hg.
+  Qed.
+
+  Lemma is_positive_equalizing_from_fully_faithful_comparison_functor
+    (Hff : fully_faithful (co_comparison_functor θ))
+    : is_positive_equalizing.
+  Proof.
+    apply is_positive_equalizing_from_is_monic_and_equation.
+    - intros p q f g Hfg.
+      apply (Injectivity #(co_comparison_functor θ)).
+      { apply isweqonpathsincl, isinclweq, Hff. }
+      apply eq_mor_co_eilenberg_moore.
+      cancel_φ_adj.
+      exact (!nat_trans_ax η _ _ _ @ Hfg @ nat_trans_ax η _ _ _).
+    - intros p q f Hf; apply hinhpr.
+      assert (Hf' : #L (η q) ∘ f♭ = #L f♯). {
+        cancel_φ_adj.
+        intermediate_path (η (R (L q)) ∘ f♯).
+        + rewrite φ_adj_natural_postcomp, oblique_mor_negative_transpose.
+          exact Hf.
+        + rewrite <- (id_right (#L f♯)), φ_adj_natural_precomp.
+          now rewrite φ_adj_identity.
+      }
+      use make_hfiber. {
+        apply (fully_faithful_inv_hom Hff).
+        use make_mor_co_eilenberg_moore; [exact f♭|].
+        change (#L(#R f♭) ∘ #L(η p) = #L(η q) ∘ f♭).
+        refine (!(Hf' @ maponpaths #L _ @ functor_comp L _ _)).
+        apply pathsinv0, oblique_mor_negative_transpose.
+      }
+      apply (Injectivity #(co_comparison_functor θ)).
+      { apply isweqonpathsincl, isinclweq, Hff. }
+      refine (functor_comp (co_comparison_functor θ) _ _ @
+                maponpaths (λ f, _ ∘ f) (functor_on_fully_faithful_inv_hom _ Hff _) @
+                _).
+      apply eq_mor_co_eilenberg_moore.
+      exact Hf'.
+  Qed.
+
+  Lemma is_positive_equalizing_to_fully_faithful_comparison_functor
+    (Hnq : is_positive_equalizing)
+    : fully_faithful (co_comparison_functor θ).
+  Proof.
+    intros p q f.
+    assert (c : ∃! f' : p --> q, η _ ∘ f' = φ_adj θ (pr11 f)). {
+      assert (Hf := pr21 f : #L(#R (pr11 f)) ∘ #L(η p) = #L(η q) ∘ pr11 f).
+      apply Hnq.
+      refine (!φ_adj_natural_postcomp θ _ _ _ _ _ @ _).
+      cancel_φ_adj_inv.
+      refine (_ @ !φ_adj_inv_natural_precomp θ _ _ _ _ _).
+      refine (_ @ maponpaths (λ f, φ_adj_inv θ f ∘ _) (φ_adj_identity θ _)).
+      rewrite !φ_adj_inv_after_φ_adj, id_right.
+      refine (_ @ !functor_comp L _ _).
+      exact (!Hf).
+    }
+    use unique_exists.
+    - exact (pr1 (iscontrpr1 c)).
+    - apply eq_mor_co_eilenberg_moore; cbn; fold L.
+      cancel_φ_adj.
+      rewrite <- (id_right (#L _)), φ_adj_natural_precomp.
+      rewrite φ_adj_identity.
+      exact (pr2 (iscontrpr1 c)).
+    - intro f'; apply homset_property.
+    - intros f' Hf'.
+      do 2 apply base_paths in Hf'.
+      cbn in Hf'; fold L in Hf'.
+      enough (Hf'' : η q ∘ f' = φ_adj θ (pr11 f)). {
+        assert (h := iscontr_uniqueness c (f',, Hf'')).
+        exact (base_paths _ _ h).
+      }
+      refine (_ @ maponpaths (φ_adj θ) Hf').
+      rewrite <- (id_right (#L f')), φ_adj_natural_precomp.
+      now rewrite φ_adj_identity.
   Qed.
 
   (** Lemmas about the negative fixed point of the adjunction *)

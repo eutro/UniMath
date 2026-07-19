@@ -15,6 +15,8 @@
  4.1 The cone
  4.2 The universal property for functors
  4.3 The universal property for natural transformations
+ 5. The free-forgetful adjunction
+ 6. The comparison functor
 
  ******************************************************************************)
 Require Import UniMath.Foundations.All.
@@ -28,6 +30,8 @@ Require Import UniMath.CategoryTheory.Categories.Dialgebras.
 Require Import UniMath.CategoryTheory.Subcategory.Core.
 Require Import UniMath.CategoryTheory.Subcategory.Full.
 Require Import UniMath.CategoryTheory.Monads.Comonads.
+Require Import UniMath.CategoryTheory.Adjunctions.Core.
+Require Import UniMath.CategoryTheory.whiskering.
 
 Local Open Scope cat.
 
@@ -314,3 +318,89 @@ Proof.
        use eq_mor_co_eilenberg_moore ; cbn ;
        exact (nat_trans_ax α _ _ f)).
 Defined.
+
+(**
+ 5. The free–forgetful adjunction
+ *)
+Definition co_eilenberg_moore_free
+  {C : category} (m : Comonad C)
+  : C ⟶ co_eilenberg_moore_cat m
+  := functor_to_co_eilenberg_moore_cat
+       m m (δ m) Comonad_law1 Comonad_law3.
+
+Lemma co_eilenberg_moore_free_and_pr_adjunction_data
+  {C : category} (m : Comonad C)
+  : adjunction_data (co_eilenberg_moore_cat m) C.
+Proof.
+  exists (co_eilenberg_moore_pr m).
+  exists (co_eilenberg_moore_free m).
+  split.
+  - use nat_trans_to_co_eilenberg_moore_cat.
+    + exact (nat_trans_comp _ _ _
+               (co_eilenberg_moore_nat_trans m)
+               (pre_whisker (co_eilenberg_moore_pr m)
+                  (nat_z_iso_inv
+                     (functor_to_co_eilenberg_moore_cat_pr_nat_z_iso
+                        m m (δ m) Comonad_law1 Comonad_law3)))).
+    + abstract (intro x; cbn;
+                rewrite !id_right;
+                exact (!co_eilenberg_moore_ob_mult x)).
+  - exact (ε m).
+Defined.
+
+Lemma co_eilenberg_moore_free_and_pr_form_adjunction
+  {C : category} (m : Comonad C)
+  : form_adjunction' (co_eilenberg_moore_free_and_pr_adjunction_data m).
+Proof.
+  split.
+  - intro x; cbn.
+    rewrite !id_right.
+    exact (co_eilenberg_moore_ob_unit x).
+  - intro a; apply eq_mor_co_eilenberg_moore; cbn.
+    rewrite id_right.
+    apply Comonad_law2.
+Qed.
+
+Definition are_adjoints_eilenberg_moore_free_and_pr
+  {C : category} (m : Comonad C)
+  : are_adjoints (co_eilenberg_moore_pr m) (co_eilenberg_moore_free m)
+  := make_are_adjoints _ _ _ _
+       (co_eilenberg_moore_free_and_pr_form_adjunction m).
+
+Definition is_left_adjoint_eilenberg_moore_pr
+  {C : category}
+  (m : Comonad C)
+  : is_left_adjoint (co_eilenberg_moore_pr m)
+  := are_adjoints_to_is_left_adjoint _ _
+       (are_adjoints_eilenberg_moore_free_and_pr m).
+
+Definition is_right_adjoint_eilenberg_moore_free
+  {C : category}
+  (m : Comonad C)
+  : is_right_adjoint (co_eilenberg_moore_free m)
+  := are_adjoints_to_is_right_adjoint _ _
+       (are_adjoints_eilenberg_moore_free_and_pr m).
+
+(**
+ 6. The comparison functor
+ *)
+Section ComparisonFunctor.
+  Context {C D : category} (θ : adjunction C D).
+  Let F : C ⟶ D := left_adjoint θ.
+  Let U : D ⟶ C := right_adjoint θ.
+  Let m : Comonad D := Comonad_from_adjunction θ.
+  Let η : functor_identity C ⟹ F ∙ U := adjunit θ.
+
+  Definition co_comparison_functor
+    : functor C (co_eilenberg_moore_cat m).
+  Proof.
+    use functor_to_co_eilenberg_moore_cat.
+    - exact F.
+    - exact (post_whisker η F).
+    - exact (triangle_1_statement_from_adjunction θ).
+    - intro x.
+      refine (!functor_comp F _ _ @ _ @ functor_comp F _ _).
+      refine (maponpaths #F _).
+      exact (!nat_trans_ax η _ _ _).
+  Defined.
+End ComparisonFunctor.

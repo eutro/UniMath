@@ -17,6 +17,7 @@
  4.2 The universal property for functors
  4.3 The universal property for natural transformations
  5. The free–forgetful adjunction
+ 6. The comparison functor
 
  ******************************************************************************)
 Require Import UniMath.Foundations.All.
@@ -379,3 +380,27 @@ Definition is_left_adjoint_eilenberg_moore_free
   : is_left_adjoint (eilenberg_moore_free m)
   := are_adjoints_to_is_left_adjoint _ _
        (are_adjoints_eilenberg_moore_free_and_pr m).
+
+(**
+ 6. The comparison functor
+ *)
+Section ComparisonFunctor.
+  Context {C D : category} (θ : adjunction C D).
+  Let F : C ⟶ D := left_adjoint θ.
+  Let U : D ⟶ C := right_adjoint θ.
+  Let m : Monad C := Monad_from_adjunction θ.
+  Let ε : U ∙ F ⟹ functor_identity D := adjcounit θ.
+
+  Definition comparison_functor
+    : functor D (eilenberg_moore_cat m).
+  Proof.
+    use functor_to_eilenberg_moore_cat.
+    - exact U.
+    - exact (post_whisker ε U).
+    - exact (triangle_2_statement_from_adjunction θ).
+    - intro x.
+      refine (!functor_comp U _ _ @ _ @ functor_comp U _ _).
+      refine (maponpaths #U _).
+      exact (nat_trans_ax ε _ _ _).
+  Defined.
+End ComparisonFunctor.
