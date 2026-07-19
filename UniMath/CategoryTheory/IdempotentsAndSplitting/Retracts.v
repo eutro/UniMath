@@ -27,7 +27,7 @@ Local Open Scope cat.
 
 (** * 1. Retractions *)
 Section SectionsAndRetractions.
-  Context {C : precategory}.
+  Context {C : precategory_data}.
 
   Definition is_retraction
     {A B : C}
@@ -94,6 +94,11 @@ Section SectionsAndRetractions.
     apply isaprop_is_retraction.
     apply H.
   Qed.
+
+End SectionsAndRetractions.
+
+Section SectionsAndRetractions.
+  Context {C : precategory}.
 
   Definition compose_retraction
     {X Y Z : C}
