@@ -139,7 +139,9 @@ PseudoFunctors/Examples/CatDiag.v
 PseudoFunctors/Examples/PseudofunctorFromMonoidal.v
 PseudoFunctors/Examples/Op2OfPseudoFunctor.v
 PseudoFunctors/Examples/BicatOfCatToUnivCat.v
+PseudoFunctors/Examples/RezkCompletion.v
 PseudoFunctors/Examples/PseudoFunctorsIntoCat.v
+PseudoFunctors/Examples/FromUniversalArrow.v
 Transformations/PseudoTransformation.v
 Transformations/Examples/Whiskering.v
 Transformations/Examples/Unitality.v
