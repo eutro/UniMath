@@ -269,7 +269,7 @@ Section disprxgraph_defs.
       E a -> E b -> UU
     := pr2 E.
 
-  Local Notation "aa '≈[' e ']' bb" := (disp_edge _ e aa bb) (at level 50, bb at next level) : rxgraph.
+  Local Notation "aa '≈[' e  ']' bb" := (disp_edge _ e aa bb) (at level 50, bb at next level) : rxgraph.
 
   Definition total_pregraph {B : pregraph} (E : disp_pregraph B) : pregraph.
   Proof.
@@ -358,7 +358,7 @@ End disprxgraph_defs.
 Arguments disp_rxgraph : clear implicits.
 Arguments univalent_disp_rxgraph : clear implicits.
 
-Notation "aa '≈[' e ']' bb" := (disp_edge _ e aa bb) (at level 50, bb at next level) : rxgraph.
+Notation "aa '≈[' e  ']' bb" := (disp_edge _ e aa bb) (at level 50, bb at next level) : rxgraph.
 
 (** ** Uses of univalence *)
 
@@ -886,6 +886,65 @@ Section constructions.
 
   Definition opp_rxgraph' (A : univalent_rxgraph) : univalent_rxgraph
     := make_univalent_rxgraph _ (is_univalent_opp_rxgraph _ A).
+
+  (** Sigma rxgraph. *)
+
+  Definition total_disp_rxgraph
+    {B : rxgraph}
+    (E₁ : disp_rxgraph B)
+    (E₂ : disp_rxgraph (total_rxgraph E₁))
+    : disp_rxgraph B.
+  Proof.
+    use make_disp_rxgraph'.
+    - intro b; exact (∑ (e₁ : E₁ b), E₂ (b,, e₁)).
+    - intros b b' p [e₁ e₂] [e₁' e₂'].
+      refine (∑ (p₁ : e₁ ≈[p] e₁'), e₂ ≈[_] e₂').
+      exact (p,,p₁).
+    - intros b [e₁ e₂].
+      exists (disp_grefl b e₁).
+      exact (disp_grefl _ e₂).
+  Defined.
+
+  Definition total_disp_rxgraph_fib
+    {B : rxgraph}
+    (E₁ : disp_rxgraph B)
+    (E₂ : disp_rxgraph (total_rxgraph E₁))
+    (b : B)
+    : disp_rxgraph (disp_rxgraph_fib E₁ b).
+  Proof.
+    use make_disp_rxgraph'.
+    - intro e₁; exact (E₂ (b,,e₁)).
+    - intros e₁ e₁' p₁ e₂ e₂'.
+      refine (e₂ ≈[_] e₂').
+      exact (grefl _,,p₁).
+    - intros e₁ e₂.
+      cbn in e₂.
+      exact (disp_grefl _ e₂).
+  Defined.
+
+  Definition is_univalent_total_disp_rxgraph
+    {B : rxgraph}
+    (E₁ : disp_rxgraph B)
+    (E₂ : disp_rxgraph (total_rxgraph E₁))
+    (H₁ : is_disp_rxgraph_univalent E₁)
+    (H₂ : is_disp_rxgraph_univalent E₂)
+    : is_disp_rxgraph_univalent (total_disp_rxgraph E₁ E₂).
+  Proof.
+    intro b.
+    change (is_rxgraph_univalent
+              (total_rxgraph (total_disp_rxgraph_fib E₁ E₂ b))).
+    apply is_univalent_total_rxgraph.
+    - exact (H₁ b).
+    - intro e₁.
+      exact (H₂ _).
+  Qed.
+
+  Definition total_disp_rxgraph'
+    {B : rxgraph}
+    (E₁ : univalent_disp_rxgraph B)
+    (E₂ : univalent_disp_rxgraph (total_rxgraph E₁))
+    : univalent_disp_rxgraph B
+    := _,, is_univalent_total_disp_rxgraph E₁ E₂ E₁ E₂.
 
 End constructions.
 

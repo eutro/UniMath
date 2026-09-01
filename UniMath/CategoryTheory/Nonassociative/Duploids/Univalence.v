@@ -49,8 +49,24 @@ Local Open Scope duploid.
 
 (** ** 1. Definition of univalence for Duploids *)
 Section univalence_def.
+  (** *** Definition for ordinary duploids. *)
+
   Definition is_duploid_univalent (M : unital_magmoid)
     := ∏ (a b : M), isweq (λ (p : a = b), id_to_lt_iso p).
+
+  Definition duploid_to_rxgraph (D : preduploid) : rxgraph.
+  Proof.
+    use make_rxgraph'.
+    - exact (ob D).
+    - intros a b; exact (lt_iso a b).
+    - intros a; exact (lt_iso_identity a).
+  Defined.
+
+  Remark duploid_rxgraph_univalent_eq (D : preduploid)
+    : is_duploid_univalent D = is_rxgraph_univalent (duploid_to_rxgraph D).
+  Proof. reflexivity. Defined.
+
+  (** *** Algebra and transport lemmas. *)
 
   Definition lt_iso_to_id {M : unital_magmoid}
     (ua : is_duploid_univalent M) {a b : M}
@@ -106,8 +122,230 @@ Section univalence_def.
     now rewrite id_to_lt_iso_after_lt_iso_to_id.
   Qed.
 
+  (** *** Split duploid univalence.
+
+   Let [D] be a split preduploid. The following are equivalent:
+
+   1. The [chosen_positive_thunkable_category] and
+      [chosen_negative_linear_category] of [D] are univalent.
+   2. The reflexive graph whose edges are [lt_iso]s between
+      same-[chosen_polarity_of] objects [is_rxgraph_univalent].
+   3. For all objects [a b : D] with the same-[chosen_polarity_of],
+      [id_to_lt_iso] at [a] and [b] is an equivalence.
+   *)
+
   Definition is_split_duploid_univalent (D : split_preduploid)
     := is_univalent D⁺ᶜₜ × is_univalent D⁻ᶜₗ.
+
+  Lemma isaprop_is_split_duploid_univalent (D : split_preduploid)
+    : isaprop (is_split_duploid_univalent D).
+  Proof. apply isapropdirprod; apply isaprop_is_univalent. Qed.
+
+  Definition have_same_polarity {D : split_preduploid} (a b : D) : UU
+    := ∑ ε, chosen_polarity_of a = ε × chosen_polarity_of b = ε.
+
+  Definition have_same_polarity_refl {D : split_preduploid} (a : D)
+    : have_same_polarity a a.
+  Proof. now exists (chosen_polarity_of a). Defined.
+
+  Definition split_duploid_ob_rxgraph (D : split_preduploid) : rxgraph.
+  Proof.
+    use make_rxgraph'.
+    - exact (ob D).
+    - intros a b.
+      exact (have_same_polarity a b × lt_iso a b).
+    - intro a.
+      exact (have_same_polarity_refl a,, lt_iso_identity a).
+  Defined.
+
+  Definition is_split_duploid_univalent_alt (D : split_preduploid) : UU
+    := ∏ (a b : D) (H : have_same_polarity a b),
+      isweq (λ (p : a = b), id_to_lt_iso p).
+
+  Definition have_same_polarity_weq {D : split_preduploid} (a b : D)
+    : have_same_polarity a b ≃ chosen_polarity_of a = chosen_polarity_of b.
+  Proof.
+    use weq_iso.
+    - intros [ε [Ha Hb]]; induction Hb; exact Ha.
+    - intros p; exact (chosen_polarity_of b,, p,, idpath _).
+    - intros [ε [Ha Hb]]; now induction Hb.
+    - easy.
+  Qed.
+
+  Lemma isaprop_have_same_polarity {D : split_preduploid} (a b : D)
+    : isaprop (have_same_polarity a b).
+  Proof.
+    apply (isofhlevelweqb 1 (have_same_polarity_weq a b)).
+    apply isasetbool.
+  Qed.
+
+  (** 1 -> 2 *)
+  Lemma is_split_duploid_univalent_to_rxgraph (D : split_preduploid)
+    (ua : is_split_duploid_univalent D)
+    : is_rxgraph_univalent (split_duploid_ob_rxgraph D).
+  Proof.
+    apply is_rxgraph_univalent_from_isaprop_edges_to.
+    intro a.
+    assert (Ha : ∑ ε, chosen_polarity_of a = ε); [eexists; reflexivity|induction Ha as [ε Ha]].
+    induction ε.
+    1: pose (make_ob := make_chosen_positive_ob); pose (C := D⁺ᶜₜ).
+    2: pose (make_ob := make_chosen_negative_ob); pose (C := D⁻ᶜₗ).
+    all: apply (isofhlevelweqf 1 (X:=edges_to (G:=category_to_rxgraph C) (make_ob D a Ha))).
+    2,4: apply is_rxgraph_univalent_to_isaprop_edges_to, ua.
+    1: eapply weqcomp; [exact (invweq (weqfp (chosen_positive_ob_weq D) _))|].
+    2: eapply weqcomp; [exact (invweq (weqfp (chosen_negative_ob_weq D) _))|].
+    all: eapply weqcomp; [apply weqtotal2asstor|].
+    all: apply weqfibtototal.
+    all: intro b; cbn.
+    all: use weqbandf; [
+          apply invweq;
+          eapply weqcomp; [apply have_same_polarity_weq|];
+          exact (make_weq _ (isweqpathscomp0r _ Ha))|].
+    all: intro Hb; apply invweq.
+    - exact (weq_z_iso_lt_iso_chosen_positive D (make_ob D b Hb) (make_ob D a Ha)).
+    - exact (weq_z_iso_lt_iso_chosen_negative D (make_ob D b Hb) (make_ob D a Ha)).
+  Qed.
+
+  (** 1 <- 2 *)
+  Lemma is_split_duploid_univalent_from_rxgraph (D : split_preduploid)
+    (ua : is_rxgraph_univalent (split_duploid_ob_rxgraph D))
+    : is_split_duploid_univalent D.
+  Proof.
+    split.
+    1: pose (make_ob := make_chosen_positive_ob); pose (C := D⁺ᶜₜ).
+    2: pose (make_ob := make_chosen_negative_ob); pose (C := D⁻ᶜₗ).
+    all: change (is_rxgraph_univalent (category_to_rxgraph C)).
+    all: apply is_rxgraph_univalent_from_isaprop_edges_to; intro a.
+    all: apply (isofhlevelweqf 1 (X:=edges_to (G:=split_duploid_ob_rxgraph D) (pr11 a))).
+    2,4: apply is_rxgraph_univalent_to_isaprop_edges_to, ua.
+    1: eapply weqcomp; [|exact (weqfp (chosen_positive_ob_weq D) _)].
+    2: eapply weqcomp; [|exact (weqfp (chosen_negative_ob_weq D) _)].
+    all: eapply weqcomp; [|apply weqtotal2asstol].
+    all: apply weqfibtototal.
+    all: intro b; cbn.
+    all: use weqbandf; [
+          eapply weqcomp; [apply have_same_polarity_weq|];
+          exact (make_weq _ (isweqpathscomp0r _ (pr2 a)))|].
+    all: intro Hb; cbn.
+    all: pose (Hb' := have_same_polarity_weq b (pr11 a) Hb @ pr2 a).
+    - exact (weq_z_iso_lt_iso_chosen_positive D (make_ob D b Hb') a).
+    - exact (weq_z_iso_lt_iso_chosen_negative D (make_ob D b Hb') a).
+  Qed.
+
+  (** 2 -> 3 *)
+  Lemma is_split_duploid_univalent_rxgraph_to_alt (D : split_preduploid)
+    (ua : is_rxgraph_univalent (split_duploid_ob_rxgraph D))
+    : is_split_duploid_univalent_alt D.
+  Proof.
+    intros a b Hab.
+    use weqhomot.
+    - eapply weqcomp; [apply (make_weq _ (ua a b))|].
+      eapply weqcomp; [apply weqdirprodcomm|].
+      apply weqpr1.
+      intro; apply iscontraprop1.
+      + apply isaprop_have_same_polarity.
+      + assumption.
+    - intro p; induction p.
+      reflexivity.
+  Qed.
+
+  (** 2 <- 3 *)
+  Lemma is_split_duploid_univalent_rxgraph_from_alt (D : split_preduploid)
+    (ua : is_split_duploid_univalent_alt D)
+    : is_rxgraph_univalent (split_duploid_ob_rxgraph D).
+  Proof.
+    intros a b.
+    use isweq_iso.
+    - intros [Hab p].
+      exact (invweq (make_weq _ (ua a b Hab)) p).
+    - intros p; induction p; cbn.
+      apply pathsinv0, pathsweq1.
+      now apply lt_iso_eq.
+    - intros [Hab p].
+      apply dirprod_paths; [apply isaprop_have_same_polarity|].
+      cbn.
+      intermediate_path (id_to_lt_iso (invmap (make_weq _ (ua a b Hab)) p)).
+      2: exact (homotweqinvweq (make_weq _ (ua a b Hab)) p).
+      generalize (invmap (make_weq _ (ua a b Hab)) p).
+      intro e; induction e.
+      now apply lt_iso_eq.
+  Qed.
+
+  Lemma is_split_duploid_univalent_to_alt (D : split_preduploid)
+    (ua : is_split_duploid_univalent D)
+    : is_split_duploid_univalent_alt D.
+  Proof.
+    apply is_split_duploid_univalent_rxgraph_to_alt.
+    apply is_split_duploid_univalent_to_rxgraph.
+    assumption.
+  Qed.
+
+  Lemma is_split_duploid_univalent_from_alt (D : split_preduploid)
+    (ua : is_split_duploid_univalent_alt D)
+    : is_split_duploid_univalent D.
+  Proof.
+    apply is_split_duploid_univalent_from_rxgraph.
+    apply is_split_duploid_univalent_rxgraph_from_alt.
+    assumption.
+  Qed.
+
+  (** *** Algebra and transport lemmas. *)
+
+  Definition weq_id_to_lt_iso_polarized {D : split_preduploid}
+    (ua : is_split_duploid_univalent D)
+    {a b : D}
+    (Hab : have_same_polarity a b)
+    : a = b ≃ lt_iso a b
+    := make_weq _ (is_split_duploid_univalent_to_alt D ua a b Hab).
+
+  Definition lt_iso_to_id_polarized {D : split_preduploid}
+    (ua : is_split_duploid_univalent D)
+    {a b : D}
+    (Hab : have_same_polarity a b)
+    : lt_iso a b -> a = b
+    := invmap (weq_id_to_lt_iso_polarized ua Hab).
+
+  Lemma id_to_lt_iso_after_lt_iso_to_id_polarized {D : split_preduploid}
+    (ua : is_split_duploid_univalent D) (a b : D)
+    (Hab : have_same_polarity a b) (f : lt_iso a b)
+    : id_to_lt_iso (lt_iso_to_id_polarized ua Hab f) = f.
+  Proof. exact (homotweqinvweq (weq_id_to_lt_iso_polarized ua Hab) f). Qed.
+
+  Lemma lt_iso_to_id_after_id_to_lt_iso_polarized {D : split_preduploid}
+    (ua : is_split_duploid_univalent D) (a b : D)
+    (Hab : have_same_polarity a b) (p : a = b)
+    : lt_iso_to_id_polarized ua Hab (id_to_lt_iso p) = p.
+  Proof. exact (homotinvweqweq (weq_id_to_lt_iso_polarized ua Hab) p). Qed.
+
+  Lemma polarized_lt_iso_to_id_precompose {D : split_preduploid}
+    (ua : is_split_duploid_univalent D)
+    {a a' b : D} (H : have_same_polarity a a')
+    (p : lt_iso a a') (f : a --> b)
+    : transportf (λ a, a --> b) (lt_iso_to_id_polarized ua H p) f
+      = lt_iso_inverse p · f.
+  Proof.
+    refine (!id_to_lt_iso_precompose a a' b _ f @ _).
+    apply cancel_postcomposition.
+    refine (base_paths _ _ (id_to_lt_iso_inv a a' (lt_iso_to_id_polarized ua H p)) @ _).
+    etrans. {
+      refine (maponpaths (λ f, pr1 (lt_iso_inv f)) _).
+      apply id_to_lt_iso_after_lt_iso_to_id_polarized.
+    }
+    reflexivity.
+  Qed.
+
+  Lemma polarized_lt_iso_to_id_postcompose {D : split_preduploid}
+    (ua : is_split_duploid_univalent D)
+    {a b b' : D} (H : have_same_polarity b b')
+    (p : lt_iso b b') (f : a --> b)
+    : transportf (λ b, a --> b) (lt_iso_to_id_polarized ua H p) f
+      = f · p.
+  Proof.
+    refine (!id_to_lt_iso_postcompose a b b' _ f @ _).
+    apply cancel_precomposition.
+    refine (maponpaths (λ f, lt_iso_mor f) _).
+    apply id_to_lt_iso_after_lt_iso_to_id_polarized.
+  Qed.
 
 End univalence_def.
 
@@ -124,14 +362,14 @@ Section univalence_consequences.
     : isaprop (has_negative_shifts M).
   Proof.
     apply isaproptotal2; [intro; apply isaprop_negative_shift_axioms|].
-    intros U1 U2 H1 H2.
+    intros D₁ D₂ H₁ H₂.
     use negative_shift_data_eq.
     - intro a.
       apply (lt_iso_to_id ua).
-      apply (upshift_unique_up_to_lt_iso M (U1,,H1) (U2,,H2) a).
+      apply (upshift_unique_up_to_lt_iso M (D₁,,H₁) (D₂,,H₂) a).
     - intro a; cbn.
       etrans; [apply lt_iso_to_id_precompose|].
-      apply (force_unique_up_to_lt_iso M (U2,,H2) (U1,,H1) a).
+      apply (force_unique_up_to_lt_iso M (D₂,,H₂) (D₁,,H₁) a).
   Qed.
 
   Lemma isaprop_has_positive_shifts (M : unital_magmoid)
@@ -139,27 +377,90 @@ Section univalence_consequences.
     : isaprop (has_positive_shifts M).
   Proof.
     apply isaproptotal2; [intro; apply isaprop_positive_shift_axioms|].
-    intros U1 U2 H1 H2.
+    intros D₁ D₂ H₁ H₂.
     use positive_shift_data_eq.
     - intro a.
       apply (lt_iso_to_id ua).
-      apply (downshift_unique_up_to_lt_iso M (U1,,H1) (U2,,H2) a).
+      apply (downshift_unique_up_to_lt_iso M (D₁,,H₁) (D₂,,H₂) a).
     - intro a; cbn.
       etrans; [apply lt_iso_to_id_postcompose|].
-      apply (wrap_unique_up_to_lt_iso M (U2,,H2) (U1,,H1) a).
+      apply (wrap_unique_up_to_lt_iso M (D₂,,H₂) (D₁,,H₁) a).
   Qed.
 
-  Lemma isaprop_has_polarity_shifts (M : unital_magmoid) (ua : is_duploid_univalent M)
+  Theorem isaprop_has_polarity_shifts (M : unital_magmoid) (ua : is_duploid_univalent M)
     : isaprop (has_polarity_shifts M).
   Proof.
     apply isapropdirprod.
     - apply isaprop_has_negative_shifts, ua.
     - apply isaprop_has_positive_shifts, ua.
   Qed.
+
+  (** Likewise in a split preduploid. *)
+  Lemma isaprop_has_split_negative_shifts (M : split_preduploid)
+    (ua : is_split_duploid_univalent M)
+    : isaprop (∑ (S : has_negative_shifts M),
+          ∏ (a : M), chosen_polarity_of (upshift' S a) = ⊖).
+  Proof.
+    apply isaproptotal2.
+    1: intro; apply impred; intro; apply isasetbool.
+    intros [D₁ H₁] [D₂ H₂] Hp₁ Hp₂.
+    apply subtypePath'.
+    2: intro; apply isaprop_negative_shift_axioms.
+    cbn.
+    use negative_shift_data_eq.
+    - intro a.
+      apply (lt_iso_to_id_polarized ua (⊖,, Hp₁ a,, Hp₂ a)).
+      apply (upshift_unique_up_to_lt_iso M (D₁,,H₁) (D₂,,H₂) a).
+    - intro a; cbn.
+      etrans; [apply polarized_lt_iso_to_id_precompose|].
+      apply (force_unique_up_to_lt_iso M (D₂,,H₂) (D₁,,H₁) a).
+  Qed.
+
+  Lemma isaprop_has_split_positive_shifts (M : split_preduploid)
+    (ua : is_split_duploid_univalent M)
+    : isaprop (∑ (S : has_positive_shifts M),
+          ∏ (a : M), chosen_polarity_of (downshift' S a) = ⊕).
+  Proof.
+    apply isaproptotal2.
+    1: intro; apply impred; intro; apply isasetbool.
+    intros [D₁ H₁] [D₂ H₂] Hp₁ Hp₂.
+    apply subtypePath'.
+    2: intro; apply isaprop_positive_shift_axioms.
+    cbn.
+    use positive_shift_data_eq.
+    - intro a.
+      apply (lt_iso_to_id_polarized ua (⊕,, Hp₁ a,, Hp₂ a)).
+      apply (downshift_unique_up_to_lt_iso M (D₁,,H₁) (D₂,,H₂) a).
+    - intro a; cbn.
+      etrans; [apply polarized_lt_iso_to_id_postcompose|].
+      apply (wrap_unique_up_to_lt_iso M (D₂,,H₂) (D₁,,H₁) a).
+  Qed.
+
+  Definition has_split_polarity_shifts (D : split_preduploid) : UU
+    := ∑ (S : has_polarity_shifts D),
+      polarity_mapping_respects_shifts (D:=make_duploid D S)
+        (split_preduploid_polarity_mapping D).
+
+  Theorem isaprop_has_split_polarity_shifts (D : split_preduploid)
+    (ua : is_split_duploid_univalent D)
+    : isaprop (has_split_polarity_shifts D).
+  Proof.
+    apply isaproptotal2; [intro; apply isaprop_polarity_mapping_respects_shifts|].
+    intros S₁ S₂ H₁ H₂.
+    apply dirprod_paths.
+    - exact (base_paths _ _
+               (proofirrelevance _ (isaprop_has_split_negative_shifts D ua)
+                  (pr1 S₁,, pr2 H₁) (pr1 S₂,, pr2 H₂))).
+    - exact (base_paths _ _
+               (proofirrelevance _ (isaprop_has_split_positive_shifts D ua)
+                  (pr2 S₁,, pr1 H₁) (pr2 S₂,, pr1 H₂))).
+  Qed.
+
 End univalence_consequences.
 
 (** ** 3. External univalence *)
 Section equivalences.
+  (** Duploid reflexive graph. *)
   Lemma preduploid_rxgraph : univalent_rxgraph.
   Proof.
     simple refine ({ M : unital_magmoid_rxgraph ∇ make_hProp _ _ })%rxgraph_spec.
@@ -191,7 +492,7 @@ Section equivalences.
   Coercion univalent_duploid_to_duploid (D : univalent_duploid) : duploid := pr1 D.
   Definition duploid_univalence (D : univalent_duploid) : is_duploid_univalent D := pr2 D.
 
-  Lemma univalent_duploid_rxgraph1 : univalent_rxgraph.
+  Lemma univalent_duploid_rxgraph₁ : univalent_rxgraph.
   Proof.
     use make_univalent_rxgraph.
     1: use make_rxgraph'.
@@ -209,6 +510,103 @@ Section equivalences.
       + intros a b; exact (idweq _).
   Defined.
 
+  (** Split duploid reflexive graph. *)
+  Definition polarity_mapping_rxgraph
+    : univalent_disp_rxgraph preduploid_rxgraph.
+  Proof.
+    use make_univalent_disp_rxgraph.
+    1: use make_disp_rxgraph'.
+    - intro D; change preduploid in D.
+      exact ({ ω : (∏ (_ : D), Δ hpolarity)%rxgraph_spec
+             ∇ make_hProp (is_polarity_mapping ω)
+             (isaprop_is_polarity_mapping ω) })%rxgraph_spec.
+    - cbn; intros D₁ D₂ F [ω₁ H₁] [ω₂ H₂]; change preduploid in D₁, D₂.
+      exact (∏ (a : D₁), ω₁ a = ω₂ (F a)).
+    - easy.
+    - intro D; apply rxgraph_univalence.
+  Defined.
+
+  Definition split_preduploid_rxgraph : univalent_rxgraph
+    := univalent_total_rxgraph polarity_mapping_rxgraph.
+
+  Definition univalent_split_preduploid :=
+    ∑ (D : split_preduploid), is_split_duploid_univalent D.
+  Coercion univalent_split_preduploid_to_split_preduploid
+    (D : univalent_split_preduploid) : split_preduploid := pr1 D.
+  Definition split_preduploid_univalence (D : univalent_split_preduploid)
+    : is_split_duploid_univalent D := pr2 D.
+
+  Definition polarity_preserving_catiso (D₁ D₂ : split_preduploid) : UU
+    := ∑ (F : catiso D₁ D₂), preserves_polarity_mapping F.
+  Coercion polarity_preserving_catiso_to_catiso {D₁ D₂ : split_preduploid}
+    (F : polarity_preserving_catiso D₁ D₂) : catiso D₁ D₂ := pr1 F.
+  Coercion polarity_preserving_catiso_preserves_polarity_mapping {D₁ D₂ : split_preduploid}
+    (F : polarity_preserving_catiso D₁ D₂)
+    : preserves_polarity_mapping F := pr2 F.
+
+  Definition univalent_split_preduploid_rxgraph₀ : univalent_rxgraph.
+  Proof.
+    exact ({ D : split_preduploid_rxgraph
+            ∇ make_hProp (is_split_duploid_univalent D)
+            (isaprop_is_split_duploid_univalent D) })%rxgraph_spec.
+  Defined.
+
+  Definition univalent_split_preduploid_rxgraph : univalent_rxgraph.
+  Proof.
+    use make_univalent_rxgraph.
+    1: use make_rxgraph'.
+    - exact univalent_split_preduploid.
+    - intros D₁ D₂; exact (polarity_preserving_catiso D₁ D₂).
+    - intro D; exact (identity_catiso D,, λ a, idpath _).
+    - use (rxgraph_univalent_from_iso_b' univalent_split_preduploid_rxgraph₀
+             (rxgraph_univalence _)).
+      use make_pregraph_iso; [exact (idweq univalent_split_preduploid)|].
+      intros D₁ D₂; change univalent_split_preduploid in D₁, D₂.
+      apply weqfibtototal; intro F.
+      apply weqonsecfibers; intro a.
+      apply weqpathsinv0.
+  Defined.
+
+  Definition univalent_split_duploid_rxgraph₀ : univalent_rxgraph.
+  Proof.
+    refine ({ D : univalent_split_preduploid_rxgraph ∇ _ })%rxgraph_spec.
+    change univalent_split_preduploid in D.
+    refine (make_hProp (has_split_polarity_shifts D) _).
+    apply isaprop_has_split_polarity_shifts.
+    apply split_preduploid_univalence.
+  Defined.
+
+  Definition univalent_split_duploid :=
+    ∑ (D : split_duploid), is_split_duploid_univalent D.
+  Coercion univalent_split_duploid_to_split_duploid
+    (D : univalent_split_duploid) : split_duploid := pr1 D.
+  Definition split_duploid_univalence (D : univalent_split_duploid)
+    : is_split_duploid_univalent D := pr2 D.
+
+  Definition univalent_split_duploid_rxgraph₁ : univalent_rxgraph.
+  Proof.
+    use make_univalent_rxgraph.
+    1: use make_rxgraph'.
+    - exact univalent_split_duploid.
+    - intros D₁ D₂; exact (polarity_preserving_catiso D₁ D₂).
+    - intros D; exact (identity_catiso D,, λ a, idpath _).
+    - use (rxgraph_univalent_from_iso_b' univalent_split_duploid_rxgraph₀
+             (rxgraph_univalence _)).
+      use make_pregraph_iso. {
+        use weq_iso.
+        - intros [D ua].
+          simple refine ((_,,ua),,_,,_); cbn.
+          + exact (duploid_has_polarity_shifts D).
+          + exact D.
+        - intros [[D ua] [S H]]; cbn in *.
+          exact ((make_duploid D S,,_,,H),,ua).
+        - abstract easy.
+        - abstract easy.
+      }
+      intros D₁ D₂; exact (idweq _).
+  Defined.
+
+  (** External univalence. *)
   Lemma isweq_on_objects_from_equivalence (D D' : preduploid)
     (ua : is_duploid_univalent D) (ua' : is_duploid_univalent D')
     (F : duploid_equivalence D D')
@@ -294,7 +692,7 @@ Section equivalences.
     - exact univalent_duploid.
     - intros a b; exact (duploid_equivalence a b).
     - intros a; exact (duploid_equivalence_identity a).
-    - use (rxgraph_univalent_from_iso_b' univalent_duploid_rxgraph1).
+    - use (rxgraph_univalent_from_iso_b' univalent_duploid_rxgraph₁).
       1: apply rxgraph_univalence.
       use make_pregraph_iso; cbn.
       + exact (idweq _).
@@ -326,18 +724,6 @@ End equivalences.
 
 (** ** 4. Characterizations of univalence *)
 Section characterizations.
-  Definition duploid_to_rxgraph (D : preduploid) : rxgraph.
-  Proof.
-    use make_rxgraph'.
-    - exact (ob D).
-    - intros a b; exact (lt_iso a b).
-    - intros a; exact (lt_iso_identity a).
-  Defined.
-
-  Remark duploid_rxgraph_univalent_eq (D : preduploid)
-    : is_duploid_univalent D = is_rxgraph_univalent (duploid_to_rxgraph D).
-  Proof. reflexivity. Defined.
-
   Definition iso_duploid_rxgraph_unital_magmoid_rxgraph (D : preduploid)
     : rxgraph_iso (unital_magmoid_to_rxgraph D) (duploid_to_rxgraph D).
   Proof.

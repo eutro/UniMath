@@ -434,6 +434,97 @@ Section inclusion_functors.
     := sub_precategory_inclusion _ _.
   Definition chosen_negative_linear_category_to_negative_linear_category : D⁻ᶜₗ ⟶ D⁻ₗ
     := sub_precategory_inclusion _ _.
+
+  (** Object constructors *)
+
+  Definition make_chosen_positive_ob
+    (a : D)
+    (Ha : chosen_polarity_of a = ⊕)
+    : D⁺ᶜₜ.
+  Proof.
+    simple refine ((_,,_),,_); cbn.
+    - exact a.
+    - exact (polarity_mapping_positive a Ha).
+    - exact Ha.
+  Defined.
+
+  Definition chosen_positive_ob_weq
+    : hfiber (chosen_polarity_of (D:=D)) ⊕ ≃ D⁺ᶜₜ.
+  Proof.
+    use weq_iso.
+    - intros [a Ha].
+      exact (make_chosen_positive_ob a Ha).
+    - intros [[a _H] Ha]; cbn in Ha.
+      exact (a,, Ha).
+    - abstract easy.
+    - abstract (intro y; now do 2 (apply subtypePath'; [|apply propproperty])).
+  Defined.
+
+  Definition make_chosen_negative_ob
+    (a : D)
+    (Ha : chosen_polarity_of a = ⊖)
+    : D⁻ᶜₗ.
+  Proof.
+    simple refine ((_,,_),,_); cbn.
+    - exact a.
+    - exact (polarity_mapping_negative a Ha).
+    - exact Ha.
+  Defined.
+
+  Definition chosen_negative_ob_weq
+    : hfiber (chosen_polarity_of (D:=D)) ⊖ ≃ D⁻ᶜₗ.
+  Proof.
+    use weq_iso.
+    - intros [a Ha].
+      exact (make_chosen_negative_ob a Ha).
+    - intros [[a _H] Ha]; cbn in Ha.
+      exact (a,, Ha).
+    - abstract easy.
+    - abstract (intro y; now do 2 (apply subtypePath'; [|apply propproperty])).
+  Defined.
+
+  (** Fully-faithfulness. *)
+
+  Lemma fully_faithful_chosen_positive_category_to_positive_category
+    : fully_faithful chosen_positive_category_to_positive_category.
+  Proof. apply fully_faithful_sub_precategory_inclusion. Defined.
+
+  Lemma fully_faithful_chosen_positive_thunkable_category_to_positive_thunkable_category
+    : fully_faithful chosen_positive_thunkable_category_to_positive_thunkable_category.
+  Proof. apply fully_faithful_sub_precategory_inclusion. Defined.
+
+  Lemma fully_faithful_chosen_negative_category_to_negative_category
+    : fully_faithful chosen_negative_category_to_negative_category.
+  Proof. apply fully_faithful_sub_precategory_inclusion. Defined.
+
+  Lemma fully_faithful_chosen_negative_linear_category_to_negative_linear_category
+    : fully_faithful chosen_negative_linear_category_to_negative_linear_category.
+  Proof. apply fully_faithful_sub_precategory_inclusion. Defined.
+
+  (** Equivalences of [lt_iso]s. *)
+
+  Lemma weq_z_iso_lt_iso_chosen_positive (a b : D⁺ᶜₜ)
+    : lt_iso (pr11 a) (pr11 b) ≃ z_iso a b.
+  Proof.
+    intermediate_weq (z_iso (C:=D⁺ₜ) (pr1 a) (pr1 b)).
+    { apply weq_z_iso_lt_iso_positive. }
+    apply invweq,
+      (weq_ff_functor_on_z_iso
+         fully_faithful_chosen_positive_thunkable_category_to_positive_thunkable_category
+         a b).
+  Defined.
+
+  Lemma weq_z_iso_lt_iso_chosen_negative (a b : D⁻ᶜₗ)
+    : lt_iso (pr11 a) (pr11 b) ≃ z_iso a b.
+  Proof.
+    intermediate_weq (z_iso (C:=D⁻ₗ) (pr1 a) (pr1 b)).
+    { apply weq_z_iso_lt_iso_negative. }
+    apply invweq,
+      (weq_ff_functor_on_z_iso
+         fully_faithful_chosen_negative_linear_category_to_negative_linear_category
+         a b).
+  Defined.
+
 End inclusion_functors.
 
 Section inclusion_equivalences.
@@ -470,14 +561,6 @@ Section inclusion_equivalences.
                 do 2 apply carrier_eq;
                 apply are_inverses_unwrap_wrap).
   Defined.
-
-  Lemma fully_faithful_chosen_positive_category_to_positive_category
-    : fully_faithful (chosen_positive_category_to_positive_category D).
-  Proof. apply fully_faithful_sub_precategory_inclusion. Defined.
-
-  Lemma fully_faithful_chosen_positive_thunkable_category_to_positive_thunkable_category
-    : fully_faithful (chosen_positive_thunkable_category_to_positive_thunkable_category D).
-  Proof. apply fully_faithful_sub_precategory_inclusion. Defined.
 
   Lemma adj_equivalence_chosen_positive_to_positive
     : adj_equivalence_of_cats (chosen_positive_category_to_positive_category D).
@@ -525,14 +608,6 @@ Section inclusion_equivalences.
                 do 2 apply carrier_eq;
                 apply are_inverses_force_delay).
   Defined.
-
-  Lemma fully_faithful_chosen_negative_category_to_negative_category
-    : fully_faithful (chosen_negative_category_to_negative_category D).
-  Proof. apply fully_faithful_sub_precategory_inclusion. Defined.
-
-  Lemma fully_faithful_chosen_negative_linear_category_to_negative_linear_category
-    : fully_faithful (chosen_negative_linear_category_to_negative_linear_category D).
-  Proof. apply fully_faithful_sub_precategory_inclusion. Defined.
 
   Lemma adj_equivalence_chosen_negative_to_negative
     : adj_equivalence_of_cats (chosen_negative_category_to_negative_category D).
