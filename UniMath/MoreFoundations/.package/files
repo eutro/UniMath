@@ -24,3 +24,4 @@ StructureIdentity.v
 Univalence.v
 NoInjectivePairing.v
 PartD.v
+Groupoids.v

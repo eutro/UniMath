@@ -582,6 +582,8 @@ Section polarized_equivs.
              (fully_faithful_negative_linear_category_to_linear_and_thunkable_category M)).
   Defined.
 
+  Local Coercion wide_submagmoid_to_unital_magmoid : wide_submagmoid >-> unital_magmoid.
+
   Lemma weq_z_iso_submm_iso {M : unital_magmoid} (P : wide_submagmoid M)
     (a b : M)
     : submm_iso P a b ≃ z_iso (C:=P) a b.
