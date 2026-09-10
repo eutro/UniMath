@@ -43,6 +43,40 @@ Local Open Scope unital_magmoid.
 Section polarized_categories.
   Context (M : unital_magmoid).
 
+  Definition wide_submagmoid_to_unital_magmoid
+    (P : wide_submagmoid M)
+    : unital_magmoid.
+  Proof.
+    use make_unital_magmoid.
+    1: use make_unital_premagmoid.
+    - exact (wide_submagmoid_to_unital_premagmoid_data P).
+    - use make_is_unital_premagmoid.
+      + intros a b f; apply carrier_eq, magmoid_id_left.
+      + intros a b f; apply carrier_eq, magmoid_id_right.
+    - intros a b; apply isaset_wide_submagmoid_carrier.
+  Defined.
+
+  Definition wide_subcategory_to_category
+    (P : wide_subcategory M)
+    : category.
+  Proof.
+    use make_category.
+    1: use make_precategory.
+    - exact (wide_submagmoid_to_unital_premagmoid_data P).
+    - use make_is_precategory.
+      + intros a b f; apply carrier_eq, magmoid_id_left.
+      + intros a b f; apply carrier_eq, magmoid_id_right.
+      + intros a b c d f g h.
+        apply carrier_eq.
+        exact (wide_subcategory_is_associative P
+                 _ _ _ _ _ _ _ (pr2 f) (pr2 g) (pr2 h)).
+      + intros a b c d f g h.
+        apply carrier_eq.
+        exact (!wide_subcategory_is_associative P
+                 _ _ _ _ _ _ _ (pr2 f) (pr2 g) (pr2 h)).
+    - intros a b; apply isaset_wide_submagmoid_carrier.
+  Defined.
+
   (** The category of all objects and linear maps. *)
   Definition linear_category : category.
   Proof.
@@ -548,23 +582,53 @@ Section polarized_equivs.
              (fully_faithful_negative_linear_category_to_linear_and_thunkable_category M)).
   Defined.
 
-  Lemma weq_z_iso_lt_iso {M : unital_magmoid} (a b : M)
-    : lt_iso a b ≃ z_iso (C:=linear_and_thunkable_category M) a b.
+  Lemma weq_z_iso_submm_iso {M : unital_magmoid} (P : wide_submagmoid M)
+    (a b : M)
+    : submm_iso P a b ≃ z_iso (C:=P) a b.
+  Proof.
+    use weq_iso.
+    - intros [f [g Hfg]].
+      apply (make_z_iso (C:=P) f g).
+      split; apply carrier_eq.
+      + exact (pr1 Hfg).
+      + exact (pr2 Hfg).
+    - intros [f [g Hfg]].
+      apply (make_submm_iso_2 P f g).
+      split.
+      + exact (base_paths _ _ (pr1 Hfg)).
+      + exact (base_paths _ _ (pr2 Hfg)).
+    - abstract (intros f; do 2 apply pair_path_in2;
+                apply isaprop_is_inverse_in_precat_of_magmoid).
+    - abstract (intros f; do 2 apply pair_path_in2;
+                apply isaprop_is_inverse_in_precat_of_magmoid).
+  Defined.
+
+  Lemma weq_z_iso_submm_iso' {M : unital_magmoid} (P : wide_submagmoid M)
+    (a b : M)
+    : submm_iso' P a b ≃ z_iso (C:=P) a b.
   Proof.
     use weq_iso.
     - intros [f [Hf [g Hfg]]].
-      exists (f,,Hf).
-      exists g.
-      abstract (split; apply carrier_eq; cbn; apply Hfg).
-    - intros [[f Hf] [[g Hg] [Hfg Hgf]]].
-      exists f.
-      refine (make_is_lt_iso' Hf g Hg _).
-      abstract (
-          apply base_paths in Hfg, Hgf;
-          cbn in Hfg, Hgf;
-          split; assumption).
-    - abstract (intro f; now apply subtypePath'; [|apply isaprop_is_lt_iso]).
-    - abstract (intro f; now apply subtypePath'; [|apply isaprop_is_z_isomorphism]).
+      apply (make_z_iso (C:=P) (f,,Hf) g).
+      split; apply carrier_eq.
+      + exact (pr1 Hfg).
+      + exact (pr2 Hfg).
+    - intros [f [g Hfg]].
+      apply (make_submm_iso' P (pr1carrier _ f) (pr2 f)).
+      apply (make_has_submm_inverse P _ g).
+      split.
+      + exact (base_paths _ _ (pr1 Hfg)).
+      + exact (base_paths _ _ (pr2 Hfg)).
+    - abstract (intros f; do 3 apply pair_path_in2;
+                apply isaprop_is_inverse_in_precat_of_magmoid).
+    - abstract (intros f; do 2 apply pair_path_in2;
+                apply isaprop_is_inverse_in_precat_of_magmoid).
+  Defined.
+
+  Lemma weq_z_iso_lt_iso {M : unital_magmoid} (a b : M)
+    : lt_iso a b ≃ z_iso (C:=linear_and_thunkable_category M) a b.
+  Proof.
+    exact (weq_z_iso_submm_iso' (isw_linear_and_thunkable M) a b).
   Defined.
 
   Lemma weq_z_iso_lt_iso_positive {M : unital_magmoid} (a b : positive_ob M)

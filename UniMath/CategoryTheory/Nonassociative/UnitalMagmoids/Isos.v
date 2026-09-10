@@ -952,6 +952,16 @@ Section isos_facts.
     - apply is_linear_of_positive, H.
   Qed.
 
+  Corollary weq_is_positive_of_lt_iso {a b : M}
+    (p : lt_iso a b)
+    : is_positive a ≃ is_positive b.
+  Proof.
+    apply weqimplimpl.
+    3,4: apply isaprop_is_positive.
+    - apply is_positive_of_lt_iso, p.
+    - apply is_positive_of_lt_iso, lt_iso_inv, p.
+  Qed.
+
   Lemma is_negative_of_lt_iso {a b : M}
     (p : lt_iso a b) (H : is_negative a) : is_negative b.
   Proof.
@@ -960,6 +970,16 @@ Section isos_facts.
     apply is_thunkable_compose.
     - apply is_thunkable_of_negative, H.
     - apply lt_iso_is_linear_and_thunkable.
+  Qed.
+
+  Corollary weq_is_negative_of_lt_iso {a b : M}
+    (p : lt_iso a b)
+    : is_negative a ≃ is_negative b.
+  Proof.
+    apply weqimplimpl.
+    3,4: apply isaprop_is_negative.
+    - apply is_negative_of_lt_iso, p.
+    - apply is_negative_of_lt_iso, lt_iso_inv, p.
   Qed.
 
   (** Precomposition with an [lt_iso] is a weq. *)

@@ -807,6 +807,54 @@ Section envelope_defs.
     apply is_linear_from_upshift_iff_envelope_counit_precompose.
   Defined.
 
+  Lemma is_linear_iff_from_envelope_chosen_negative {a b : envelope_ob}
+    (f : envelope_duploid⟦a, b⟧)
+    (Hn : envelope_chosen_negative a)
+    : is_negative_oblique_mor_linear θ
+        (oblique_compose_positive _ (is_z_isomorphism_mor Hn) f)
+        ≃ is_linear f.
+  Proof.
+    intermediate_weq (is_negative_oblique_mor_linear θ (force a · f)). {
+      apply eqweqmap, maponpaths; cbn.
+      rewrite (envelope_compose_known (ii1 Hn)); cbn.
+      now rewrite id_left.
+    }
+    intermediate_weq (is_linear (force a · f)). {
+      apply is_linear_from_upshift_iff_envelope_counit_precompose.
+    }
+    use weqimplimpl.
+    3,4: apply isaprop_is_linear.
+    - intro H.
+      rewrite <- (delay_force_left f).
+      exact (is_linear_compose _ _ (delay a) H).
+    - intro H.
+      exact (is_linear_compose _ _ (force a) H).
+  Qed.
+
+  Lemma is_linear_iff_envelope_impl {a b : envelope_ob}
+    (f : envelope_duploid⟦a, b⟧)
+    : (∏ (Hn : envelope_chosen_negative a),
+        is_negative_oblique_mor_linear θ
+          (oblique_compose_positive _ (is_z_isomorphism_mor Hn) f))
+        ≃ is_linear f.
+  Proof.
+    envelope_induction' a.
+    - intro; apply isapropweqtoprop, isaprop_is_linear.
+    - intro Hn.
+      eapply weqcomp; [|apply (is_linear_iff_from_envelope_chosen_negative _ Hn)].
+      pose (c := iscontraprop1 (isaprop_envelope_chosen_negative a) Hn).
+      exact (weqsecovercontr _ c).
+    - intro Hp.
+      apply weqimplimpl.
+      + intros _.
+        apply is_linear_of_positive, is_positive_of_envelope_chosen_positive, Hp.
+      + intros _ Hn.
+        apply is_linear_iff_from_envelope_chosen_negative.
+        apply is_linear_of_positive, is_positive_of_envelope_chosen_positive, Hp.
+      + apply impred; intro; apply isaprop_is_negative_oblique_mor_linear.
+      + apply isaprop_is_linear.
+  Qed.
+
   Lemma is_positive_envelope_upshift_iff_pre_fixed_point (a : N)
     : is_negative_pre_fixed_point θ a ≃ is_positive (envelope_ob_of_negative a).
   Proof.
@@ -815,6 +863,17 @@ Section envelope_defs.
     cbn.
     rewrite !id_right.
     exact (idweq _).
+  Qed.
+
+  Lemma is_positive_iff_from_envelope_chosen_negative (a : envelope_ob)
+    (Hn : envelope_chosen_negative a)
+    : is_negative_pre_fixed_point θ a⁻ ≃ is_positive a.
+  Proof.
+    intermediate_weq (is_positive (⇑a)). {
+      apply is_positive_envelope_upshift_iff_pre_fixed_point.
+    }
+    apply weq_is_positive_of_lt_iso, lt_iso_upshift_of_negative.
+    apply is_negative_of_envelope_chosen_negative, Hn.
   Qed.
 
   Lemma envelope_negative_lift {a b : envelope_ob}
@@ -854,6 +913,54 @@ Section envelope_defs.
     apply is_thunkable_from_downshift_iff_envelope_unit_postcompose.
   Defined.
 
+  Lemma is_thunkable_iff_from_envelope_chosen_positive {a b : envelope_ob}
+    (f : envelope_duploid⟦a, b⟧)
+    (Hp : envelope_chosen_positive b)
+    : is_positive_oblique_mor_thunkable θ
+        (oblique_compose_negative _ f (is_z_isomorphism_mor Hp))
+        ≃ is_thunkable f.
+  Proof.
+    intermediate_weq (is_positive_oblique_mor_thunkable θ (f · wrap b)). {
+      apply eqweqmap, maponpaths; cbn.
+      rewrite (envelope_compose_known (ii2 Hp)); cbn.
+      now rewrite id_right.
+    }
+    intermediate_weq (is_thunkable (f · wrap b)). {
+      apply is_thunkable_from_downshift_iff_envelope_unit_postcompose.
+    }
+    use weqimplimpl.
+    3,4: apply isaprop_is_thunkable.
+    - intro H.
+      rewrite <- (wrap_unwrap_right f).
+      exact (is_thunkable_compose _ _ H (unwrap b)).
+    - intro H.
+      exact (is_thunkable_compose _ _ H (wrap b)).
+  Qed.
+
+  Lemma is_thunkable_iff_envelope_impl {a b : envelope_ob}
+    (f : envelope_duploid⟦a, b⟧)
+    : (∏ (Hp : envelope_chosen_positive b),
+        is_positive_oblique_mor_thunkable θ
+          (oblique_compose_negative _ f (is_z_isomorphism_mor Hp)))
+        ≃ is_thunkable f.
+  Proof.
+    envelope_induction' b.
+    - intro; apply isapropweqtoprop, isaprop_is_thunkable.
+    - intro Hn.
+      apply weqimplimpl.
+      + intros _.
+        apply is_thunkable_of_negative, is_negative_of_envelope_chosen_negative, Hn.
+      + intros _ Hp.
+        apply is_thunkable_iff_from_envelope_chosen_positive.
+        apply is_thunkable_of_negative, is_negative_of_envelope_chosen_negative, Hn.
+      + apply impred; intro; apply isaprop_is_positive_oblique_mor_thunkable.
+      + apply isaprop_is_thunkable.
+    - intro Hp.
+      eapply weqcomp; [|apply (is_thunkable_iff_from_envelope_chosen_positive _ Hp)].
+      pose (c := iscontraprop1 (isaprop_envelope_chosen_positive b) Hp).
+      exact (weqsecovercontr _ c).
+  Qed.
+
   Lemma is_negative_envelope_downshift_iff_pre_fixed_point (a : P)
     : is_positive_pre_fixed_point θ a ≃ is_negative (envelope_ob_of_positive a).
   Proof.
@@ -862,6 +969,17 @@ Section envelope_defs.
     cbn.
     rewrite !id_left.
     exact (idweq _).
+  Qed.
+
+  Lemma is_negative_iff_from_envelope_chosen_positive (a : envelope_ob)
+    (Hp : envelope_chosen_positive a)
+    : is_positive_pre_fixed_point θ a⁺ ≃ is_negative a.
+  Proof.
+    intermediate_weq (is_negative (⇓a)). {
+      apply is_negative_envelope_downshift_iff_pre_fixed_point.
+    }
+    apply weq_is_negative_of_lt_iso, lt_iso_inv, lt_iso_downshift_of_positive.
+    apply is_positive_of_envelope_chosen_positive, Hp.
   Qed.
 
   Lemma envelope_mor_from_negative_mor {a b : N}
@@ -1106,6 +1224,9 @@ Section envelope_defs.
   Defined.
 
 End envelope_defs.
+
+Arguments envelope_mor_factor_chosen_negative {_ _ _} / _.
+Arguments envelope_mor_factor_chosen_positive {_ _ _} / _.
 
 Ltac envelope_induction' θ a
   := let a' := uconstr:(a : envelope_ob θ) in

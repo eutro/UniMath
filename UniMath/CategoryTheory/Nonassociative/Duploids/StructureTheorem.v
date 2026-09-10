@@ -239,7 +239,9 @@ Section envelope_equiv.
       2: apply invweq; exact (make_weq _ (isweq_oblique_mor_negative θ _ _)).
       intermediate_weq (D ₗ⟦⇓a, b⟧).
       1: apply invweq, (hom_weq2 (downshift_nathomweq_linear_'_left D)).
-      apply (weq_from_fully_faithful (fully_faithful_from_equivalence _ _ _ (upshift_linear_to_negative_linear_is_equivalence D))
+      apply (weq_from_fully_faithful
+               (fully_faithful_from_equivalence _ _ _
+                  (upshift_linear_to_negative_linear_is_equivalence D))
                (⇓a) b).
     - abstract (intros f; apply oblique_mor_negative_path; now do 2 apply carrier_eq).
   Defined.
